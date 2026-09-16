@@ -41,6 +41,14 @@ create index if not exists characters_owner_idx on public.characters(owner_id);
 create index if not exists characters_class_idx on public.characters(class_id);
 create index if not exists profiles_class_idx on public.profiles(class_id);
 
+-- characters.owner_id and profiles.id both reference auth.users, which leaves no
+-- relationship PostgREST can follow. This extra key is what makes the author's name
+-- embeddable as `profiles(display_name)` in the gallery queries.
+alter table public.characters drop constraint if exists characters_owner_profile_fkey;
+alter table public.characters
+  add constraint characters_owner_profile_fkey
+  foreign key (owner_id) references public.profiles(id) on delete cascade;
+
 -- ------------------------------------------------------------ helpers
 -- Security-definer helpers avoid recursive RLS checks.
 
@@ -104,11 +112,16 @@ drop policy if exists "classes are readable" on public.classes;
 create policy "classes are readable" on public.classes
   for select using (true);
 
+-- Students sign in anonymously, so requiring a real account here stops a pupil from
+-- minting their own class codes.
 drop policy if exists "teachers manage own classes" on public.classes;
 create policy "teachers manage own classes" on public.classes
   for all to authenticated
   using (teacher_id = auth.uid())
-  with check (teacher_id = auth.uid());
+  with check (
+    teacher_id = auth.uid()
+    and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+  );
 
 -- profiles: you can see yourself, your classmates and (as teacher) your students.
 drop policy if exists "profiles readable by class" on public.profiles;
@@ -125,6 +138,12 @@ create policy "users update own profile" on public.profiles
   for update to authenticated
   using (id = auth.uid())
   with check (id = auth.uid());
+
+-- RLS cannot restrict single columns, so the grant does it: a pupil may correct the
+-- spelling of their own name, but cannot promote themselves to teacher or move
+-- themselves into another class (which would expose that class's work).
+revoke update on public.profiles from authenticated;
+grant update (display_name) on public.profiles to authenticated;
 
 drop policy if exists "users insert own profile" on public.profiles;
 create policy "users insert own profile" on public.profiles
