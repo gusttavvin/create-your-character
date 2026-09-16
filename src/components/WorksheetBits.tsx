@@ -1,0 +1,93 @@
+import type { CharacterDefinition, PartCategory, PartOption } from '../characters/types';
+
+const UI = '/assets/monster/ui';
+
+/** Big "CREATE YOUR ___" banner. The monster one is the original worksheet art. */
+export function TitleBanner({ def }: { def: CharacterDefinition }) {
+  if (def.kind === 'monster') {
+    return <img className="ws-title ws-title-img" src={`${UI}/title.png`} alt="Create Your Monster" />;
+  }
+  return (
+    <h1 className="ws-title ws-title-text" aria-label={def.title}>
+      <span className="doodle doodle-l" aria-hidden />
+      <span className="t-cream">Create Your</span> <span className="t-yellow">{def.noun}</span>
+      <span className="doodle doodle-r" aria-hidden />
+    </h1>
+  );
+}
+
+export function Sticker() {
+  return <img className="ws-sticker" src={`${UI}/sticker.png`} alt="Use your imagination!" />;
+}
+
+/** Colored row label ("BODY", "EYES"...). Monster rows use the worksheet crops. */
+export function LabelTile({ def, category }: { def: CharacterDefinition; category: PartCategory }) {
+  if (def.kind === 'monster') {
+    return <img className="ws-label ws-label-img" src={`${UI}/label_${category.id}.png`} alt={category.label} />;
+  }
+  return (
+    <div className="ws-label ws-label-css" style={{ background: category.color }}>
+      <span className="ws-label-text">{category.label}</span>
+    </div>
+  );
+}
+
+export function GenericTile({ label, color }: { label: string; color: string }) {
+  return (
+    <div className="ws-label ws-label-css" style={{ background: color }}>
+      <span className="ws-label-text">{label}</span>
+    </div>
+  );
+}
+
+interface CardProps {
+  category: PartCategory;
+  option: PartOption;
+  selected: boolean;
+  onPick: (category: PartCategory, option: PartOption) => void;
+}
+
+export function OptionCard({ category, option, selected, onPick }: CardProps) {
+  const Svg = option.Svg;
+  return (
+    <button
+      type="button"
+      className={`ws-card${selected ? ' is-selected' : ''}`}
+      style={{ ['--row' as string]: category.color }}
+      onClick={() => onPick(category, option)}
+      aria-pressed={selected}
+      title={option.phrase}
+    >
+      <span className="ws-card-art">
+        {option.img ? <img src={option.img} alt="" draggable={false} /> : Svg ? <Svg colors={{}} /> : null}
+      </span>
+      <span className="ws-card-label">{option.label}</span>
+      {selected && (
+        <span className="ws-card-check" aria-hidden>
+          ✓
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function PartRow({
+  def,
+  category,
+  value,
+  onPick,
+}: {
+  def: CharacterDefinition;
+  category: PartCategory;
+  value: string;
+  onPick: (category: PartCategory, option: PartOption) => void;
+}) {
+  return (
+    <div className="ws-row" data-cat={category.id}>
+      <LabelTile def={def} category={category} />
+      {category.options.map((o) => (
+        <OptionCard key={o.id} category={category} option={o} selected={value === o.id} onPick={onPick} />
+      ))}
+    </div>
+  );
+}
