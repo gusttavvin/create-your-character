@@ -1371,12 +1371,22 @@ a {
   .topbar {
     gap: 10px;
     padding: 8px 12px;
+    flex-wrap: wrap;
   }
 
   .topnav {
     order: 3;
     width: 100%;
     justify-content: center;
+  }
+
+  .topnav a {
+    padding: 4px 10px;
+    font-size: 0.9rem;
+  }
+
+  .topbar-right {
+    gap: 6px;
   }
 
   .brand-text {
