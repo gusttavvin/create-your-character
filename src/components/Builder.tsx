@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ERASED,
   normalizeColors,
   normalizeParts,
   randomColors,
@@ -71,6 +72,14 @@ export default function Builder({ def, initial }: Props) {
   // glowing slot already teaches where the piece belongs.
   useDropTarget((category, option) => pick(category, option));
 
+  /** Take a part off again. Base parts are not erasable, so they never reach here. */
+  const erase = useCallback((category: PartCategory) => {
+    setParts((p) => ({ ...p, [category.id]: ERASED }));
+    setDirty(true);
+    playClick();
+    speak(`No ${category.label.toLowerCase()}`);
+  }, []);
+
   const pickColor = useCallback((slot: ColorSlot, value: string, label: string) => {
     setColors((c) => ({ ...c, [slot.id]: value }));
     setDirty(true);
@@ -126,7 +135,7 @@ export default function Builder({ def, initial }: Props) {
       <div className="ws-body">
         <div className="ws-grid">
           {def.categories.map((c) => (
-            <PartRow key={c.id} def={def} category={c} value={parts[c.id]} onPick={pick} />
+            <PartRow key={c.id} def={def} category={c} value={parts[c.id]} onPick={pick} onErase={erase} />
           ))}
           <ColorRow slots={def.colorSlots} colors={colors} onPick={pickColor} />
         </div>
@@ -169,8 +178,7 @@ export default function Builder({ def, initial }: Props) {
 
           {role === 'guest' && (
             <p className="ws-note">
-              You are playing as a guest: characters are saved on this device only.{' '}
-              <Link to="/join">Join your class</Link> to keep them online.
+              You are playing as a guest: characters are saved on this device only.{' '} Sign in on the Teacher page to keep them online.
             </p>
           )}
         </div>

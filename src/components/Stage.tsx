@@ -5,6 +5,8 @@ import { CHARACTERS } from '../characters/registry';
 import { monsterSlots } from '../characters/monster/Monster2D';
 import { dragonSlots } from '../characters/dragon/Dragon2D';
 import { princessSlots } from '../characters/princess/Princess2D';
+import { superheroSlots } from '../characters/superhero/Superhero2D';
+import { fairySlots } from '../characters/fairy/Fairy2D';
 import { useDrag } from '../lib/drag';
 
 const Character3D = lazy(() => import('./Character3D'));
@@ -12,6 +14,8 @@ const Character3D = lazy(() => import('./Character3D'));
 function slotsFor(kind: CharacterKind, parts: PartMap): SlotLayout {
   if (kind === 'dragon') return dragonSlots(parts);
   if (kind === 'princess') return princessSlots();
+  if (kind === 'superhero') return superheroSlots(parts);
+  if (kind === 'fairy') return fairySlots(parts);
   return monsterSlots(parts);
 }
 

@@ -34,10 +34,10 @@ function SoundToggle() {
 }
 
 function UserChip() {
-  const { role, displayName, signOut, hasBackend } = useAuth();
+  const { role, displayName, signOut } = useAuth();
   if (role === 'guest') {
     return (
-      <Link to={hasBackend ? '/join' : '/teacher'} className="chip chip-guest" title="Sign in">
+      <Link to="/teacher" className="chip chip-guest" title="Sign in">
         👋 Guest
       </Link>
     );
@@ -58,10 +58,10 @@ function Shell() {
       <header className="topbar">
         <Link to="/" className="brand">
           <span className="brand-icon" aria-hidden>
-            🎨
+            🎮
           </span>
           <span className="brand-text">
-            Create Your <b>Character</b>
+            Funny <b>Games</b>
           </span>
         </Link>
         <nav className="topnav">
@@ -69,7 +69,6 @@ function Shell() {
             Home
           </NavLink>
           <NavLink to="/gallery">My Characters</NavLink>
-          <NavLink to="/join">Join Class</NavLink>
           <NavLink to="/teacher">Teacher</NavLink>
         </nav>
         <div className="topbar-right">
@@ -81,7 +80,7 @@ function Shell() {
       <main className="page">
         <Outlet />
       </main>
-      <footer className="footer">Made with ❤ for Teacher Clara's English class · Use your imagination!</footer>
+      <footer className="footer">Funny Games · made with ❤ for Teacher Clara's English class</footer>
     </div>
   );
 }

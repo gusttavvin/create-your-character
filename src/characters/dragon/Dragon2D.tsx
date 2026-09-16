@@ -1,6 +1,7 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import PartArt from '../../components/PartArt';
 import { DRAGON, DRAGON_BODY_LAYOUT, resolveDragonColors } from './config';
-import { findOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
+import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
 const VH = 720;
@@ -48,30 +49,31 @@ interface Props {
   className?: string;
 }
 
+
+/** A positioned layer. The pop animation owns the element's transform, so anything needing
+ *  its own transform (mirroring, wagging) goes on a wrapper inside it. */
+function Layer({ style, extra, children }: { style: CSSProperties; extra?: string; children: ReactNode }) {
+  return <div className={`part pop${extra ? ` ${extra}` : ''}`} style={style}>{children}</div>;
+}
+
 export default function Dragon2D({ parts, colors, animate = true, className }: Props) {
-  const body = findOption(DRAGON, 'body', parts.body) ?? DRAGON.categories[0].options[0];
-  const wings = findOption(DRAGON, 'wings', parts.wings) ?? DRAGON.categories[1].options[0];
-  const horns = findOption(DRAGON, 'horns', parts.horns) ?? DRAGON.categories[2].options[0];
-  const eyes = findOption(DRAGON, 'eyes', parts.eyes) ?? DRAGON.categories[3].options[0];
-  const mouth = findOption(DRAGON, 'mouth', parts.mouth) ?? DRAGON.categories[4].options[0];
-  const tail = findOption(DRAGON, 'tail', parts.tail) ?? DRAGON.categories[5].options[0];
-  const L = DRAGON_BODY_LAYOUT[body.id] ?? DRAGON_BODY_LAYOUT.chubby;
+  const body = pickOption(DRAGON, 'body', parts.body);
+  const wings = pickOption(DRAGON, 'wings', parts.wings);
+  const horns = pickOption(DRAGON, 'horns', parts.horns);
+  const eyes = pickOption(DRAGON, 'eyes', parts.eyes);
+  const mouth = pickOption(DRAGON, 'mouth', parts.mouth);
+  const tail = pickOption(DRAGON, 'tail', parts.tail);
+
+  const L = DRAGON_BODY_LAYOUT[body?.id ?? 'chubby'] ?? DRAGON_BODY_LAYOUT.chubby;
   const eff = resolveDragonColors(parts, colors);
-
-  const Body = body.Svg!;
-  const Wings = wings.Svg!;
-  const Horns = horns.Svg!;
-  const Eyes = eyes.Svg!;
-  const Mouth = mouth.Svg!;
-  const Tail = tail.Svg!;
-
   const eyeCY = BODY_TOP + L.eyeY * BODY_H;
   const mouthCY = BODY_TOP + L.mouthY * BODY_H;
-  // The fire mouth is drawn off-centre (flame to the right); shift it so the mouth stays on the face.
-  const mouthDX = mouth.id === 'fire' ? (66 / 512) * L.mouthSize : 0;
+  // The fire mouth is drawn off-centre (flame to the right), so it shifts to keep the lips on the face.
+  const mouthDX = mouth?.id === 'fire' ? (66 / 512) * L.mouthSize : 0;
   const HORN = 230;
   const hornCY = BODY_TOP + L.hornY * BODY_H - 34;
   const anim = animate ? ' is-animated' : '';
+  const full: CSSProperties = { width: '100%', height: '100%' };
 
   return (
     <div
@@ -79,24 +81,38 @@ export default function Dragon2D({ parts, colors, animate = true, className }: P
       style={{ position: 'relative', width: '100%', aspectRatio: `${VW} / ${VH}` }}
     >
       <div className="char2d-bob" style={{ position: 'absolute', inset: 0 }}>
-        <div key={`tail-${tail.id}`} className="part pop tail-wag" style={{ ...box(452, 520, 300, 0), transformOrigin: '12% 60%' }}>
-          <Tail colors={eff} />
-        </div>
-        <div key={`wings-${wings.id}`} className="part pop wing-flap" style={box(BODY_CX, 372, 560, 1)}>
-          <Wings colors={eff} />
-        </div>
-        <div key={`horns-${horns.id}`} className="part pop" style={box(BODY_CX, hornCY, HORN, 2)}>
-          <Horns colors={eff} />
-        </div>
-        <div key={`body-${body.id}`} className="part pop" style={box(BODY_CX, BODY_CY, BODY_SIZE, 3)}>
-          <Body colors={eff} />
-        </div>
-        <div key={`mouth-${mouth.id}`} className="part pop" style={box(BODY_CX + mouthDX, mouthCY, L.mouthSize, 4)}>
-          <Mouth colors={eff} />
-        </div>
-        <div key={`eyes-${eyes.id}`} className="part pop blink" style={box(BODY_CX, eyeCY, L.eyeSize, 5)}>
-          <Eyes colors={eff} />
-        </div>
+        {tail && (
+          <Layer key={`tail-${tail.id}`} style={box(452, 520, 300, 0)}>
+            <div className="tail-wag" style={{ ...full, transformOrigin: '12% 60%' }}>
+              <PartArt option={tail} colors={eff} />
+            </div>
+          </Layer>
+        )}
+        {wings && (
+          <Layer key={`wings-${wings.id}`} style={box(BODY_CX, 372, 560, 1)} extra="wing-flap">
+            <PartArt option={wings} colors={eff} />
+          </Layer>
+        )}
+        {horns && (
+          <Layer key={`horns-${horns.id}`} style={box(BODY_CX, hornCY, HORN, 2)}>
+            <PartArt option={horns} colors={eff} />
+          </Layer>
+        )}
+        {body && (
+          <Layer key={`body-${body.id}`} style={box(BODY_CX, BODY_CY, BODY_SIZE, 3)}>
+            <PartArt option={body} colors={eff} />
+          </Layer>
+        )}
+        {mouth && (
+          <Layer key={`mouth-${mouth.id}`} style={box(BODY_CX + mouthDX, mouthCY, L.mouthSize, 4)}>
+            <PartArt option={mouth} colors={eff} />
+          </Layer>
+        )}
+        {eyes && (
+          <Layer key={`eyes-${eyes.id}`} style={box(BODY_CX, eyeCY, L.eyeSize, 5)} extra="blink">
+            <PartArt option={eyes} colors={eff} />
+          </Layer>
+        )}
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ export default function GalleryPage() {
 
       {role === 'guest' && (
         <p className="note">
-          Saved on this device. <Link to="/join">Join your class</Link> to keep your characters online and share them with your teacher.
+          Saved on this device. Sign in on the Teacher page to keep your characters online.
         </p>
       )}
       {error && <p className="note note-error">{error}</p>}

@@ -6,6 +6,8 @@ import type { CharacterKind, ColorMap, PartMap } from '../characters/types';
 import Monster3D from '../characters/monster/Monster3D';
 import Dragon3D from '../characters/dragon/Dragon3D';
 import Princess3D from '../characters/princess/Princess3D';
+import Superhero3D from '../characters/superhero/Superhero3D';
+import Fairy3D from '../characters/fairy/Fairy3D';
 
 interface Props {
   kind: CharacterKind;
@@ -52,6 +54,10 @@ export default function Character3D({ kind, parts, colors }: Props) {
             <Dragon3D parts={parts} colors={colors} />
           ) : kind === 'princess' ? (
             <Princess3D parts={parts} colors={colors} />
+          ) : kind === 'superhero' ? (
+            <Superhero3D parts={parts} colors={colors} />
+          ) : kind === 'fairy' ? (
+            <Fairy3D parts={parts} colors={colors} />
           ) : (
             <Monster3D parts={parts} />
           )}

@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type CharacterKind = 'monster' | 'dragon' | 'princess';
+export type CharacterKind = 'monster' | 'dragon' | 'princess' | 'superhero' | 'fairy';
 export type ViewMode = '2d' | '3d';
 
 /** Colors that a character can be painted with (keyed by slot, e.g. "body", "skin"). */
@@ -30,6 +30,8 @@ export interface PartCategory {
   label: string;
   /** Row color, matches the worksheet tiles. */
   color: string;
+  /** The child may erase this part, leaving the spot empty. Base parts cannot be erased. */
+  optional?: boolean;
   options: PartOption[];
 }
 
@@ -87,6 +89,35 @@ export function findOption(def: CharacterDefinition, categoryId: string, optionI
   return def.categories.find((c) => c.id === categoryId)?.options.find((o) => o.id === optionId);
 }
 
+/** Erased by the child. Stored, saved and restored like any other choice. */
+export const ERASED = '';
+
+/**
+ * Resolves what to draw for a category.
+ * The empty string means the child erased the part, so nothing is drawn; an id we do not
+ * recognise falls back to the category's first option rather than leaving a hole.
+ */
+export function pickOption(def: CharacterDefinition, categoryId: string, optionId: string | undefined): PartOption | null {
+  const cat = def.categories.find((c) => c.id === categoryId);
+  if (!cat) return null;
+  if (optionId === ERASED) return null;
+  return cat.options.find((o) => o.id === optionId) ?? cat.options[0] ?? null;
+}
+
+/** The English phrases of the parts the character is actually wearing, in the order given. */
+export function phrasesOf(def: CharacterDefinition, parts: PartMap, categoryIds: string[]): string[] {
+  return categoryIds
+    .map((id) => pickOption(def, id, parts[id])?.phrase)
+    .filter((p): p is string => !!p);
+}
+
+/** "a, b and c" — the spoken list the children hear. */
+export function listPhrases(items: string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
 export function randomParts(def: CharacterDefinition): PartMap {
   const out: PartMap = {};
   for (const c of def.categories) {
@@ -109,7 +140,8 @@ export function normalizeParts(def: CharacterDefinition, parts?: Partial<PartMap
   if (parts) {
     for (const c of def.categories) {
       const v = parts[c.id];
-      if (v && c.options.some((o) => o.id === v)) out[c.id] = v;
+      if (v === ERASED && c.optional) out[c.id] = ERASED;
+      else if (v && c.options.some((o) => o.id === v)) out[c.id] = v;
     }
   }
   return out;

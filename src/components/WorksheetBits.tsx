@@ -83,18 +83,36 @@ export function PartRow({
   category,
   value,
   onPick,
+  onErase,
 }: {
   def: CharacterDefinition;
   category: PartCategory;
   value: string;
   onPick: (category: PartCategory, option: PartOption) => void;
+  onErase: (category: PartCategory) => void;
 }) {
+  const erased = value === '';
   return (
     <div className="ws-row" data-cat={category.id}>
       <LabelTile def={def} category={category} />
       {category.options.map((o) => (
         <OptionCard key={o.id} category={category} option={o} selected={value === o.id} onPick={onPick} />
       ))}
+      {category.optional ? (
+        <button
+          type="button"
+          className={`ws-erase${erased ? ' is-on' : ''}`}
+          style={{ ['--row' as string]: category.color }}
+          onClick={() => onErase(category)}
+          aria-pressed={erased}
+          title={`No ${category.label.toLowerCase()}`}
+        >
+          <span className="ws-erase-mark" aria-hidden />
+          <span className="ws-erase-text">None</span>
+        </button>
+      ) : (
+        <span className="ws-erase-gap" aria-hidden />
+      )}
     </div>
   );
 }

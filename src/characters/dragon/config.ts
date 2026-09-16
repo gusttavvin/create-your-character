@@ -1,4 +1,4 @@
-import type { CharacterDefinition, PartMap } from '../types';
+import { listPhrases, phrasesOf, type CharacterDefinition, type PartMap } from '../types';
 import * as P from './parts';
 
 export const DRAGON: CharacterDefinition = {
@@ -22,6 +22,7 @@ export const DRAGON: CharacterDefinition = {
       id: 'wings',
       label: 'Wings',
       color: '#FF8A2A',
+      optional: true,
       options: [
         { id: 'bat', label: 'Bat', phrase: 'bat wings', Svg: P.WingsBat },
         { id: 'feather', label: 'Feather', phrase: 'feather wings', Svg: P.WingsFeather },
@@ -33,6 +34,7 @@ export const DRAGON: CharacterDefinition = {
       id: 'horns',
       label: 'Horns',
       color: '#FFD93D',
+      optional: true,
       options: [
         { id: 'pointy', label: 'Pointy', phrase: 'pointy horns', Svg: P.HornsPointy },
         { id: 'curly', label: 'Curly', phrase: 'curly horns', Svg: P.HornsCurly },
@@ -44,6 +46,7 @@ export const DRAGON: CharacterDefinition = {
       id: 'eyes',
       label: 'Eyes',
       color: '#4FC3FF',
+      optional: true,
       options: [
         { id: 'cute', label: 'Cute', phrase: 'cute eyes', Svg: P.EyesCute },
         { id: 'fierce', label: 'Fierce', phrase: 'fierce eyes', Svg: P.EyesFierce },
@@ -55,6 +58,7 @@ export const DRAGON: CharacterDefinition = {
       id: 'mouth',
       label: 'Mouth',
       color: '#7ED957',
+      optional: true,
       options: [
         { id: 'smile', label: 'Smile', phrase: 'a big smile', Svg: P.MouthSmile },
         { id: 'fire', label: 'Fire', phrase: 'a mouth that breathes fire', Svg: P.MouthFire },
@@ -66,11 +70,12 @@ export const DRAGON: CharacterDefinition = {
       id: 'tail',
       label: 'Tail',
       color: '#A77BFF',
+      optional: true,
       options: [
-        { id: 'arrow', label: 'Arrow', phrase: 'an arrow tail', Svg: P.TailArrow },
-        { id: 'heart', label: 'Heart', phrase: 'a heart tail', Svg: P.TailHeart },
-        { id: 'spiky', label: 'Spiky', phrase: 'a spiky tail', Svg: P.TailSpiky },
-        { id: 'fluffy', label: 'Fluffy', phrase: 'a fluffy tail', Svg: P.TailFluffy },
+        { id: 'fire', label: 'Fire', phrase: 'a tail of fire', Svg: P.TailFire },
+        { id: 'star', label: 'Star', phrase: 'a star tail', Svg: P.TailStar },
+        { id: 'crystal', label: 'Crystal', phrase: 'a crystal tail', Svg: P.TailCrystal },
+        { id: 'leaf', label: 'Leaf', phrase: 'a leaf tail', Svg: P.TailLeaf },
       ],
     },
   ],
@@ -104,13 +109,12 @@ export const DRAGON: CharacterDefinition = {
       ],
     },
   ],
-  defaultParts: { body: 'chubby', wings: 'bat', horns: 'pointy', eyes: 'cute', mouth: 'smile', tail: 'arrow' },
+  defaultParts: { body: 'chubby', wings: 'bat', horns: 'pointy', eyes: 'cute', mouth: 'smile', tail: 'fire' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
-    const ph = (cat: string) =>
-      DRAGON.categories.find((c) => c.id === cat)?.options.find((o) => o.id === parts[cat])?.phrase ?? '';
     const who = name ? `${name} the dragon` : 'My dragon';
-    return `${who} has ${ph('body')}, ${ph('wings')}, ${ph('horns')}, ${ph('eyes')}, ${ph('mouth')} and ${ph('tail')}.`;
+    const has = listPhrases(phrasesOf(DRAGON, parts, ['body', 'wings', 'horns', 'eyes', 'mouth', 'tail']));
+    return has ? `${who} has ${has}.` : `${who} is still just an idea!`;
   },
 };
 

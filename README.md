@@ -1,9 +1,10 @@
-# Create Your Character 🎨
+# Funny Games 🎮
 
-A kid-friendly English-learning mini game for Teacher Clara's class. Children build their own
-**Monster**, **Dragon** or **Princess** by picking parts from a worksheet, hear the English words
-read aloud, give the character a name and save it. Every character can be shown in **2D**
-(the original worksheet art) or **3D** (a toon-shaded model that spins on the page).
+A little arcade of English-learning games for Teacher Clara's class. The home page lists the
+games; today there is one, **Create Your Character**, where children build a **Monster**,
+**Dragon**, **Princess**, **Superhero** or **Fairy**, hear the English words read aloud, name
+their creature and save it. Every character can be shown in **2D** (layered artwork) or **3D**
+(a toon-shaded model that spins on the page).
 
 Live site: deployed on Cloudflare Pages (see *Deploy* below). Backend: Supabase (free tier).
 
@@ -17,16 +18,15 @@ Live site: deployed on Cloudflare Pages (see *Deploy* below). Backend: Supabase 
   piece also works, on a projector or with a keyboard.
 - Parts that come in twos (arms, legs, eyes, braids) are **true mirrors**: one hand-drawn piece
   and its exact reflection, in 2D and in 3D.
-- Three characters, each with 5–6 categories × 4 options, plus color palettes for the dragon
-  and the princess (skin, hair, dress, body, wings).
+- Five characters, each with 5–6 categories × 4 options, plus colour palettes (skin, hair,
+  dress, body, wings, suit, cape).
+- Any part except the base one can be erased with the **None** button in its row.
 - 2D layered art with idle animations (bobbing, blinking, wiggling arms, flapping wings…).
 - 3D mode with cartoon outlines, orbit/zoom and idle motion (Three.js / React Three Fiber).
 - English vocabulary: every click reads the word aloud (Web Speech API), a sentence describes
   the character with the words highlighted, and a **Read it!** button reads the sentence.
 - Save & name characters. Guests save on the device; signed-in users save in the cloud.
-- **Teacher area**: e-mail login, create classes, get a class code, see all students' characters.
-- **Join Class**: students enter the class code + their name (no e-mail needed, anonymous auth).
-- Class gallery: classmates can see each other's creations; the teacher can delete any of them.
+- **Teacher area**: e-mail login, classes, and every character made for a class in one place.
 - Presentation page (`/c/:id`) with a big stage: perfect for the projector.
 
 ## Tech
@@ -85,9 +85,12 @@ Every push to `main` triggers a new deploy.
 ```
 art-source/                  untouched originals of the pieces that were turned into mirrors
 public/assets/monster/       kit PNGs (parts) + crops of the worksheet (ui)
+src/games.ts                 the list the home page is built from
 src/characters/monster/      config (words, phrases, layout), Monster2D, Monster3D
 src/characters/dragon/       vector parts (SVG), config, Dragon2D, Dragon3D
 src/characters/princess/     vector parts (SVG), config, Princess2D, Princess3D
+src/characters/superhero/    vector parts (SVG), config, Superhero2D, Superhero3D
+src/characters/fairy/        vector parts (SVG), config, Fairy2D, Fairy3D
 src/components/              Builder (worksheet), Stage, cards, dialogs, 3D canvas
 src/pages/                   Home, Builder, Gallery, Character (show), Teacher, Join
 src/lib/                     auth, storage (local/cloud), speech, sounds, confetti, three helpers

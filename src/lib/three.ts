@@ -142,3 +142,27 @@ export function polyShape(points: [number, number][]) {
   s.closePath();
   return s;
 }
+
+/** Pointed leaf Shape, tip at +y and stem at -y (for the dragon's leaf tail). */
+export function leafShape(size = 1) {
+  const s = new THREE.Shape();
+  s.moveTo(0, -size * 0.55);
+  s.quadraticCurveTo(size * 0.6, -size * 0.12, 0, size * 0.78);
+  s.quadraticCurveTo(-size * 0.6, -size * 0.12, 0, -size * 0.55);
+  return s;
+}
+
+/**
+ * Resolves a selected option id for the 3D builders.
+ *
+ * The eraser lets a child clear a category, which arrives as the empty string:
+ * that must render nothing, so it resolves to `null`. A missing id still falls
+ * back to the category's default.
+ */
+export function pickPart(id: string | undefined | null, fallback: string): string | null {
+  if (id === '') return null;
+  return id ?? fallback;
+}
+
+export { usePatternTexture, getPatternTexture } from './pattern';
+export type { PatternKind, PatternSpec } from './pattern';

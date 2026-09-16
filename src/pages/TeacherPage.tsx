@@ -119,7 +119,7 @@ function ClassPanel({ cls }: { cls: ClassRoom }) {
             {students ?? '…'} student{students === 1 ? '' : 's'} · {chars?.length ?? '…'} character{chars?.length === 1 ? '' : 's'}
           </p>
         </div>
-        <div className="class-code" title="Students type this code on the Join Class page">
+        <div className="class-code" title="The code that identifies this class">
           <span>Class code</span>
           <b>{cls.code}</b>
         </div>
@@ -127,7 +127,7 @@ function ClassPanel({ cls }: { cls: ClassRoom }) {
       {open && (
         <div className="class-body">
           <p className="note">
-            Students go to <b>Join Class</b>, type the code <b>{cls.code}</b> and their name. Their characters appear here.
+            Class code <b>{cls.code}</b>. Everything made for this class shows up here.
           </p>
           {chars === null ? (
             <div className="center-msg">

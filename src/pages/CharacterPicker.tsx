@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom';
 import { CHARACTERS, KINDS } from '../characters/registry';
 import Character2D from '../components/Character2D';
-import { useAuth } from '../lib/auth';
 import { speak } from '../lib/speech';
 import { playClick } from '../lib/sounds';
 
-export default function Home() {
-  const { role, displayName, hasBackend } = useAuth();
+export default function CharacterPicker() {
   return (
     <div className="home">
       <section className="hero">
@@ -14,13 +12,8 @@ export default function Home() {
           <span className="t-cream">Create Your</span> <span className="t-yellow">Character!</span>
         </h1>
         <p className="hero-sub">
-          Pick a friend, choose the parts, learn the words in English, give it a name and save it. Use your imagination!
+          Pick a friend, drag the pieces onto the picture, learn the words in English, give it a name and save it.
         </p>
-        {role !== 'guest' && (
-          <p className="hero-hello">
-            Hello, <b>{displayName}</b>! 👋
-          </p>
-        )}
       </section>
 
       <section className="picker">
@@ -56,13 +49,8 @@ export default function Home() {
         <Link to="/gallery" className="btn btn-ghost">
           🖼 My Characters
         </Link>
-        {hasBackend && role === 'guest' && (
-          <Link to="/join" className="btn btn-fun">
-            🎒 Join my class
-          </Link>
-        )}
-        <Link to="/teacher" className="btn btn-ghost">
-          🍎 Teacher area
+        <Link to="/" className="btn btn-ghost">
+          ← All games
         </Link>
       </section>
     </div>

@@ -588,3 +588,22 @@ export function AccessoryKitten({ className }: PartSvgProps) {
     </Svg>
   );
 }
+
+/* ------------------------------------------------------------------ FEET */
+
+/** Little shoes peeking out under the hem, drawn in the dress's own 512 box. */
+export function Shoes({ colors, className }: PartSvgProps) {
+  const c = shade(colors.dress || PRINCESS_DEFAULTS.dress.gown, -0.32);
+  const shoe = (
+    <g>
+      <rect x="176" y="452" width="80" height="48" rx="22" fill={c} {...O} strokeWidth={12} />
+      <rect x="192" y="440" width="46" height="26" rx="12" fill={shade(c, 0.3)} {...O} strokeWidth={10} />
+    </g>
+  );
+  return (
+    <Svg className={className}>
+      {shoe}
+      <g transform="matrix(-1 0 0 1 512 0)">{shoe}</g>
+    </Svg>
+  );
+}

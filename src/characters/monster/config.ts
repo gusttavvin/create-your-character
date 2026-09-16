@@ -1,4 +1,4 @@
-import type { CharacterDefinition, PartMap } from '../types';
+import { listPhrases, phrasesOf, type CharacterDefinition, type PartMap } from '../types';
 
 const P = '/assets/monster/parts';
 
@@ -23,6 +23,7 @@ export const MONSTER: CharacterDefinition = {
       id: 'eyes',
       label: 'Eyes',
       color: '#FFD93D',
+      optional: true,
       options: [
         { id: 'stalks', label: 'Stalks', phrase: 'eyes on stalks', img: `${P}/eyes/stalks.png` },
         { id: 'multiple', label: 'Multiple', phrase: 'multiple eyes', img: `${P}/eyes/multiple.png` },
@@ -34,6 +35,7 @@ export const MONSTER: CharacterDefinition = {
       id: 'mouth',
       label: 'Mouth',
       color: '#7ED957',
+      optional: true,
       options: [
         { id: 'teeth', label: 'Teeth', phrase: 'a mouth full of teeth', img: `${P}/mouth/teeth.png` },
         { id: 'tongue', label: 'Tongue', phrase: 'a smile with a tongue', img: `${P}/mouth/tongue.png` },
@@ -45,6 +47,7 @@ export const MONSTER: CharacterDefinition = {
       id: 'arms',
       label: 'Arms',
       color: '#A77BFF',
+      optional: true,
       options: [
         { id: 'claw', label: 'Claw', phrase: 'claw arms', img: `${P}/arms/claw.png` },
         { id: 'tentacle', label: 'Tentacle', phrase: 'tentacle arms', img: `${P}/arms/tentacle.png` },
@@ -56,6 +59,7 @@ export const MONSTER: CharacterDefinition = {
       id: 'legs',
       label: 'Legs',
       color: '#4FC3FF',
+      optional: true,
       options: [
         { id: 'stubby', label: 'Stubby', phrase: 'stubby legs', img: `${P}/legs/stubby.png` },
         { id: 'bird', label: 'Bird', phrase: 'bird legs', img: `${P}/legs/bird.png` },
@@ -68,16 +72,18 @@ export const MONSTER: CharacterDefinition = {
   defaultParts: { body: 'round', eyes: 'stalks', mouth: 'teeth', arms: 'claw', legs: 'stubby' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
-    const ph = (cat: string) =>
-      MONSTER.categories.find((c) => c.id === cat)?.options.find((o) => o.id === parts[cat])?.phrase ?? '';
     const who = name ? `${name} the monster` : 'My monster';
-    return `${who} has ${ph('body')}, ${ph('eyes')}, ${ph('mouth')}, ${ph('arms')} and ${ph('legs')}.`;
+    const has = listPhrases(phrasesOf(MONSTER, parts, ['body', 'eyes', 'mouth', 'arms', 'legs']));
+    return has ? `${who} has ${has}.` : `${who} is still just an idea!`;
   },
 };
 
 /** 2D layout metrics per body shape, in a 600 x 720 virtual canvas. */
 export interface BodyLayout {
   halfW: number; // half of the visible body width (virtual units)
+  /** First and last opaque row of the art, in its own 512 px image. */
+  top: number;
+  bottom: number;
   eyeY: number; // fraction of body height (0 = top, 1 = bottom)
   eyeSize: number;
   mouthY: number;
@@ -86,11 +92,14 @@ export interface BodyLayout {
   armInset: number; // where the arm attaches, as a fraction of halfW
 }
 
+// Three of the four bodies were drawn standing on their own little feet, which fought with
+// the legs the child picks. Those feet were cut off the artwork and the hem closed, so each
+// body now ends higher than the kit's original 470.
 export const BODY_LAYOUT: Record<string, BodyLayout> = {
-  round: { halfW: 173, eyeY: 0.3, eyeSize: 210, mouthY: 0.62, mouthSize: 150, armY: 0.58, armInset: 0.82 },
-  egg: { halfW: 143, eyeY: 0.33, eyeSize: 190, mouthY: 0.6, mouthSize: 140, armY: 0.62, armInset: 0.86 },
-  square: { halfW: 171, eyeY: 0.3, eyeSize: 210, mouthY: 0.62, mouthSize: 150, armY: 0.58, armInset: 0.78 },
-  hourglass: { halfW: 136, eyeY: 0.22, eyeSize: 170, mouthY: 0.4, mouthSize: 120, armY: 0.72, armInset: 0.9 },
+  round: { halfW: 173, top: 41, bottom: 425, eyeY: 0.3, eyeSize: 210, mouthY: 0.63, mouthSize: 150, armY: 0.6, armInset: 0.82 },
+  egg: { halfW: 143, top: 41, bottom: 441, eyeY: 0.33, eyeSize: 190, mouthY: 0.61, mouthSize: 140, armY: 0.64, armInset: 0.86 },
+  square: { halfW: 171, top: 41, bottom: 425, eyeY: 0.3, eyeSize: 210, mouthY: 0.63, mouthSize: 150, armY: 0.6, armInset: 0.78 },
+  hourglass: { halfW: 136, top: 41, bottom: 470, eyeY: 0.22, eyeSize: 170, mouthY: 0.4, mouthSize: 120, armY: 0.72, armInset: 0.9 },
 };
 
 /** Fraction of the 512px legs image between its top edge and the first opaque pixel. */

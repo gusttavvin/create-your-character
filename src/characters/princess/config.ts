@@ -1,4 +1,4 @@
-import type { CharacterDefinition, PartMap } from '../types';
+import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type PartMap } from '../types';
 import * as P from './parts';
 
 export const PRINCESS: CharacterDefinition = {
@@ -22,6 +22,7 @@ export const PRINCESS: CharacterDefinition = {
       id: 'hair',
       label: 'Hair',
       color: '#FF8A2A',
+      optional: true,
       options: [
         { id: 'long', label: 'Long', phrase: 'long hair', Svg: P.HairLong },
         { id: 'braids', label: 'Braids', phrase: 'two braids', Svg: P.HairBraids },
@@ -33,6 +34,7 @@ export const PRINCESS: CharacterDefinition = {
       id: 'crown',
       label: 'Crown',
       color: '#FFD93D',
+      optional: true,
       options: [
         { id: 'tiara', label: 'Tiara', phrase: 'a tiara', Svg: P.CrownTiara },
         { id: 'gold', label: 'Crown', phrase: 'a golden crown', Svg: P.CrownGold },
@@ -44,6 +46,7 @@ export const PRINCESS: CharacterDefinition = {
       id: 'eyes',
       label: 'Eyes',
       color: '#4FC3FF',
+      optional: true,
       options: [
         { id: 'sparkly', label: 'Sparkly', phrase: 'sparkly eyes', Svg: P.EyesSparkly },
         { id: 'happy', label: 'Happy', phrase: 'happy eyes', Svg: P.EyesHappy },
@@ -55,6 +58,7 @@ export const PRINCESS: CharacterDefinition = {
       id: 'mouth',
       label: 'Mouth',
       color: '#7ED957',
+      optional: true,
       options: [
         { id: 'smile', label: 'Smile', phrase: 'a sweet smile', Svg: P.MouthSmile },
         { id: 'laugh', label: 'Laugh', phrase: 'a big laugh', Svg: P.MouthLaugh },
@@ -66,6 +70,7 @@ export const PRINCESS: CharacterDefinition = {
       id: 'accessory',
       label: 'Item',
       color: '#A77BFF',
+      optional: true,
       options: [
         { id: 'wand', label: 'Wand', phrase: 'a magic wand', Svg: P.AccessoryWand },
         { id: 'book', label: 'Book', phrase: 'a book', Svg: P.AccessoryBook },
@@ -115,10 +120,16 @@ export const PRINCESS: CharacterDefinition = {
   defaultParts: { dress: 'gown', hair: 'long', crown: 'tiara', eyes: 'sparkly', mouth: 'smile', accessory: 'wand' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
-    const ph = (cat: string) =>
-      PRINCESS.categories.find((c) => c.id === cat)?.options.find((o) => o.id === parts[cat])?.phrase ?? '';
     const who = name ? `Princess ${name}` : 'My princess';
-    return `${who} has ${ph('hair')}, ${ph('crown')}, ${ph('eyes')} and ${ph('mouth')}. She is wearing ${ph('dress')} and holding ${ph('accessory')}.`;
+    const has = listPhrases(phrasesOf(PRINCESS, parts, ['hair', 'crown', 'eyes', 'mouth']));
+    const dress = pickOption(PRINCESS, 'dress', parts.dress)?.phrase;
+    const item = pickOption(PRINCESS, 'accessory', parts.accessory)?.phrase;
+    const lines = [has ? `${who} has ${has}.` : ''];
+    if (dress && item) lines.push(`She is wearing ${dress} and holding ${item}.`);
+    else if (dress) lines.push(`She is wearing ${dress}.`);
+    else if (item) lines.push(`She is holding ${item}.`);
+    const out = lines.filter(Boolean).join(' ');
+    return out || `${who} is still just an idea!`;
   },
 };
 

@@ -384,61 +384,83 @@ function TailBase({ color }: { color: string }) {
   );
 }
 
-export function TailArrow({ colors, className }: PartSvgProps) {
+/** Sparkles and small shapes that trail along the tail, so each tip has a story. */
+function star5(cx: number, cy: number, rOut: number, rIn: number) {
+  const pts: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? rOut : rIn;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+  }
+  return pts.join(' ');
+}
+
+export function TailFire({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
   return (
     <Svg className={className}>
       <TailBase color={c} />
-      <path d="M430,92 L512,112 L488,194 Z" fill={shade(c, -0.2)} {...O} />
+      {/* a flame licking up off the tip, in three shrinking tongues */}
+      <path
+        d="M466,178 C420,142 430,96 462,60 C470,86 486,92 494,74 C516,104 526,146 506,178 C494,198 478,196 466,178 Z"
+        fill="#FF8A2A"
+        {...O}
+      />
+      <path d="M472,168 C448,142 456,112 474,88 C482,106 494,110 498,98 C512,122 514,150 500,168 C492,180 480,180 472,168 Z" fill="#FFD93D" />
+      <path d="M478,158 C466,142 470,124 480,110 C488,126 494,142 488,158 C484,166 482,166 478,158 Z" fill="#FFF3C4" />
+      <circle cx="430" cy="66" r="9" fill="#FF8A2A" />
+      <circle cx="508" cy="42" r="7" fill="#FFD93D" />
     </Svg>
   );
 }
 
-export function TailHeart({ colors, className }: PartSvgProps) {
+export function TailStar({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
   return (
     <Svg className={className}>
       <TailBase color={c} />
-      <path d="M472,206 C420,166 412,100 462,110 C472,112 480,124 484,134 C488,124 496,112 506,110 C556,100 536,166 472,206 Z" fill="#FF6B78" {...O} />
+      {/* a comet: big star at the tip, little ones trailing back down the tail */}
+      <polygon points={star5(474, 122, 68, 29)} fill="#FFD93D" {...O} />
+      <polygon points={star5(474, 122, 34, 15)} fill="#FFF3C4" />
+      <polygon points={star5(398, 178, 26, 11)} fill="#FFD93D" {...O} strokeWidth={8} />
+      <polygon points={star5(340, 224, 17, 7)} fill="#FFE99A" {...O} strokeWidth={6} />
+      <circle cx="300" cy="262" r="7" fill="#FFD93D" />
     </Svg>
   );
 }
 
-export function TailSpiky({ colors, className }: PartSvgProps) {
+export function TailCrystal({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
-  const spike = shade(c, -0.22);
+  const gem = '#5BE8FF';
   return (
     <Svg className={className}>
-      <path d="M150,300 L168,246 L196,304 Z M230,286 L262,226 L280,276 Z M320,222 L364,176 L370,236 Z" fill={spike} {...O} strokeWidth={10} />
       <TailBase color={c} />
-      <path d="M430,92 L512,112 L488,194 Z" fill={spike} {...O} />
+      {/* a cluster of angular gems growing out of the tip */}
+      <path d="M470,196 L440,120 L474,62 L512,118 L500,196 Z" fill={gem} {...O} />
+      <path d="M474,62 L474,196 M440,120 L474,138 L512,118" fill="none" stroke={INK} strokeWidth="7" />
+      <path d="M418,190 L404,140 L432,112 L448,158 Z" fill={shade(gem, 0.25)} {...O} strokeWidth={10} />
+      <path d="M500,206 L512,164 L536,196 L524,226 Z" fill={shade(gem, -0.15)} {...O} strokeWidth={10} />
+      <path d="M462,92 L470,110 L456,116 Z" fill="#fff" />
     </Svg>
   );
 }
 
-export function TailFluffy({ colors, className }: PartSvgProps) {
+export function TailLeaf({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
-  const puff = '#FFF3C4';
-  const circles: [number, number, number][] = [
-    [466, 140, 44],
-    [426, 116, 30],
-    [500, 108, 30],
-    [508, 160, 28],
-    [446, 186, 30],
-    [488, 190, 26],
-    [432, 154, 26],
-  ];
+  const leaf = '#7ED957';
+  const Leaf = ({ x, y, s, rot }: { x: number; y: number; s: number; rot: number }) => (
+    <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s})`}>
+      <path d="M0,60 C-64,10 -48,-62 0,-86 C48,-62 64,10 0,60 Z" fill={leaf} {...O} strokeWidth={14 / s} />
+      <path d="M0,54 L0,-74 M0,-10 L-30,-34 M0,-10 L30,-34 M0,22 L-24,4 M0,22 L24,4" fill="none" stroke={shade(leaf, -0.35)} strokeWidth={8 / s} strokeLinecap="round" />
+    </g>
+  );
   return (
     <Svg className={className}>
       <TailBase color={c} />
-      <g>
-        {circles.map(([x, y, r], i) => (
-          <circle key={i} cx={x} cy={y} r={r} fill={puff} {...O} strokeWidth={12} />
-        ))}
-        {circles.map(([x, y, r], i) => (
-          <circle key={`i${i}`} cx={x} cy={y} r={r - 1} fill={puff} />
-        ))}
-      </g>
+      {/* a big leaf at the tip with two sprouting along the tail */}
+      <Leaf x={476} y={118} s={1} rot={18} />
+      <Leaf x={392} y={182} s={0.55} rot={-32} />
+      <Leaf x={322} y={236} s={0.38} rot={-58} />
     </Svg>
   );
 }

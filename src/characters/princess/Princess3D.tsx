@@ -7,14 +7,42 @@ import * as THREE from 'three';
 import type { ColorMap, PartMap } from '../types';
 import { PRINCESS, resolvePrincessColors } from './config';
 import { findOption } from '../types';
-import { INK3D, starShape, useGradientMap, useSvgTexture } from '../../lib/three';
+import { INK3D, pickPart, starShape, useGradientMap, usePatternTexture, useSvgTexture } from '../../lib/three';
+import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
 
 const HEAD_Y = 1.15;
 const HEAD_R = 0.68;
 
-function Toon({ color, map }: { color: string; map: THREE.Texture }) {
-  return <meshToonMaterial color={color} gradientMap={map} />;
+/** Toon surface; a pattern texture carries the colour itself, so the tint goes white. */
+function Toon({ color, map, tex }: { color: string; map: THREE.Texture; tex?: THREE.Texture | null }) {
+  return <meshToonMaterial color={tex ? '#ffffff' : color} gradientMap={map} map={tex ?? null} />;
+}
+
+interface Skin {
+  pattern: PatternKind;
+  scale: number;
+}
+
+/** Trim and fabric, mirroring the drawn dresses. */
+const DRESS_SKIN: Record<string, Skin> = {
+  gown: { pattern: 'stripes', scale: 2 }, // bands of trim around the skirt
+  aline: { pattern: 'dots', scale: 3 },
+  mermaid: { pattern: 'scales', scale: 3 },
+  star: { pattern: 'smooth', scale: 1 },
+};
+
+const HAIR_SKIN: Record<string, Skin> = {
+  long: { pattern: 'fur', scale: 2 }, // strand strokes
+  braids: { pattern: 'stripes', scale: 1.6 }, // the plait's bands
+  bun: { pattern: 'fur', scale: 2 },
+  curly: { pattern: 'spots', scale: 1 },
+};
+
+function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
+  if (!kind) return null;
+  const s = map[kind] ?? { pattern: 'smooth' as PatternKind, scale: 1 };
+  return { base: color, pattern: s.pattern, scale: s.scale };
 }
 
 /* ----------------------------------------------------------------- dress */
@@ -26,7 +54,39 @@ function lathe(points: [number, number][]) {
   );
 }
 
-function Dress({ kind, color, skin, grad }: { kind: string; color: string; skin: string; grad: THREE.DataTexture }) {
+/** Where the shoes peek out, just under each skirt's hem. */
+const HEM: Record<string, { y: number; z: number }> = {
+  gown: { y: -1.88, z: 0.32 },
+  aline: { y: -1.88, z: 0.28 },
+  mermaid: { y: -1.99, z: 0.34 }, // below the mermaid flare
+  star: { y: -1.88, z: 0.32 },
+};
+
+/** One shoe, drawn for the right foot; the left one is this mirrored. */
+function Shoe({ color, grad }: { color: string; grad: THREE.DataTexture }) {
+  return (
+    <group>
+      <mesh scale={[1, 0.5, 1.7]}>
+        <sphereGeometry args={[0.15, 22, 22]} />
+        <Toon color={color} map={grad} />
+        <Ink thin />
+      </mesh>
+      {/* rounded toe */}
+      <mesh position={[0, 0.005, 0.19]} scale={[0.95, 0.62, 0.95]}>
+        <sphereGeometry args={[0.11, 18, 18]} />
+        <Toon color={shade(color, 0.22)} map={grad} />
+        <Ink thin />
+      </mesh>
+      {/* ankle strap */}
+      <mesh position={[0, 0.05, -0.05]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.125, 0.022, 8, 20]} />
+        <Toon color={shade(color, -0.22)} map={grad} />
+      </mesh>
+    </group>
+  );
+}
+
+function Dress({ kind, color, skin, grad }: { kind: string | null; color: string; skin: string; grad: THREE.DataTexture }) {
   const geo = useMemo(() => {
     switch (kind) {
       case 'aline':
@@ -71,10 +131,14 @@ function Dress({ kind, color, skin, grad }: { kind: string; color: string; skin:
     }
   }, [kind]);
   const stars = useMemo(() => new THREE.ExtrudeGeometry(starShape(0.13, 0.06), { depth: 0.03, bevelEnabled: false }), []);
+  const cloth = usePatternTexture(skinOf(DRESS_SKIN, kind, color));
+  if (!kind) return null;
+  const hem = HEM[kind] ?? HEM.gown;
+  const shoeColor = shade(color, -0.3);
   return (
     <group position={[0, 0.15, 0]}>
       <mesh geometry={geo}>
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={cloth} />
         <Ink />
       </mesh>
       {/* sash / trim */}
@@ -95,12 +159,19 @@ function Dress({ kind, color, skin, grad }: { kind: string; color: string; skin:
           <Ink />
         </mesh>
       )}
+      {/* shoes peeking out under the hem — one shape, mirrored into a real pair */}
+      <group position={[0.21, hem.y, hem.z]}>
+        <Shoe color={shoeColor} grad={grad} />
+      </group>
+      <group position={[-0.21, hem.y, hem.z]} scale={[-1, 1, 1]}>
+        <Shoe color={shoeColor} grad={grad} />
+      </group>
       {/* puff sleeves + arms */}
       {[-1, 1].map((s) => (
         <group key={s} position={[s * 0.42, 0.35, 0]}>
           <mesh>
             <sphereGeometry args={[0.17, 20, 20]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={cloth} />
             <Ink thin />
           </mesh>
           <mesh position={[s * 0.16, -0.38, 0.05]} rotation={[0, 0, -s * 0.35]}>
@@ -121,7 +192,7 @@ function Dress({ kind, color, skin, grad }: { kind: string; color: string; skin:
 
 /* ------------------------------------------------------------------ hair */
 
-function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.DataTexture }) {
+function Hair({ kind, color, grad }: { kind: string | null; color: string; grad: THREE.DataTexture }) {
   const curls = useMemo(() => {
     const arr: [number, number, number, number][] = [];
     for (let i = 0; i < 22; i++) {
@@ -131,25 +202,27 @@ function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.
     }
     return arr;
   }, []);
+  const tex = usePatternTexture(skinOf(HAIR_SKIN, kind, color));
+  if (!kind) return null;
   return (
     <group>
       {/* cap */}
       <mesh position={[0, HEAD_Y + 0.04, -0.06]}>
         <sphereGeometry args={[HEAD_R + 0.05, 40, 40, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
       {kind === 'long' && (
         <>
           <mesh position={[0, HEAD_Y - 0.55, -0.3]} scale={[1, 1.4, 0.55]}>
             <sphereGeometry args={[0.7, 32, 32]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={tex} />
             <Ink />
           </mesh>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.6, HEAD_Y - 0.55, 0.05]}>
               <capsuleGeometry args={[0.17, 0.9, 6, 16]} />
-              <Toon color={color} map={grad} />
+              <Toon color={color} map={grad} tex={tex} />
               <Ink />
             </mesh>
           ))}
@@ -161,7 +234,7 @@ function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.
             {[0, 1, 2, 3].map((i) => (
               <mesh key={i} position={[s * (i % 2 === 0 ? 0.03 : -0.03), -i * 0.27, 0]}>
                 <sphereGeometry args={[0.16, 18, 18]} />
-                <Toon color={color} map={grad} />
+                <Toon color={color} map={grad} tex={tex} />
                 <Ink thin />
               </mesh>
             ))}
@@ -175,7 +248,7 @@ function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.
       {kind === 'bun' && (
         <mesh position={[0, HEAD_Y + HEAD_R + 0.2, -0.1]}>
           <sphereGeometry args={[0.3, 24, 24]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
       )}
@@ -183,7 +256,7 @@ function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.
         curls.map(([x, y, z, r], i) => (
           <mesh key={i} position={[x, y, z]}>
             <sphereGeometry args={[r, 18, 18]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={tex} />
             <Ink thin />
           </mesh>
         ))}
@@ -193,8 +266,9 @@ function Hair({ kind, color, grad }: { kind: string; color: string; grad: THREE.
 
 /* ----------------------------------------------------------------- crown */
 
-function Crown({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
+function Crown({ kind, grad }: { kind: string | null; grad: THREE.DataTexture }) {
   const y = HEAD_Y + HEAD_R - 0.05;
+  if (!kind) return null;
   if (kind === 'gold') {
     return (
       <group position={[0, y + 0.1, 0]}>
@@ -294,12 +368,13 @@ function Crown({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
 
 /* ------------------------------------------------------------- accessory */
 
-function Accessory({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
+function Accessory({ kind, grad }: { kind: string | null; grad: THREE.DataTexture }) {
   const ref = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (ref.current) ref.current.rotation.z = -0.3 + Math.sin(clock.getElapsedTime() * 2) * 0.12;
   });
   const star = useMemo(() => new THREE.ExtrudeGeometry(starShape(0.22, 0.1), { depth: 0.06, bevelEnabled: false }), []);
+  if (!kind) return null;
   // right hand is around (0.7, -0.22, 0.13)
   return (
     <group ref={ref} position={[0.72, -0.2, 0.15]}>
@@ -374,8 +449,8 @@ function Accessory({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
 export default function Princess3D({ parts, colors }: { parts: PartMap; colors: ColorMap }) {
   const grad = useGradientMap();
   const eff = resolvePrincessColors(parts, colors);
-  const EyesSvg = findOption(PRINCESS, 'eyes', parts.eyes)?.Svg;
-  const MouthSvg = findOption(PRINCESS, 'mouth', parts.mouth)?.Svg;
+  const EyesSvg = findOption(PRINCESS, 'eyes', pickPart(parts.eyes, 'sparkly') ?? '')?.Svg;
+  const MouthSvg = findOption(PRINCESS, 'mouth', pickPart(parts.mouth, 'smile') ?? '')?.Svg;
   const eyesEl = useMemo(() => (EyesSvg ? <EyesSvg colors={eff} /> : null), [EyesSvg, eff.skin]); // eslint-disable-line react-hooks/exhaustive-deps
   const mouthEl = useMemo(() => (MouthSvg ? <MouthSvg colors={eff} /> : null), [MouthSvg]); // eslint-disable-line react-hooks/exhaustive-deps
   const eyesTex = useSvgTexture(eyesEl);
@@ -383,7 +458,7 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
 
   return (
     <group position={[0, -0.05, 0]}>
-      <Dress kind={parts.dress} color={eff.dress} skin={eff.skin} grad={grad} />
+      <Dress kind={pickPart(parts.dress, 'gown')} color={eff.dress} skin={eff.skin} grad={grad} />
       {/* neck */}
       <mesh position={[0, 0.62, 0]}>
         <cylinderGeometry args={[0.13, 0.15, 0.3, 16]} />
@@ -406,9 +481,9 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
           <Ink thin />
         </mesh>
       ))}
-      <Hair kind={parts.hair} color={eff.hair} grad={grad} />
-      <Crown kind={parts.crown} grad={grad} />
-      <Accessory kind={parts.accessory} grad={grad} />
+      <Hair kind={pickPart(parts.hair, 'long')} color={eff.hair} grad={grad} />
+      <Crown kind={pickPart(parts.crown, 'tiara')} grad={grad} />
+      <Accessory kind={pickPart(parts.accessory, 'wand')} grad={grad} />
     </group>
   );
 }

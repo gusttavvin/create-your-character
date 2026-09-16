@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import PartArt from '../../components/PartArt';
 import { PRINCESS, resolvePrincessColors } from './config';
-import { HAIR_LAYERS, Head } from './parts';
-import { findOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
+import { HAIR_LAYERS, Head, Shoes } from './parts';
+import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
 const VH = 720;
@@ -50,39 +51,35 @@ interface Props {
   className?: string;
 }
 
+/** A positioned layer. The pop animation owns the element's transform, so anything needing
+ *  its own transform (mirroring, swaying) goes on a wrapper inside it. */
+function Layer({ style, extra, children }: { style: CSSProperties; extra?: string; children: ReactNode }) {
+  return <div className={`part pop${extra ? ` ${extra}` : ''}`} style={style}>{children}</div>;
+}
+
 export default function Princess2D({ parts, colors, animate = true, className }: Props) {
-  const dress = findOption(PRINCESS, 'dress', parts.dress) ?? PRINCESS.categories[0].options[0];
-  const hair = findOption(PRINCESS, 'hair', parts.hair) ?? PRINCESS.categories[1].options[0];
-  const crown = findOption(PRINCESS, 'crown', parts.crown) ?? PRINCESS.categories[2].options[0];
-  const eyes = findOption(PRINCESS, 'eyes', parts.eyes) ?? PRINCESS.categories[3].options[0];
-  const mouth = findOption(PRINCESS, 'mouth', parts.mouth) ?? PRINCESS.categories[4].options[0];
-  const accessory = findOption(PRINCESS, 'accessory', parts.accessory) ?? PRINCESS.categories[5].options[0];
+  const dress = pickOption(PRINCESS, 'dress', parts.dress);
+  const hair = pickOption(PRINCESS, 'hair', parts.hair);
+  const crown = pickOption(PRINCESS, 'crown', parts.crown);
+  const eyes = pickOption(PRINCESS, 'eyes', parts.eyes);
+  const mouth = pickOption(PRINCESS, 'mouth', parts.mouth);
+  const accessory = pickOption(PRINCESS, 'accessory', parts.accessory);
   const eff = resolvePrincessColors(parts, colors);
+  const layers = hair ? HAIR_LAYERS[hair.id] ?? HAIR_LAYERS.long : null;
 
-  const Dress = dress.Svg!;
-  const Crown = crown.Svg!;
-  const Eyes = eyes.Svg!;
-  const Mouth = mouth.Svg!;
-  const Accessory = accessory.Svg!;
-  const layers = HAIR_LAYERS[hair.id] ?? HAIR_LAYERS.long;
-  const HairBack = layers.Back;
-  const HairFront = layers.Front;
-
-  // Right hand position in virtual units (dress box → virtual)
+  // Right hand position, mapped from the dress art into virtual units.
   const dScale = DRESS.size / 512;
   const handX = DRESS.cx - DRESS.size / 2 + 404 * dScale;
   const handY = DRESS.cy - DRESS.size / 2 + 298 * dScale;
   const ACC = 230;
-  // accessory grip point is at (256, 440) in its 512 box
-  const accCX = handX;
   const accCY = handY - ((440 - 256) / 512) * ACC;
 
   const headTop = HEAD.cy - (170 / 512) * HEAD.size;
   const CROWN = 230;
   const crownCY = headTop + 14 - ((430 - 256) / 512) * CROWN;
-  const crownDX = crown.id === 'bow' ? 10 : 0;
-
+  const crownDX = crown?.id === 'bow' ? 10 : 0;
   const anim = animate ? ' is-animated' : '';
+  const full: CSSProperties = { width: '100%', height: '100%' };
 
   return (
     <div
@@ -90,30 +87,52 @@ export default function Princess2D({ parts, colors, animate = true, className }:
       style={{ position: 'relative', width: '100%', aspectRatio: `${VW} / ${VH}` }}
     >
       <div className="char2d-bob" style={{ position: 'absolute', inset: 0 }}>
-        <div key={`dress-${dress.id}`} className="part pop dress-sway" style={{ ...box(DRESS.cx, DRESS.cy, DRESS.size, 1), transformOrigin: '50% 20%' }}>
-          <Dress colors={eff} />
+        {/* shoes sit behind the skirt so they only peek out below the hem */}
+        <div className="part" style={box(DRESS.cx, DRESS.cy, DRESS.size, 0)}>
+          <Shoes colors={eff} />
         </div>
-        <div key={`hairb-${hair.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 2)}>
-          <HairBack colors={eff} />
-        </div>
+        {dress && (
+          <Layer key={`dress-${dress.id}`} style={box(DRESS.cx, DRESS.cy, DRESS.size, 1)}>
+            <div className="dress-sway" style={{ ...full, transformOrigin: '50% 20%' }}>
+              <PartArt option={dress} colors={eff} />
+            </div>
+          </Layer>
+        )}
+        {layers && (
+          <Layer key={`hairb-${hair!.id}`} style={box(HEAD.cx, HEAD.cy, HEAD.size, 2)}>
+            <layers.Back colors={eff} />
+          </Layer>
+        )}
         <div className="part" style={box(HEAD.cx, HEAD.cy, HEAD.size, 3)}>
           <Head colors={eff} />
         </div>
-        <div key={`mouth-${mouth.id}`} className="part pop" style={box(300, 306, 120, 4)}>
-          <Mouth colors={eff} />
-        </div>
-        <div key={`eyes-${eyes.id}`} className="part pop blink" style={box(300, 258, 170, 5)}>
-          <Eyes colors={eff} />
-        </div>
-        <div key={`hairf-${hair.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 6)}>
-          <HairFront colors={eff} />
-        </div>
-        <div key={`crown-${crown.id}`} className="part pop" style={box(HEAD.cx + crownDX, crownCY, CROWN, 7)}>
-          <Crown colors={eff} />
-        </div>
-        <div key={`acc-${accessory.id}`} className="part pop acc-wave" style={{ ...box(accCX, accCY, ACC, 8), transformOrigin: '50% 86%' }}>
-          <Accessory colors={eff} />
-        </div>
+        {mouth && (
+          <Layer key={`mouth-${mouth.id}`} style={box(300, 306, 120, 4)}>
+            <PartArt option={mouth} colors={eff} />
+          </Layer>
+        )}
+        {eyes && (
+          <Layer key={`eyes-${eyes.id}`} style={box(300, 258, 170, 5)} extra="blink">
+            <PartArt option={eyes} colors={eff} />
+          </Layer>
+        )}
+        {layers && (
+          <Layer key={`hairf-${hair!.id}`} style={box(HEAD.cx, HEAD.cy, HEAD.size, 6)}>
+            <layers.Front colors={eff} />
+          </Layer>
+        )}
+        {crown && (
+          <Layer key={`crown-${crown.id}`} style={box(HEAD.cx + crownDX, crownCY, CROWN, 7)}>
+            <PartArt option={crown} colors={eff} />
+          </Layer>
+        )}
+        {accessory && (
+          <Layer key={`acc-${accessory.id}`} style={box(handX, accCY, ACC, 8)}>
+            <div className="acc-wave" style={{ ...full, transformOrigin: '50% 86%' }}>
+              <PartArt option={accessory} colors={eff} />
+            </div>
+          </Layer>
+        )}
       </div>
     </div>
   );

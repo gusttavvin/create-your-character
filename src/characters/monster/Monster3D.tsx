@@ -6,11 +6,49 @@ import Ink from '../../components/Ink';
 import * as THREE from 'three';
 import type { PartMap } from '../types';
 import { MONSTER_COLORS } from './config';
-import { INK3D, useGradientMap, useImageTexture } from '../../lib/three';
+import { INK3D, pickPart, useGradientMap, useImageTexture, usePatternTexture } from '../../lib/three';
+import type { PatternKind } from '../../lib/three';
 
+/**
+ * Toon surface. When a pattern texture is given it already carries the part's
+ * colour (the material multiplies `color` by `map`), so the tint goes to white
+ * and the canvas does the painting.
+ */
+function Toon({ color, map, tex }: { color: string; map: THREE.Texture; tex?: THREE.Texture | null }) {
+  return <meshToonMaterial color={tex ? '#ffffff' : color} gradientMap={map} map={tex ?? null} />;
+}
 
-function Toon({ color, map }: { color: string; map: THREE.Texture }) {
-  return <meshToonMaterial color={color} gradientMap={map} />;
+/** Which hand-drawn surface each part wears, mirroring the PNG kit. */
+interface Skin {
+  pattern: PatternKind;
+  scale: number;
+}
+
+const BODY_SKIN: Record<string, Skin> = {
+  round: { pattern: 'spots', scale: 2 }, // green body covered in darker blobs
+  egg: { pattern: 'dots', scale: 2 }, // purple egg with even polka dots
+  square: { pattern: 'fur', scale: 2 }, // blue fuzz, strokes all one way
+  hourglass: { pattern: 'smooth', scale: 1 }, // orange jelly with a highlight
+};
+
+const ARM_SKIN: Record<string, Skin> = {
+  claw: { pattern: 'spots', scale: 1.4 },
+  tentacle: { pattern: 'dots', scale: 1.6 },
+  pincher: { pattern: 'smooth', scale: 1 },
+  fuzzy: { pattern: 'fur', scale: 1.6 },
+};
+
+const LEG_SKIN: Record<string, Skin> = {
+  stubby: { pattern: 'dots', scale: 1.4 },
+  bird: { pattern: 'smooth', scale: 1 },
+  thick: { pattern: 'spots', scale: 1.3 },
+  snake: { pattern: 'smooth', scale: 1 },
+};
+
+function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
+  if (!kind) return null;
+  const s = map[kind] ?? { pattern: 'smooth' as PatternKind, scale: 1 };
+  return { base: color, pattern: s.pattern, scale: s.scale };
 }
 
 /* ------------------------------------------------------------------ body */
@@ -24,29 +62,27 @@ interface FaceSpec {
   bottom: number; // where legs attach
 }
 
-function useMouthDecal(mouth: string) {
-  return useImageTexture(`/assets/monster/parts/mouth/${mouth}.png`);
-}
-
-function Body({ kind, mouth, grad }: { kind: string; mouth: string; grad: THREE.DataTexture }) {
-  const color = MONSTER_COLORS.body[kind] ?? '#8BD43B';
-  const tex = useMouthDecal(mouth);
+function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null; grad: THREE.DataTexture }) {
+  const color = (kind && MONSTER_COLORS.body[kind]) || '#8BD43B';
+  const tex = usePatternTexture(skinOf(BODY_SKIN, kind, color));
+  const face = useImageTexture(mouth ? `/assets/monster/parts/mouth/${mouth}.png` : null);
+  if (!kind) return null;
   if (kind === 'egg') {
     return (
       <mesh position={[0, 0.35, 0]} scale={[0.9, 1.2, 0.9]}>
         <sphereGeometry args={[1, 48, 48]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
-        <FaceDecal tex={tex} y={-0.25} z={1} size={0.75} />
+        <FaceDecal tex={face} y={-0.25} z={1} size={0.75} />
       </mesh>
     );
   }
   if (kind === 'square') {
     return (
       <RoundedBox args={[2.1, 2.1, 1.7]} radius={0.4} smoothness={6} position={[0, 0.35, 0]}>
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
-        <FaceDecal tex={tex} y={-0.3} z={0.85} size={0.9} />
+        <FaceDecal tex={face} y={-0.3} z={0.85} size={0.9} />
       </RoundedBox>
     );
   }
@@ -55,18 +91,18 @@ function Body({ kind, mouth, grad }: { kind: string; mouth: string; grad: THREE.
       <group>
         <mesh position={[0, 1.0, 0]}>
           <sphereGeometry args={[0.78, 48, 48]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
-          <FaceDecal tex={tex} y={-0.2} z={0.78} size={0.7} />
+          <FaceDecal tex={face} y={-0.2} z={0.78} size={0.7} />
         </mesh>
         <mesh position={[0, 0.35, 0]}>
           <cylinderGeometry args={[0.42, 0.5, 0.7, 32]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
         <mesh position={[0, -0.35, 0]}>
           <sphereGeometry args={[0.92, 48, 48]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
       </group>
@@ -76,9 +112,9 @@ function Body({ kind, mouth, grad }: { kind: string; mouth: string; grad: THREE.
   return (
     <mesh position={[0, 0.3, 0]} scale={[1.05, 1.05, 0.95]}>
       <sphereGeometry args={[1.05, 48, 48]} />
-      <Toon color={color} map={grad} />
+      <Toon color={color} map={grad} tex={tex} />
       <Ink />
-      <FaceDecal tex={tex} y={-0.3} z={1.05} size={0.9} />
+      <FaceDecal tex={face} y={-0.3} z={1.05} size={0.9} />
     </mesh>
   );
 }
@@ -112,7 +148,8 @@ function Eyeball({ r, iris, pos, grad }: { r: number; iris: string; pos: [number
   );
 }
 
-function Eyes({ kind, y, z, grad }: { kind: string; y: number; z: number; grad: THREE.DataTexture }) {
+function Eyes({ kind, y, z, grad }: { kind: string | null; y: number; z: number; grad: THREE.DataTexture }) {
+  if (!kind) return null;
   if (kind === 'stalks') {
     return (
       <group>
@@ -161,22 +198,34 @@ function Eyes({ kind, y, z, grad }: { kind: string; y: number; z: number; grad: 
 
 function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
   const color = MONSTER_COLORS.arms[kind] ?? '#8BD43B';
+  const tex = usePatternTexture(skinOf(ARM_SKIN, kind, color));
+  // every hook runs for every arm style, so switching styles never reorders them
+  const curve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0.15, 0.4, 0.05),
+        new THREE.Vector3(0.05, 0.8, 0.1),
+        new THREE.Vector3(0.35, 1.15, 0.05),
+        new THREE.Vector3(0.7, 1.35, 0),
+      ]),
+    [],
+  );
+  const tufts = useMemo(() => {
+    const arr: [number, number, number, number][] = [];
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * Math.PI * 2 * 3;
+      const y = 0.1 + (i / 26) * 0.9;
+      arr.push([Math.cos(a) * 0.16, y, Math.sin(a) * 0.16, a]);
+    }
+    return arr;
+  }, []);
+
   if (kind === 'tentacle') {
-    const curve = useMemo(
-      () =>
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(0.15, 0.4, 0.05),
-          new THREE.Vector3(0.05, 0.8, 0.1),
-          new THREE.Vector3(0.35, 1.15, 0.05),
-          new THREE.Vector3(0.7, 1.35, 0),
-        ]),
-      [],
-    );
     return (
       <mesh>
         <tubeGeometry args={[curve, 40, 0.16, 16, false]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
     );
@@ -186,13 +235,13 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
       <group>
         <mesh position={[0, 0.45, 0]}>
           <cylinderGeometry args={[0.12, 0.15, 0.9, 16]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
         {[-1, 1].map((s) => (
           <mesh key={s} position={[s * 0.16, 1.05, 0]} rotation={[0, 0, s * 0.35]}>
             <torusGeometry args={[0.22, 0.09, 12, 24, Math.PI * 0.9]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={tex} />
             <Ink />
           </mesh>
         ))}
@@ -200,20 +249,11 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
     );
   }
   if (kind === 'fuzzy') {
-    const tufts = useMemo(() => {
-      const arr: [number, number, number, number][] = [];
-      for (let i = 0; i < 26; i++) {
-        const a = (i / 26) * Math.PI * 2 * 3;
-        const y = 0.1 + (i / 26) * 0.9;
-        arr.push([Math.cos(a) * 0.16, y, Math.sin(a) * 0.16, a]);
-      }
-      return arr;
-    }, []);
     return (
       <group>
         <mesh position={[0, 0.5, 0]}>
           <cylinderGeometry args={[0.17, 0.2, 1.0, 16]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
         {tufts.map(([x, y, z, a], i) => (
@@ -225,7 +265,7 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
         {[-0.18, 0, 0.18].map((x) => (
           <mesh key={x} position={[x, 1.1, 0]} rotation={[0, 0, x * 1.4]}>
             <capsuleGeometry args={[0.06, 0.2, 4, 8]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={tex} />
             <Ink thin />
           </mesh>
         ))}
@@ -237,13 +277,13 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
     <group>
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.12, 0.16, 1.0, 16]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
       {[-0.5, 0, 0.5].map((r) => (
         <mesh key={r} position={[Math.sin(r) * 0.22, 1.12 + Math.cos(r) * 0.05, 0]} rotation={[0, 0, -r]}>
           <capsuleGeometry args={[0.055, 0.28, 4, 8]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink thin />
         </mesh>
       ))}
@@ -251,7 +291,7 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
   );
 }
 
-function Arms({ kind, halfW, y, grad }: { kind: string; halfW: number; y: number; grad: THREE.DataTexture }) {
+function Arms({ kind, halfW, y, grad }: { kind: string | null; halfW: number; y: number; grad: THREE.DataTexture }) {
   const l = useRef<THREE.Group>(null);
   const r = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
@@ -260,6 +300,7 @@ function Arms({ kind, halfW, y, grad }: { kind: string; halfW: number; y: number
     if (l.current) l.current.rotation.z = 0.9 + w;
     if (r.current) r.current.rotation.z = -0.9 - w;
   });
+  if (!kind) return null;
   return (
     <group>
       <group ref={r} position={[halfW - 0.1, y, 0]} rotation={[0, 0, -0.9]}>
@@ -276,18 +317,31 @@ function Arms({ kind, halfW, y, grad }: { kind: string; halfW: number; y: number
 
 function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
   const color = MONSTER_COLORS.legs[kind] ?? '#A97CF1';
+  const tex = usePatternTexture(skinOf(LEG_SKIN, kind, color));
+  const curve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0.18, -0.3, 0),
+        new THREE.Vector3(-0.15, -0.6, 0),
+        new THREE.Vector3(0.15, -0.9, 0),
+        new THREE.Vector3(-0.05, -1.1, 0),
+      ]),
+    [],
+  );
+
   if (kind === 'bird') {
     return (
       <group>
         <mesh position={[0, -0.45, 0]}>
           <cylinderGeometry args={[0.07, 0.07, 0.9, 12]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink thin />
         </mesh>
         {[-0.5, 0, 0.5].map((a) => (
           <mesh key={a} position={[Math.sin(a) * 0.2, -0.9, Math.cos(a) * 0.2]} rotation={[Math.PI / 2 - 0.1, 0, -a]}>
             <capsuleGeometry args={[0.05, 0.3, 4, 8]} />
-            <Toon color={color} map={grad} />
+            <Toon color={color} map={grad} tex={tex} />
             <Ink thin />
           </mesh>
         ))}
@@ -299,33 +353,22 @@ function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
       <group>
         <mesh position={[0, -0.4, 0]}>
           <cylinderGeometry args={[0.2, 0.22, 0.8, 16]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
         <mesh position={[0, -0.85, 0.12]} scale={[1, 0.6, 1.5]}>
           <sphereGeometry args={[0.28, 24, 24]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink />
         </mesh>
       </group>
     );
   }
   if (kind === 'snake') {
-    const curve = useMemo(
-      () =>
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(0.18, -0.3, 0),
-          new THREE.Vector3(-0.15, -0.6, 0),
-          new THREE.Vector3(0.15, -0.9, 0),
-          new THREE.Vector3(-0.05, -1.1, 0),
-        ]),
-      [],
-    );
     return (
       <mesh>
         <tubeGeometry args={[curve, 40, 0.12, 12, false]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
     );
@@ -335,13 +378,13 @@ function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
     <group>
       <mesh position={[0, -0.35, 0]}>
         <cylinderGeometry args={[0.16, 0.18, 0.7, 16]} />
-        <Toon color={color} map={grad} />
+        <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
       {[-0.12, 0, 0.12].map((x) => (
         <mesh key={x} position={[x, -0.72, 0.14]}>
           <sphereGeometry args={[0.1, 16, 16]} />
-          <Toon color={color} map={grad} />
+          <Toon color={color} map={grad} tex={tex} />
           <Ink thin />
         </mesh>
       ))}
@@ -349,7 +392,8 @@ function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
   );
 }
 
-function Legs({ kind, bottom, grad }: { kind: string; bottom: number; grad: THREE.DataTexture }) {
+function Legs({ kind, bottom, grad }: { kind: string | null; bottom: number; grad: THREE.DataTexture }) {
+  if (!kind) return null;
   return (
     <group>
       {/* the left leg is the right one reflected, like a real pair */}
@@ -367,13 +411,14 @@ function Legs({ kind, bottom, grad }: { kind: string; bottom: number; grad: THRE
 
 export default function Monster3D({ parts }: { parts: PartMap }) {
   const grad = useGradientMap();
-  const face = FACES[parts.body] ?? FACES.round;
+  const body = pickPart(parts.body, 'round');
+  const face = FACES[body ?? ''] ?? FACES.round;
   return (
     <group position={[0, -0.2, 0]}>
-      <Body kind={parts.body} mouth={parts.mouth} grad={grad} />
-      <Eyes kind={parts.eyes} y={face.eyeY} z={face.z} grad={grad} />
-      <Arms kind={parts.arms} halfW={face.halfW} y={face.armY} grad={grad} />
-      <Legs kind={parts.legs} bottom={face.bottom} grad={grad} />
+      <Body kind={body} mouth={pickPart(parts.mouth, 'teeth')} grad={grad} />
+      <Eyes kind={pickPart(parts.eyes, 'stalks')} y={face.eyeY} z={face.z} grad={grad} />
+      <Arms kind={pickPart(parts.arms, 'claw')} halfW={face.halfW} y={face.armY} grad={grad} />
+      <Legs kind={pickPart(parts.legs, 'stubby')} bottom={face.bottom} grad={grad} />
     </group>
   );
 }
