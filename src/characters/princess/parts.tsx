@@ -220,8 +220,11 @@ export function HairBraidsBack({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <path d="M256,50 C130,50 66,150 66,270 C66,330 80,360 100,380 L412,380 C432,360 446,330 446,270 C446,150 382,50 256,50 Z" fill={c} {...O} />
+      {/* the right braid is the left one reflected, so the pair matches like a mirror */}
       <Braid x={96} color={c} ribbon="#FF6B78" />
-      <Braid x={416} color={c} ribbon="#FF6B78" />
+      <g transform="matrix(-1 0 0 1 512 0)">
+        <Braid x={96} color={c} ribbon="#FF6B78" />
+      </g>
     </Svg>
   );
 }

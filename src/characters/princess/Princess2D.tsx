@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { PRINCESS, resolvePrincessColors } from './config';
 import { HAIR_LAYERS, Head } from './parts';
-import { findOption, type ColorMap, type PartMap } from '../types';
+import { findOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
 const VH = 720;
@@ -19,6 +19,27 @@ function box(cx: number, cy: number, size: number, z: number): CSSProperties {
     width: `${(size / VW) * 100}%`,
     aspectRatio: '1 / 1',
     zIndex: z,
+  };
+}
+
+/** Where each part belongs, so a dragged piece can be dropped on the right spot. */
+export function princessSlots(): SlotLayout {
+  const headTop = HEAD.cy - (170 / 512) * HEAD.size;
+  const dScale = DRESS.size / 512;
+  const handX = DRESS.cx - DRESS.size / 2 + 404 * dScale;
+  const handY = DRESS.cy - DRESS.size / 2 + 298 * dScale;
+  return {
+    vw: VW,
+    vh: VH,
+    slots: [
+      { id: 'dress', cx: DRESS.cx, cy: 540, w: 300, h: 290 },
+      { id: 'hair', cx: HEAD.cx - 125, cy: HEAD.cy + 20, w: 110, h: 250 },
+      { id: 'hair', cx: HEAD.cx + 125, cy: HEAD.cy + 20, w: 110, h: 250 },
+      { id: 'crown', cx: HEAD.cx, cy: headTop - 34, w: 230, h: 110 },
+      { id: 'accessory', cx: handX + 6, cy: handY - 78, w: 150, h: 200 },
+      { id: 'mouth', cx: 300, cy: 306, w: 110, h: 70 },
+      { id: 'eyes', cx: 300, cy: 258, w: 165, h: 85 },
+    ],
   };
 }
 

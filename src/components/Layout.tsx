@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { PrefsProvider, usePrefs } from '../lib/prefs';
+import { DragProvider } from '../lib/drag';
 import { playClick } from '../lib/sounds';
 
 function ModeToggle() {
@@ -88,7 +89,9 @@ function Shell() {
 export default function Layout() {
   return (
     <PrefsProvider>
-      <Shell />
+      <DragProvider>
+        <Shell />
+      </DragProvider>
     </PrefsProvider>
   );
 }

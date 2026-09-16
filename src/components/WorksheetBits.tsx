@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PartCategory, PartOption } from '../characters/types';
+import { useDrag } from '../lib/drag';
 
 const UI = '/assets/monster/ui';
 
@@ -49,14 +50,20 @@ interface CardProps {
 
 export function OptionCard({ category, option, selected, onPick }: CardProps) {
   const Svg = option.Svg;
+  const { beginDrag, drag } = useDrag();
+  const held = drag?.option.id === option.id && drag.category.id === category.id;
   return (
     <button
       type="button"
-      className={`ws-card${selected ? ' is-selected' : ''}`}
+      className={`ws-card${selected ? ' is-selected' : ''}${held ? ' is-held' : ''}`}
       style={{ ['--row' as string]: category.color }}
-      onClick={() => onPick(category, option)}
+      onPointerDown={(e) => beginDrag(e, category, option, () => onPick(category, option))}
+      // A pointer tap picks the part through beginDrag; detail 0 means the keyboard did it.
+      onClick={(e) => {
+        if (e.detail === 0) onPick(category, option);
+      }}
       aria-pressed={selected}
-      title={option.phrase}
+      title={`${option.phrase} — drag me onto the picture`}
     >
       <span className="ws-card-art">
         {option.img ? <img src={option.img} alt="" draggable={false} /> : Svg ? <Svg colors={{}} /> : null}

@@ -11,6 +11,12 @@ Live site: deployed on Cloudflare Pages (see *Deploy* below). Backend: Supabase 
 
 - Worksheet-style builder faithful to the original *Create Your Monster* sheet (title, sticker,
   colored rows and the taped paper are the original artwork).
+- **Drag and drop**: the pieces sit in the palette at the side and are dragged onto the picture.
+  The spot where the held piece belongs glows and names itself, so the child reads the word while
+  placing it. Dropping anywhere on the sheet still works, because small hands miss. Tapping a
+  piece also works, on a projector or with a keyboard.
+- Parts that come in twos (arms, legs, eyes, braids) are **true mirrors**: one hand-drawn piece
+  and its exact reflection, in 2D and in 3D.
 - Three characters, each with 5–6 categories × 4 options, plus color palettes for the dragon
   and the princess (skin, hair, dress, body, wings).
 - 2D layered art with idle animations (bobbing, blinking, wiggling arms, flapping wings…).
@@ -77,7 +83,8 @@ Every push to `main` triggers a new deploy.
 ## Project structure
 
 ```
-public/assets/monster/       original kit PNGs (parts) + crops of the worksheet (ui)
+art-source/                  untouched originals of the pieces that were turned into mirrors
+public/assets/monster/       kit PNGs (parts) + crops of the worksheet (ui)
 src/characters/monster/      config (words, phrases, layout), Monster2D, Monster3D
 src/characters/dragon/       vector parts (SVG), config, Dragon2D, Dragon3D
 src/characters/princess/     vector parts (SVG), config, Princess2D, Princess3D
@@ -90,7 +97,13 @@ supabase/schema.sql          database schema + RLS policies
 ## Adding a new part
 
 1. Draw the part as a React SVG component (512×512 box, thick `#0B1B3B` outlines) in the
-   character's `parts.tsx`, or drop a PNG in `public/assets/...`.
+   character's `parts.tsx`, or drop a PNG in `public/assets/...`. Draw one side only for a pair
+   and let the code mirror it.
 2. Add an option `{ id, label, phrase, Svg | img }` to the category in `config.ts`.
    `phrase` is the English text read aloud and used in the sentence.
 3. Optionally add a 3D variant in the character's `*3D.tsx`.
+
+A whole new category also needs a drop zone, otherwise its pieces can only be dropped on the
+sheet at large: add a rect to the `…Slots()` function exported from the character's `*2D.tsx`.
+Coordinates are in that character's virtual canvas (600 × 720), and several rects may share one
+category id, which is how the two arms and the two wings each get their own zone.

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { BODY_LAYOUT, LEG_TOP, MONSTER } from './config';
-import { findOption, type PartMap } from '../types';
+import { findOption, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
 const VH = 720;
@@ -20,6 +20,27 @@ function box(cx: number, cy: number, size: number, z: number): CSSProperties {
     width: `${(size / VW) * 100}%`,
     aspectRatio: '1 / 1',
     zIndex: z,
+  };
+}
+
+/** Where each part belongs, so a dragged piece can be dropped on the right spot. */
+export function monsterSlots(parts: PartMap): SlotLayout {
+  const bodyId = parts.body in BODY_LAYOUT ? parts.body : 'round';
+  const L = BODY_LAYOUT[bodyId];
+  const legsId = parts.legs in LEG_TOP ? parts.legs : 'stubby';
+  const legVisibleTop = BODY_BOTTOM - 38;
+  const legHeight = (1 - (LEG_TOP[legsId] ?? 0.15)) * 300 * 0.62;
+  return {
+    vw: VW,
+    vh: VH,
+    slots: [
+      { id: 'body', cx: BODY_CX, cy: BODY_CY, w: L.halfW * 2, h: BODY_H },
+      { id: 'arms', cx: BODY_CX - L.halfW - 80, cy: BODY_TOP + L.armY * BODY_H - 50, w: 190, h: 210 },
+      { id: 'arms', cx: BODY_CX + L.halfW + 80, cy: BODY_TOP + L.armY * BODY_H - 50, w: 190, h: 210 },
+      { id: 'legs', cx: BODY_CX, cy: legVisibleTop + legHeight / 2, w: 280, h: legHeight },
+      { id: 'mouth', cx: BODY_CX, cy: BODY_TOP + L.mouthY * BODY_H, w: L.mouthSize * 0.9, h: L.mouthSize * 0.75 },
+      { id: 'eyes', cx: BODY_CX, cy: BODY_TOP + L.eyeY * BODY_H, w: L.eyeSize * 0.95, h: L.eyeSize * 0.8 },
+    ],
   };
 }
 

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { DRAGON, DRAGON_BODY_LAYOUT, resolveDragonColors } from './config';
-import { findOption, type ColorMap, type PartMap } from '../types';
+import { findOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
 const VH = 720;
@@ -19,6 +19,25 @@ function box(cx: number, cy: number, size: number, z: number): CSSProperties {
     width: `${(size / VW) * 100}%`,
     aspectRatio: '1 / 1',
     zIndex: z,
+  };
+}
+
+/** Where each part belongs, so a dragged piece can be dropped on the right spot. */
+export function dragonSlots(parts: PartMap): SlotLayout {
+  const L = DRAGON_BODY_LAYOUT[parts.body] ?? DRAGON_BODY_LAYOUT.chubby;
+  const hornCY = BODY_TOP + L.hornY * BODY_H - 34;
+  return {
+    vw: VW,
+    vh: VH,
+    slots: [
+      { id: 'body', cx: BODY_CX, cy: BODY_CY, w: 300, h: BODY_H },
+      { id: 'wings', cx: BODY_CX - 195, cy: 372, w: 190, h: 220 },
+      { id: 'wings', cx: BODY_CX + 195, cy: 372, w: 190, h: 220 },
+      { id: 'tail', cx: 462, cy: 528, w: 200, h: 170 },
+      { id: 'horns', cx: BODY_CX, cy: hornCY + 46, w: 230, h: 120 },
+      { id: 'mouth', cx: BODY_CX, cy: BODY_TOP + L.mouthY * BODY_H, w: L.mouthSize * 0.85, h: L.mouthSize * 0.6 },
+      { id: 'eyes', cx: BODY_CX, cy: BODY_TOP + L.eyeY * BODY_H, w: L.eyeSize * 0.9, h: L.eyeSize * 0.6 },
+    ],
   };
 }
 

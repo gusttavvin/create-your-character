@@ -54,6 +54,22 @@ export interface CharacterDefinition {
   sentence: (parts: PartMap, name?: string) => string;
 }
 
+/** A place on the character sheet where a part belongs, in the character's virtual canvas. */
+export interface SlotRect {
+  /** Category id this area belongs to. Several rects may share one id (e.g. two arms). */
+  id: string;
+  cx: number;
+  cy: number;
+  w: number;
+  h: number;
+}
+
+export interface SlotLayout {
+  vw: number;
+  vh: number;
+  slots: SlotRect[];
+}
+
 export interface SavedCharacter {
   id: string;
   kind: CharacterKind;

@@ -352,7 +352,8 @@ function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
 function Legs({ kind, bottom, grad }: { kind: string; bottom: number; grad: THREE.DataTexture }) {
   return (
     <group>
-      <group position={[-0.45, bottom + 0.1, 0]}>
+      {/* the left leg is the right one reflected, like a real pair */}
+      <group position={[-0.45, bottom + 0.1, 0]} scale={[-1, 1, 1]}>
         <Leg kind={kind} grad={grad} />
       </group>
       <group position={[0.45, bottom + 0.1, 0]}>

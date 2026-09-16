@@ -14,6 +14,7 @@ import {
   type SavedCharacter,
 } from '../characters/types';
 import { usePrefs } from '../lib/prefs';
+import { useDropTarget } from '../lib/drag';
 import { useStore } from '../lib/useStore';
 import { useAuth } from '../lib/auth';
 import { speak } from '../lib/speech';
@@ -65,6 +66,10 @@ export default function Builder({ def, initial }: Props) {
     playPop();
     speak(option.phrase);
   }, []);
+
+  // A part dropped anywhere on the sheet is applied: little hands miss, and the
+  // glowing slot already teaches where the piece belongs.
+  useDropTarget((category, option) => pick(category, option));
 
   const pickColor = useCallback((slot: ColorSlot, value: string, label: string) => {
     setColors((c) => ({ ...c, [slot.id]: value }));
@@ -136,10 +141,12 @@ export default function Builder({ def, initial }: Props) {
                 3D
               </button>
             </div>
-            {mode === '3d' && <span className="hint">Drag to spin · scroll to zoom</span>}
+            <span className="hint">
+              {mode === '3d' ? 'Drag to spin · scroll to zoom' : 'Drag a piece onto the picture, or tap it'}
+            </span>
           </div>
 
-          <Stage kind={def.kind} parts={parts} colors={colors} mode={mode} name={name} />
+          <Stage kind={def.kind} parts={parts} colors={colors} mode={mode} name={name} interactive />
 
           <Sentence def={def} parts={parts} name={name || undefined} onRead={readAloud} />
 
