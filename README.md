@@ -92,7 +92,7 @@ src/characters/princess/     vector parts (SVG), config, Princess2D, Princess3D
 src/characters/superhero/    vector parts (SVG), config, Superhero2D, Superhero3D
 src/characters/fairy/        vector parts (SVG), config, Fairy2D, Fairy3D
 src/components/              Builder (worksheet), Stage, cards, dialogs, 3D canvas
-src/pages/                   Home, Builder, Gallery, Character (show), Teacher, Join
+src/pages/                   GamesHome, CharacterPicker, Builder, Gallery, Character, Teacher
 src/lib/                     auth, storage (local/cloud), speech, sounds, confetti, three helpers
 supabase/schema.sql          database schema + RLS policies
 ```
