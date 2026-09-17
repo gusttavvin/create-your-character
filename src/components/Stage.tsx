@@ -1,5 +1,5 @@
 import { lazy, Suspense, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { NEUTRAL, type CharacterKind, type ColorMap, type LayoutMap, type PartMap, type SlotLayout, type ViewMode } from '../characters/types';
+import { NEUTRAL, isEmptyCharacter, type CharacterKind, type ColorMap, type LayoutMap, type PartMap, type SlotLayout, type ViewMode } from '../characters/types';
 import Character2D from './Character2D';
 import { CHARACTERS } from '../characters/registry';
 import { monsterSlots } from '../characters/monster/Monster2D';
@@ -55,6 +55,8 @@ export default function Stage({
   const innerRef = useRef<HTMLDivElement>(null);
   const def = CHARACTERS[kind];
   const editing = !!interactive && mode === '2d';
+  // nothing placed yet: the sheet stays blank instead of showing a bare mannequin
+  const empty = isEmptyCharacter(parts);
   const showSlots = !!interactive && !!drag && mode === '2d';
   const layoutRects = showSlots ? slotsFor(kind, parts) : null;
 
@@ -113,7 +115,14 @@ export default function Stage({
     >
       <img className="stage-paper" src="/assets/monster/ui/paper.png" alt="" draggable={false} />
       <div className="stage-inner" ref={innerRef} onPointerDown={startMove}>
-        {mode === '3d' ? (
+        {empty ? (
+          interactive ? (
+            <p className="stage-empty">
+              <span aria-hidden>👆</span>
+              Drag a piece here to start
+            </p>
+          ) : null
+        ) : mode === '3d' ? (
           <Suspense
             fallback={
               <div className="stage-loading">

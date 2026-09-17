@@ -174,15 +174,16 @@ function Suit({ kind, color, skin, grad }: { kind: string | null; color: string;
   const torso = useMemo(() => lathe(TORSO), []);
   const plate = useMemo(() => lathe(PLATE), []);
   const cloth = usePatternTexture(skinOf(SUIT_SKIN, kind, color));
-  if (!kind) return null;
-  const glove = shade(color, -0.24);
+  // erased suit: the hero underneath is still drawn, exactly like the 2D <Body>
+  const body = kind ? color : skin;
+  const glove = kind ? shade(color, -0.24) : skin;
   const dark = shade(color, -0.2);
   const light = shade(color, 0.42);
   return (
     <group>
       {/* torso: a lathe squashed in z, so he is wide and flat like the drawing */}
       <mesh geometry={torso} scale={[1, 1, 0.72]}>
-        <Toon color={color} map={grad} tex={cloth} />
+        <Toon color={body} map={grad} tex={kind ? cloth : null} />
         <Ink />
       </mesh>
 
@@ -257,18 +258,20 @@ function Suit({ kind, color, skin, grad }: { kind: string | null; color: string;
       )}
 
       {/* belt */}
-      <group position={[0, -0.3, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.75, 1]}>
-          <torusGeometry args={[0.36, 0.07, 10, 32]} />
-          <Toon color={shade(color, -0.34)} map={grad} />
-          <Ink thin />
-        </mesh>
-        <mesh position={[0, 0, 0.3]} scale={[1, 1, 0.6]}>
-          <sphereGeometry args={[0.09, 16, 16]} />
-          <Toon color="#FFD93D" map={grad} />
-          <Ink thin />
-        </mesh>
-      </group>
+      {kind && (
+        <group position={[0, -0.3, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.75, 1]}>
+            <torusGeometry args={[0.36, 0.07, 10, 32]} />
+            <Toon color={shade(color, -0.34)} map={grad} />
+            <Ink thin />
+          </mesh>
+          <mesh position={[0, 0, 0.3]} scale={[1, 1, 0.6]}>
+            <sphereGeometry args={[0.09, 16, 16]} />
+            <Toon color="#FFD93D" map={grad} />
+            <Ink thin />
+          </mesh>
+        </group>
+      )}
 
       {/* neck */}
       <mesh position={[0, 0.66, 0]}>
@@ -282,7 +285,7 @@ function Suit({ kind, color, skin, grad }: { kind: string | null; color: string;
         <>
           <mesh position={SHOULDER} scale={kind === 'armour' ? 1.18 : 1}>
             <sphereGeometry args={[0.2, 22, 22]} />
-            <Toon color={kind === 'armour' ? dark : color} map={grad} tex={kind === 'armour' ? null : cloth} />
+            <Toon color={kind === 'armour' ? dark : body} map={grad} tex={kind && kind !== 'armour' ? cloth : null} />
             <Ink thin />
           </mesh>
           {kind === 'armour' && (
@@ -291,8 +294,8 @@ function Suit({ kind, color, skin, grad }: { kind: string | null; color: string;
               <Toon color="#E4E9F7" map={grad} />
             </mesh>
           )}
-          <Arm suit={color} glove={glove} grad={grad} tex={cloth} />
-          <Leg suit={color} grad={grad} tex={cloth} />
+          <Arm suit={body} glove={glove} grad={grad} tex={kind ? cloth : null} />
+          <Leg suit={body} grad={grad} tex={kind ? cloth : null} />
         </>
       </Pair>
     </group>
@@ -775,9 +778,9 @@ function Hair({ grad }: { grad: THREE.DataTexture }) {
         <Toon color="#2B1B12" map={grad} tex={tex} />
         <Ink thin />
       </mesh>
-      {/* the swept quiff from the drawing */}
-      <mesh position={[0, HEAD_Y + 0.46, 0.13]} rotation={[0.4, 0, 0.2]} scale={[1.5, 0.7, 0.9]}>
-        <sphereGeometry args={[0.22, 20, 20]} />
+      {/* the swept quiff from the drawing, standing proud of the cap */}
+      <mesh position={[0, HEAD_Y + 0.56, 0.1]} rotation={[0.35, 0, 0.18]} scale={[1.4, 0.9, 1]}>
+        <sphereGeometry args={[0.24, 22, 22]} />
         <Toon color="#2B1B12" map={grad} tex={tex} />
         <Ink thin />
       </mesh>

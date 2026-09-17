@@ -20,7 +20,10 @@ Live site: deployed on Cloudflare Pages (see *Deploy* below). Backend: Supabase 
   and its exact reflection, in 2D and in 3D.
 - Five characters, each with 5–6 categories × 4 options, plus colour palettes (skin, hair,
   dress, body, wings, suit, cape).
-- Any part except the base one can be erased with the **None** button in its row.
+- Any part except the base one can be erased with the **None** button in its row, and a new
+  sheet starts completely empty so the child builds the character from nothing.
+- **Arrange by hand**: dragging a piece that is already on the sheet moves it, and the bar under
+  the picture resizes the selected piece. The offsets are saved with the character.
 - 2D layered art with idle animations (bobbing, blinking, wiggling arms, flapping wings…).
 - 3D mode with cartoon outlines, orbit/zoom and idle motion (Three.js / React Three Fiber).
 - English vocabulary: every click reads the word aloud (Web Speech API), a sentence describes
@@ -54,9 +57,8 @@ everything works and characters are saved in the browser.
 2. Open **SQL Editor → New query**, paste the content of [`supabase/schema.sql`](supabase/schema.sql)
    and run it. It creates the tables (`classes`, `profiles`, `characters`), the trigger that
    creates a profile on sign-up and all the security policies.
-3. **Authentication → Sign In / Providers**: enable **Anonymous sign-ins** (students join
-   without an e-mail). Under **Email** you may turn off *Confirm email* so the teacher can sign
-   in right after creating the account.
+3. **Authentication → Sign In / Providers**: under **Email** you may turn off *Confirm email* so
+   the teacher can sign in right after creating the account.
 4. **Project Settings → API**: copy the *Project URL* and the *anon public* key into a `.env`
    file (see `.env.example`):
 
@@ -91,9 +93,10 @@ src/characters/dragon/       vector parts (SVG), config, Dragon2D, Dragon3D
 src/characters/princess/     vector parts (SVG), config, Princess2D, Princess3D
 src/characters/superhero/    vector parts (SVG), config, Superhero2D, Superhero3D
 src/characters/fairy/        vector parts (SVG), config, Fairy2D, Fairy3D
-src/components/              Builder (worksheet), Stage, cards, dialogs, 3D canvas
+src/components/              Builder (worksheet), Stage, AdjustBar, cards, dialogs, 3D canvas
 src/pages/                   GamesHome, CharacterPicker, Builder, Gallery, Character, Teacher
-src/lib/                     auth, storage (local/cloud), speech, sounds, confetti, three helpers
+src/lib/                     auth, storage (local/cloud), drag, speech, sounds, confetti,
+                             three helpers and the procedural 3D surface patterns
 supabase/schema.sql          database schema + RLS policies
 ```
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { SavedCharacter } from '../characters/types';
 import CharacterCard from '../components/CharacterCard';
+import { CHARACTERS, KINDS } from '../characters/registry';
 import { useAuth } from '../lib/auth';
 import { useStore } from '../lib/useStore';
 import { listClassCharacters } from '../lib/storage';
@@ -70,15 +71,11 @@ export default function GalleryPage() {
         <div className="empty">
           <p>No characters yet!</p>
           <div className="empty-actions">
-            <Link to="/build/monster" className="btn btn-primary">
-              👾 Create a monster
-            </Link>
-            <Link to="/build/dragon" className="btn btn-primary">
-              🐉 Create a dragon
-            </Link>
-            <Link to="/build/princess" className="btn btn-primary">
-              👸 Create a princess
-            </Link>
+            {KINDS.map((k) => (
+              <Link key={k} to={`/build/${k}`} className="btn btn-primary">
+                {CHARACTERS[k].emoji} Create a {CHARACTERS[k].noun.toLowerCase()}
+              </Link>
+            ))}
           </div>
         </div>
       ) : (

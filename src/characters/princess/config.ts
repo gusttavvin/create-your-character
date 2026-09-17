@@ -12,9 +12,10 @@ export const PRINCESS: CharacterDefinition = {
       label: 'Dress',
       color: '#FF6EC7',
       options: [
-        { id: 'gown', label: 'Ball Gown', phrase: 'a ball gown', Svg: P.DressGown },
-        { id: 'aline', label: 'Bow Dress', phrase: 'a dress with a bow', Svg: P.DressAline },
-        { id: 'mermaid', label: 'Mermaid', phrase: 'a mermaid dress', Svg: P.DressMermaid },
+        // the four silhouettes: wide, short, tail, stepped — the word says the shape
+        { id: 'gown', label: 'Ball Gown', phrase: 'a big ball gown', Svg: P.DressGown },
+        { id: 'aline', label: 'Short', phrase: 'a short dress with a bow', Svg: P.DressAline },
+        { id: 'mermaid', label: 'Mermaid', phrase: 'a long mermaid dress', Svg: P.DressMermaid },
         { id: 'star', label: 'Star', phrase: 'a star dress', Svg: P.DressStar },
       ],
     },
