@@ -11,7 +11,7 @@ const SW = 14;
 const O = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
 
 export const DRAGON_DEFAULTS = {
-  body: { chubby: '#7ED957', tall: '#4FC3FF', spiky: '#FF6B78', round: '#A77BFF' } as Record<string, string>,
+  body: { classic: '#7ED957', chubby: '#7ED957', tall: '#4FC3FF', spiky: '#FF6B78' } as Record<string, string>,
   wings: { bat: '#FF8A2A', feather: '#FFD93D', tiny: '#FF6EC7', butterfly: '#4FC3FF' } as Record<string, string>,
 };
 
@@ -25,6 +25,16 @@ function Svg({ children, className }: { children: ReactNode; className?: string 
     >
       {children}
     </svg>
+  );
+}
+
+/** One drawn shape plus its exact reflection, so every pair is a true mirror. */
+function Mirror({ children }: { children: ReactNode }) {
+  return (
+    <g>
+      {children}
+      <g transform="matrix(-1 0 0 1 512 0)">{children}</g>
+    </g>
   );
 }
 
@@ -55,7 +65,64 @@ function Shine({ x, y, w = 60, h = 26, rot = -30 }: { x: number; y: number; w?: 
   return <ellipse cx={x} cy={y} rx={w / 2} ry={h / 2} fill="#fff" opacity="0.55" transform={`rotate(${rot} ${x} ${y})`} />;
 }
 
+/* ------------------------------------------------------------------ fire */
+
+/*
+ * The flame's flicker keyframes (dgFlame, dgSpark and the .dg-* classes) live in
+ * the global stylesheet. An inline <style> inside the drawing would be repeated
+ * once per copy of the art, and its text leaks into the option card's text.
+ */
+
 /* ------------------------------------------------------------------ BODY */
+
+/** The dragon proper: spiked crest, snout, neck, chest, clawed feet, tail root. */
+export function BodyClassic({ colors, className }: PartSvgProps) {
+  const c = colors.body || DRAGON_DEFAULTS.body.classic;
+  const mid = shade(c, -0.12);
+  const dark = shade(c, -0.18);
+  const snout = shade(c, 0.12);
+  const leg = (
+    <g>
+      <path d="M300,352 C352,352 382,390 382,424 L382,436 C382,452 362,460 342,456 C306,448 292,410 300,352 Z" fill={mid} {...O} />
+      <path d="M336,418 C378,416 408,428 420,446 C428,458 416,470 398,470 L346,470 C330,470 320,458 322,444 Z" fill={mid} {...O} />
+      <path d="M360,468 L360,446 M390,464 L386,442" fill="none" stroke={INK} strokeWidth="9" strokeLinecap="round" />
+    </g>
+  );
+  return (
+    <Svg className={className}>
+      {/* the tail grows out of this root, low on the right hip */}
+      <path d="M300,364 C356,364 410,396 438,442 C404,464 336,460 296,438 Z" fill={dark} {...O} />
+      <Mirror>{leg}</Mirror>
+      {/* neck */}
+      <Mirror>
+        <path d="M318,262 L356,268 L316,286 Z M312,310 L348,318 L310,334 Z" fill={dark} {...O} strokeWidth={12} />
+      </Mirror>
+      <path d="M212,166 C202,226 198,282 194,344 L318,344 C314,282 310,226 300,166 Z" fill={mid} {...O} />
+      {/* chest */}
+      <path d="M256,312 C338,312 390,352 390,396 C390,438 330,458 256,458 C182,458 122,438 122,396 C122,352 174,312 256,312 Z" fill={c} {...O} />
+      <path d="M256,346 C302,346 334,368 334,398 C334,426 300,444 256,444 C212,444 178,426 178,398 C178,368 210,346 256,346 Z" fill={shade(c, 0.45)} />
+      <path d="M196,376 L316,376 M182,402 L330,402 M198,428 L314,428" fill="none" stroke={shade(c, 0.1)} strokeWidth="10" strokeLinecap="round" />
+      {/* crest of spikes over the skull */}
+      <path d="M228,54 L256,-6 L284,54 Z" fill={dark} {...O} />
+      <Mirror>
+        <path d="M286,50 L330,6 L328,72 Z M330,92 L386,62 L352,122 Z" fill={dark} {...O} />
+      </Mirror>
+      {/* cheek frills */}
+      <Mirror>
+        <path d="M330,176 L392,186 L336,208 Z" fill={mid} {...O} strokeWidth={13} />
+      </Mirror>
+      {/* head */}
+      <path d="M256,44 C322,44 358,84 358,132 C358,158 348,180 330,196 C314,216 290,226 256,226 C222,226 198,216 182,196 C164,180 154,158 154,132 C154,84 190,44 256,44 Z" fill={c} {...O} />
+      {/* snout */}
+      <path d="M200,156 C200,138 222,126 256,126 C290,126 312,138 312,156 C312,214 302,258 282,274 C268,286 244,286 230,274 C210,258 200,214 200,156 Z" fill={snout} {...O} />
+      <path d="M218,152 C238,142 274,142 294,152" fill="none" stroke={mid} strokeWidth="9" strokeLinecap="round" />
+      <Mirror>
+        <ellipse cx="284" cy="170" rx="13" ry="9" fill={INK} transform="rotate(-22 284 170)" />
+      </Mirror>
+      <Shine x={198} y={88} w={56} h={24} />
+    </Svg>
+  );
+}
 
 export function BodyChubby({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
@@ -87,62 +154,61 @@ export function BodyTall({ colors, className }: PartSvgProps) {
   );
 }
 
-function spikePath(cx: number, cy: number, rIn: number, rOut: number, angles: number[]) {
-  return angles
-    .map((a) => {
-      const a1 = ((a - 10) * Math.PI) / 180;
-      const a2 = ((a + 10) * Math.PI) / 180;
-      const am = (a * Math.PI) / 180;
-      return `M${cx + rIn * Math.cos(a1)},${cy + rIn * Math.sin(a1)} L${cx + rOut * Math.cos(am)},${cy + rOut * Math.sin(am)} L${cx + rIn * Math.cos(a2)},${cy + rIn * Math.sin(a2)} Z`;
-    })
-    .join(' ');
+/** A ring of triangles around a circle, so the whole silhouette bristles. */
+function spikeRing(cx: number, cy: number, rIn: number, outs: [number, number], n: number) {
+  const step = 360 / n;
+  const d: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = i * step - 90;
+    const rOut = outs[i % 2];
+    const a1 = ((a - step * 0.48) * Math.PI) / 180;
+    const a2 = ((a + step * 0.48) * Math.PI) / 180;
+    const am = (a * Math.PI) / 180;
+    d.push(
+      `M${(cx + rIn * Math.cos(a1)).toFixed(1)},${(cy + rIn * Math.sin(a1)).toFixed(1)} ` +
+        `L${(cx + rOut * Math.cos(am)).toFixed(1)},${(cy + rOut * Math.sin(am)).toFixed(1)} ` +
+        `L${(cx + rIn * Math.cos(a2)).toFixed(1)},${(cy + rIn * Math.sin(a2)).toFixed(1)} Z`,
+    );
+  }
+  return d.join(' ');
 }
 
 export function BodySpiky({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.spiky;
   return (
     <Svg className={className}>
+      {/* spikes all the way round, not just along the back */}
+      <path d={spikeRing(256, 258, 150, [202, 222], 16)} fill={shade(c, -0.12)} {...O} />
+      <circle cx="256" cy="258" r="158" fill={c} {...O} />
+      <Belly cx={256} cy={332} rx={102} ry={70} color={c} />
+      <path d="M188,296 L324,296 M176,326 L336,326" fill="none" stroke={shade(c, 0.28)} strokeWidth="10" strokeLinecap="round" opacity="0.8" />
+      <Spots color={c} pts={[[152, 232, 13], [366, 222, 11], [162, 356, 9]]} />
+      <Shine x={196} y={140} />
       <Feet color={c} />
-      <path d={spikePath(256, 268, 170, 236, [-160, -135, -110, -90, -70, -45, -20])} fill={shade(c, -0.2)} {...O} />
-      <circle cx="256" cy="268" r="192" fill={c} {...O} />
-      <Belly cx={256} cy={340} rx={112} ry={84} color={c} />
-      <Spots color={c} pts={[[140, 250, 12], [380, 240, 10], [150, 380, 8]]} />
-      <Shine x={190} y={130} />
-    </Svg>
-  );
-}
-
-export function BodyRound({ colors, className }: PartSvgProps) {
-  const c = colors.body || DRAGON_DEFAULTS.body.round;
-  return (
-    <Svg className={className}>
-      <Feet color={c} />
-      <circle cx="256" cy="262" r="204" fill={c} {...O} />
-      <Belly cx={256} cy={340} rx={120} ry={90} color={c} />
-      <Spots color={c} pts={[[130, 230, 14], [392, 210, 11], [160, 400, 9], [370, 400, 12]]} />
-      <Shine x={180} y={120} />
     </Svg>
   );
 }
 
 /* ----------------------------------------------------------------- WINGS */
 
-function Mirror({ children }: { children: ReactNode }) {
-  return (
-    <g>
-      {children}
-      <g transform="matrix(-1 0 0 1 512 0)">{children}</g>
-    </g>
-  );
-}
-
 export function WingsBat({ colors, className }: PartSvgProps) {
   const c = colors.wings || DRAGON_DEFAULTS.wings.bat;
   return (
     <Svg className={className}>
       <Mirror>
-        <path d="M290,250 C330,190 420,130 488,92 Q422,180 482,226 Q404,268 452,322 Q362,348 290,332 Z" fill={c} {...O} />
-        <path d="M300,262 L470,110 M300,262 L470,232 M300,262 L440,318" fill="none" stroke={shade(c, -0.35)} strokeWidth="8" strokeLinecap="round" />
+        {/* leathery membrane: thumb claw, four finger bones, scalloped edge */}
+        <path
+          d="M288,246 C316,204 364,152 428,106 L450,72 L476,84 L462,114 L506,144 Q440,178 498,214 Q432,240 476,288 Q412,300 434,348 C382,340 328,322 288,302 Z"
+          fill={c}
+          {...O}
+        />
+        <path
+          d="M296,264 L444,110 M444,110 L502,146 M444,110 L492,216 M444,110 L468,290 M444,110 L430,346 M296,270 L432,346"
+          fill="none"
+          stroke={shade(c, -0.25)}
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
       </Mirror>
     </Svg>
   );
@@ -153,12 +219,24 @@ export function WingsFeather({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
+        {/* five long blades hang off the bone arm */}
         <path
-          d="M290,250 C330,186 420,124 488,96 C494,140 476,172 452,190 C482,212 478,254 446,268 C468,300 446,332 404,326 C394,352 350,352 290,334 Z"
+          d="M436,102 C474,130 498,168 506,206 C470,206 434,178 412,138 Z
+             M398,136 C438,168 462,210 468,250 C432,248 398,216 378,174 Z
+             M358,172 C398,208 420,252 424,292 C388,288 356,254 338,210 Z
+             M318,208 C356,248 376,292 378,332 C344,326 314,290 298,246 Z
+             M282,248 C314,286 330,326 330,362 C300,354 276,322 264,284 Z"
+          fill={shade(c, 0.35)}
+          {...O}
+          strokeWidth={13}
+        />
+        <path
+          d="M288,240 C316,196 366,148 428,106 L450,72 L476,84 L462,114 C476,146 466,184 444,220 C412,206 340,232 292,268 Z"
           fill={c}
           {...O}
         />
-        <path d="M304,268 L450,178 M304,276 L428,258 M304,290 L396,318" fill="none" stroke={shade(c, -0.3)} strokeWidth="8" strokeLinecap="round" />
+        <path d="M296,258 L444,110" fill="none" stroke={shade(c, -0.25)} strokeWidth="10" strokeLinecap="round" />
+        <path d="M424,122 L452,156 M390,156 L418,190 M354,192 L378,226" fill="none" stroke={shade(c, -0.25)} strokeWidth="8" strokeLinecap="round" />
       </Mirror>
     </Svg>
   );
@@ -169,8 +247,13 @@ export function WingsTiny({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
-        <path d="M292,246 C318,208 356,190 392,186 Q380,224 372,254 Q352,290 292,300 Z" fill={c} {...O} />
-        <path d="M300,262 L372,214 M300,268 L352,268" fill="none" stroke={shade(c, -0.3)} strokeWidth="7" strokeLinecap="round" />
+        {/* the same leathery build, only small: three fingers */}
+        <path
+          d="M292,252 C310,220 338,192 370,170 L382,146 L402,156 L392,180 L424,204 Q392,222 418,250 Q388,268 402,298 C364,300 320,288 292,276 Z"
+          fill={c}
+          {...O}
+        />
+        <path d="M298,268 L378,178 M378,178 L420,206 M378,178 L412,252 M378,178 L398,296" fill="none" stroke={shade(c, -0.25)} strokeWidth="8" strokeLinecap="round" />
       </Mirror>
     </Svg>
   );
@@ -182,63 +265,21 @@ export function WingsButterfly({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
-        <path d="M290,252 C334,140 468,116 482,192 C492,246 424,288 290,292 Z" fill={c} {...O} />
-        <path d="M290,292 C382,282 456,300 448,352 C440,398 350,384 290,342 Z" fill={c2} {...O} />
-        <circle cx="410" cy="204" r="22" fill={c2} />
-        <circle cx="370" cy="336" r="14" fill={c} />
+        {/* two leathery lobes with eye spots */}
+        <path
+          d="M290,240 C316,182 372,126 436,94 L450,64 L476,76 L462,106 C492,148 486,198 456,236 Q420,242 408,216 C372,240 322,254 290,258 Z"
+          fill={c}
+          {...O}
+        />
+        <path
+          d="M292,268 C344,262 404,272 438,296 C470,320 464,362 428,376 Q406,354 388,362 C356,360 314,326 290,300 Z"
+          fill={c2}
+          {...O}
+        />
+        <path d="M298,256 L452,104 M452,104 L474,172 M452,104 L428,206 M298,286 L434,300 M434,300 L424,364" fill="none" stroke={shade(c, -0.35)} strokeWidth="8" strokeLinecap="round" />
+        <circle cx="404" cy="158" r="23" fill={c2} stroke={INK} strokeWidth="10" />
+        <circle cx="390" cy="318" r="15" fill={c} stroke={INK} strokeWidth="9" />
       </Mirror>
-    </Svg>
-  );
-}
-
-/* ----------------------------------------------------------------- HORNS */
-
-export function HornsPointy({ className }: PartSvgProps) {
-  const c = '#FFE066';
-  return (
-    <Svg className={className}>
-      <Mirror>
-        <path d="M262,430 C262,320 288,220 322,150 C346,220 366,320 366,430 Z" fill={c} {...O} />
-        <path d="M282,330 L352,330 M292,270 L342,270" fill="none" stroke={INK} strokeWidth="8" strokeLinecap="round" />
-      </Mirror>
-    </Svg>
-  );
-}
-
-export function HornsCurly({ className }: PartSvgProps) {
-  const c = '#F2B266';
-  const d = 'M296,420 C296,300 470,300 462,196 C458,126 356,132 352,204';
-  return (
-    <Svg className={className}>
-      <Mirror>
-        <path d={d} fill="none" stroke={INK} strokeWidth="60" strokeLinecap="round" />
-        <path d={d} fill="none" stroke={c} strokeWidth="34" strokeLinecap="round" />
-        <path d="M334,320 L372,344 M396,250 L430,262" fill="none" stroke={INK} strokeWidth="7" strokeLinecap="round" />
-      </Mirror>
-    </Svg>
-  );
-}
-
-export function HornsAntlers({ className }: PartSvgProps) {
-  const c = '#D9A066';
-  const d = 'M300,430 L322,300 L360,190 M322,300 L400,270 M344,240 L312,170 M360,190 L392,150';
-  return (
-    <Svg className={className}>
-      <Mirror>
-        <path d={d} fill="none" stroke={INK} strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
-        <path d={d} fill="none" stroke={c} strokeWidth="26" strokeLinecap="round" strokeLinejoin="round" />
-      </Mirror>
-    </Svg>
-  );
-}
-
-export function HornsUnicorn({ className }: PartSvgProps) {
-  const c = '#FFD93D';
-  return (
-    <Svg className={className}>
-      <path d="M216,430 L256,96 L296,430 Z" fill={c} {...O} />
-      <path d="M232,360 L286,340 M236,300 L280,282 M242,240 L272,228 M248,180 L266,172" fill="none" stroke={INK} strokeWidth="8" strokeLinecap="round" />
-      <path d="M300,130 L328,100 M310,180 L340,168" fill="none" stroke="#FFB800" strokeWidth="10" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -356,111 +397,134 @@ export function MouthTongue({ className }: PartSvgProps) {
   );
 }
 
+/** A jaw thrown open on a row of teeth, with a jet of fire roaring out of it. */
 export function MouthFire({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
-      {/* flame shooting out to the right */}
-      <path d="M250,222 C340,168 450,166 512,256 C450,346 340,344 250,290 Z" fill="#FF8A2A" {...O} strokeWidth={12} />
-      <path d="M276,240 C340,210 420,214 458,256 C420,298 340,302 276,272 Z" fill="#FFD93D" />
-      <path d="M300,250 C336,238 380,240 400,256 C380,272 336,274 300,262 Z" fill="#fff" opacity="0.8" />
-      {/* open mouth */}
-      <ellipse cx="190" cy="256" rx="78" ry="62" fill={INK} {...O} strokeWidth={12} />
-      <ellipse cx="190" cy="282" rx="50" ry="26" fill="#FF4757" />
-      <path d="M150,206 L164,236 L178,206 Z M202,206 L216,236 L230,206 Z" fill="#fff" />
+      {/* the gaping jaw */}
+      <path d="M110,228 C126,196 156,182 192,182 C230,182 260,198 272,228 C280,272 250,336 190,336 C130,336 104,272 110,228 Z" fill="#4A1020" {...O} />
+      <path d="M190,296 C216,296 236,310 240,330 C226,334 208,336 190,336 C172,336 156,334 142,330 C146,310 164,296 190,296 Z" fill="#FF4757" />
+      <path d="M124,218 L136,254 L152,212 Z M162,208 L176,250 L192,206 Z M204,206 L218,250 L232,210 Z M242,214 L252,248 L262,222 Z" fill="#fff" {...O} strokeWidth={9} />
+      <path d="M136,312 L150,278 L166,314 Z M180,320 L194,282 L210,318 Z M222,312 L234,282 L246,304 Z" fill="#fff" {...O} strokeWidth={9} />
+      {/* the fire: three nested tongues that flicker, plus flying sparks */}
+      <g transform="translate(232,256)">
+        <path
+          className="dg-fl"
+          d="M2,-62 C58,-108 132,-118 196,-96 C182,-76 184,-66 200,-58 C228,-72 260,-70 284,-54
+             C252,-44 246,-32 262,-22 C288,-24 300,-14 300,2 C276,18 254,22 236,18
+             C248,34 242,50 224,58 C196,50 178,38 170,24 C150,58 108,74 56,70
+             C10,66 -14,34 2,-62 Z"
+          fill="#FF7A1A"
+          {...O}
+          strokeWidth={12}
+        />
+        <path
+          className="dg-fl2"
+          d="M10,-40 C58,-76 118,-82 168,-66 C160,-50 162,-42 174,-38 C198,-48 222,-44 238,-32
+             C216,-24 212,-16 222,-8 C204,6 182,10 168,6 C176,18 172,30 158,34
+             C136,28 124,18 118,8 C100,32 68,44 36,40 C6,36 -4,16 10,-40 Z"
+          fill="#FFC400"
+        />
+        <path
+          className="dg-fl2"
+          d="M24,-18 C54,-38 92,-42 122,-32 C116,-22 118,-16 126,-14 C110,-4 98,0 88,-2
+             C90,6 84,12 74,12 C56,8 44,2 38,-6 C28,4 16,6 10,2 C4,-4 12,-10 24,-18 Z"
+          fill="#FFF3C4"
+        />
+        <circle className="dg-sp" cx="250" cy="-70" r="10" fill="#FF7A1A" />
+        <circle className="dg-sp dg-sp2" cx="230" cy="52" r="8" fill="#FFC400" />
+      </g>
     </Svg>
   );
 }
 
 /* ------------------------------------------------------------------ TAIL */
 
-const TAIL_D = 'M56,300 C160,332 250,330 300,250 C350,170 420,150 466,140';
-
-function TailBase({ color }: { color: string }) {
+/** A jagged bolt from root to tip. */
+export function TailLightning({ className }: PartSvgProps) {
+  const bolt = 'M52,318 L158,286 L110,238 L246,224 L194,170 L340,166 L294,116 L430,96';
+  const zig = { fill: 'none', strokeLinejoin: 'miter' as const, strokeLinecap: 'round' as const, strokeMiterlimit: 3 };
   return (
-    <g>
-      <path d={TAIL_D} fill="none" stroke={INK} strokeWidth="62" strokeLinecap="round" />
-      <path d={TAIL_D} fill="none" stroke={color} strokeWidth="38" strokeLinecap="round" />
-    </g>
+    <Svg className={className}>
+      <path d={bolt} stroke={INK} strokeWidth="58" {...zig} />
+      <path d="M418,66 L508,58 L438,134 Z" fill="#FFD93D" {...O} />
+      <path d={bolt} stroke="#FFD93D" strokeWidth="34" {...zig} />
+      <path d="M74,314 L150,290 L120,246 L240,234 L204,180 L330,176" stroke="#FFF3C4" strokeWidth="11" {...zig} />
+      <path d="M470,150 L498,154 M392,44 L400,16 M336,72 L318,52" fill="none" stroke="#FFD93D" strokeWidth="12" strokeLinecap="round" />
+    </Svg>
   );
 }
 
-/** Sparkles and small shapes that trail along the tail, so each tip has a story. */
-function star5(cx: number, cy: number, rOut: number, rIn: number) {
-  const pts: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? rOut : rIn;
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
-  }
-  return pts.join(' ');
-}
-
-export function TailFire({ colors, className }: PartSvgProps) {
-  const c = colors.body || DRAGON_DEFAULTS.body.chubby;
+/** Burning the whole way: three nested tongues of flame with sparks flying off. */
+export function TailFire({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
-      <TailBase color={c} />
-      {/* a flame licking up off the tip, in three shrinking tongues */}
       <path
-        d="M466,178 C420,142 430,96 462,60 C470,86 486,92 494,74 C516,104 526,146 506,178 C494,198 478,196 466,178 Z"
-        fill="#FF8A2A"
+        className="dg-fl"
+        d="M46,318 C110,344 176,338 222,300 C236,318 254,316 262,296 C296,306 320,286 318,254 C346,272 372,258 376,228 C404,244 432,226 430,190 C462,206 490,180 484,138 C500,156 512,150 506,124 C470,80 402,74 356,110 C346,88 324,84 310,100 C280,82 250,100 246,132 C216,112 186,124 178,154 C146,138 116,154 114,190 C82,182 56,206 52,242 C36,258 34,292 46,318 Z"
+        fill="#FF7A1A"
         {...O}
       />
-      <path d="M472,168 C448,142 456,112 474,88 C482,106 494,110 498,98 C512,122 514,150 500,168 C492,180 480,180 472,168 Z" fill="#FFD93D" />
-      <path d="M478,158 C466,142 470,124 480,110 C488,126 494,142 488,158 C484,166 482,166 478,158 Z" fill="#FFF3C4" />
-      <circle cx="430" cy="66" r="9" fill="#FF8A2A" />
-      <circle cx="508" cy="42" r="7" fill="#FFD93D" />
+      <path
+        className="dg-fl2"
+        d="M78,308 C130,322 180,314 214,282 C230,296 246,290 250,272 C280,278 296,258 294,232 C318,244 338,230 342,204 C366,214 388,198 386,168 C412,180 436,158 430,124 C398,94 348,94 316,126 C306,110 288,110 278,124 C254,112 232,128 230,154 C204,140 182,152 176,178 C150,168 128,182 126,210 C100,206 80,226 78,254 C66,268 68,292 78,308 Z"
+        fill="#FFC400"
+      />
+      <path
+        className="dg-fl2"
+        d="M104,296 C150,304 190,294 216,266 C238,278 256,258 256,234 C288,244 306,220 302,192 C332,200 352,178 348,148 C324,132 292,138 274,158 C262,142 242,146 236,164 C214,156 196,170 194,192 C172,186 154,200 152,222 C128,222 112,240 110,262 C102,272 100,286 104,296 Z"
+        fill="#FFF3C4"
+        opacity="0.9"
+      />
+      <circle className="dg-sp" cx="470" cy="92" r="11" fill="#FF7A1A" />
+      <circle className="dg-sp dg-sp2" cx="410" cy="60" r="8" fill="#FFC400" />
     </Svg>
   );
 }
 
-export function TailStar({ colors, className }: PartSvgProps) {
-  const c = colors.body || DRAGON_DEFAULTS.body.chubby;
+/** A chain of crystal shards, growing colder and sharper toward the tip. */
+export function TailIce({ className }: PartSvgProps) {
+  const a = '#7FE3FF';
+  const b = '#A7EEFF';
   return (
     <Svg className={className}>
-      <TailBase color={c} />
-      {/* a comet: big star at the tip, little ones trailing back down the tail */}
-      <polygon points={star5(474, 122, 68, 29)} fill="#FFD93D" {...O} />
-      <polygon points={star5(474, 122, 34, 15)} fill="#FFF3C4" />
-      <polygon points={star5(398, 178, 26, 11)} fill="#FFD93D" {...O} strokeWidth={8} />
-      <polygon points={star5(340, 224, 17, 7)} fill="#FFE99A" {...O} strokeWidth={6} />
-      <circle cx="300" cy="262" r="7" fill="#FFD93D" />
+      <path d="M41,319 L112,333 L151,273 L80,259 Z" fill={a} {...O} />
+      <path d="M121,295 L204,299 L259,237 L176,233 Z" fill={b} {...O} />
+      <path d="M209,260 L292,259 L351,200 L268,201 Z" fill={a} {...O} />
+      <path d="M285,223 L368,216 L431,161 L348,168 Z" fill={b} {...O} />
+      <path d="M355,183 L432,172 L491,125 L416,136 Z" fill={a} {...O} />
+      <path d="M414,140 L471,131 L512,96 L461,105 Z" fill="#CFF6FF" {...O} />
+      <path d="M80,259 L112,333 M176,233 L204,299 M268,201 L292,259 M348,168 L368,216 M416,136 L432,172" fill="none" stroke="#49B6DA" strokeWidth="8" strokeLinecap="round" />
+      <path d="M146,232 L122,186 L182,224 Z M300,184 L286,132 L336,178 Z M262,268 L272,316 L216,278 Z" fill="#CFF6FF" {...O} strokeWidth={12} />
+      <path d="M470,72 L478,50 M500,146 L522,148" fill="none" stroke={a} strokeWidth="11" strokeLinecap="round" />
     </Svg>
   );
 }
 
-export function TailCrystal({ colors, className }: PartSvgProps) {
-  const c = colors.body || DRAGON_DEFAULTS.body.chubby;
-  const gem = '#5BE8FF';
-  return (
-    <Svg className={className}>
-      <TailBase color={c} />
-      {/* a cluster of angular gems growing out of the tip */}
-      <path d="M470,196 L440,120 L474,62 L512,118 L500,196 Z" fill={gem} {...O} />
-      <path d="M474,62 L474,196 M440,120 L474,138 L512,118" fill="none" stroke={INK} strokeWidth="7" />
-      <path d="M418,190 L404,140 L432,112 L448,158 Z" fill={shade(gem, 0.25)} {...O} strokeWidth={10} />
-      <path d="M500,206 L512,164 L536,196 L524,226 Z" fill={shade(gem, -0.15)} {...O} strokeWidth={10} />
-      <path d="M462,92 L470,110 L456,116 Z" fill="#fff" />
-    </Svg>
-  );
-}
-
-export function TailLeaf({ colors, className }: PartSvgProps) {
-  const c = colors.body || DRAGON_DEFAULTS.body.chubby;
+/** A climbing vine: leaves the whole way up and a curl at the tip. */
+export function TailLeaf({ className }: PartSvgProps) {
+  const vine = '#5FA83F';
   const leaf = '#7ED957';
+  const d = 'M56,300 C160,332 250,330 300,250 C350,170 420,150 466,140';
+  const curl = 'M470,142 C504,140 516,118 504,100 C494,86 474,92 476,110';
   const Leaf = ({ x, y, s, rot }: { x: number; y: number; s: number; rot: number }) => (
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s})`}>
-      <path d="M0,60 C-64,10 -48,-62 0,-86 C48,-62 64,10 0,60 Z" fill={leaf} {...O} strokeWidth={14 / s} />
-      <path d="M0,54 L0,-74 M0,-10 L-30,-34 M0,-10 L30,-34 M0,22 L-24,4 M0,22 L24,4" fill="none" stroke={shade(leaf, -0.35)} strokeWidth={8 / s} strokeLinecap="round" />
+      <path d="M0,46 C-54,8 -44,-52 0,-72 C44,-52 54,8 0,46 Z" fill={leaf} {...O} strokeWidth={SW / s} />
+      <path d="M0,40 L0,-62 M0,-8 L-26,-28 M0,-8 L26,-28 M0,18 L-22,2 M0,18 L22,2" fill="none" stroke={shade(leaf, -0.35)} strokeWidth={8 / s} strokeLinecap="round" />
     </g>
   );
   return (
     <Svg className={className}>
-      <TailBase color={c} />
-      {/* a big leaf at the tip with two sprouting along the tail */}
-      <Leaf x={476} y={118} s={1} rot={18} />
-      <Leaf x={392} y={182} s={0.55} rot={-32} />
-      <Leaf x={322} y={236} s={0.38} rot={-58} />
+      <path d={d} fill="none" stroke={INK} strokeWidth="56" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={vine} strokeWidth="32" strokeLinecap="round" />
+      <path d={curl} fill="none" stroke={INK} strokeWidth="30" strokeLinecap="round" />
+      <path d={curl} fill="none" stroke={vine} strokeWidth="14" strokeLinecap="round" />
+      <Leaf x={112} y={326} s={0.46} rot={205} />
+      <Leaf x={178} y={336} s={0.56} rot={18} />
+      <Leaf x={244} y={314} s={0.64} rot={198} />
+      <Leaf x={296} y={256} s={0.74} rot={32} />
+      <Leaf x={352} y={196} s={0.84} rot={212} />
+      <Leaf x={414} y={160} s={0.95} rot={26} />
     </Svg>
   );
 }

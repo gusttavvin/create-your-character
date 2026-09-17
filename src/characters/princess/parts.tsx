@@ -9,8 +9,8 @@
  *               y =  50  the chin (where the head's outline crosses the neck)
  *               y =  96  the shoulders
  *               y = 136  the middle of the puff sleeves
- *               y = 234  the waist
- *               y = 300  the hands
+ *               y = 196  the waist
+ *               y = 286  the hands
  *               y = 396  the floor (the bottom of her shoes)
  *             Everything is mirror-symmetric about x = 256, so a shape and its
  *             reflection `matrix(-1 0 0 1 512 0)` always meet in the middle.
@@ -26,8 +26,8 @@ const O = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, stro
 export const BODY = {
   chin: 50,
   shoulder: 96,
-  waist: 234,
-  hand: { x: 408, y: 300 },
+  waist: 196,
+  hand: { x: 400, y: 286 },
   floor: 396,
 };
 
@@ -98,13 +98,13 @@ export function Neck({ colors, className }: PartSvgProps) {
 /* ----------------------------------------------------------------- DRESS */
 
 function Arms({ skin }: { skin: string }) {
-  const d = 'M172,162 C132,196 108,244 104,284';
+  const d = 'M154,156 C132,188 116,226 112,272';
   return (
     <Pair>
       <g>
         <path d={d} fill="none" stroke={INK} strokeWidth="46" strokeLinecap="round" />
-        <path d={d} fill="none" stroke={skin} strokeWidth="26" strokeLinecap="round" />
-        <circle cx="104" cy="300" r="26" fill={skin} {...O} strokeWidth={12} />
+        <path d={d} fill="none" stroke={skin} strokeWidth="30" strokeLinecap="round" />
+        <circle cx="112" cy="286" r="26" fill={skin} {...O} strokeWidth={12} />
       </g>
     </Pair>
   );
@@ -115,11 +115,11 @@ function Bodice({ color }: { color: string }) {
   return (
     <g>
       <path
-        d="M176,146 C182,116 208,98 232,96 C240,122 272,122 280,96 C304,98 330,116 336,146 C342,178 342,208 338,234 L174,234 C170,208 170,178 176,146 Z"
+        d="M162,150 C168,112 196,92 232,90 C240,118 272,118 280,90 C316,92 344,112 350,150 C356,172 344,188 336,200 L176,200 C168,188 156,172 162,150 Z"
         fill={shade(color, -0.12)}
         {...O}
       />
-      <path d="M232,102 C242,128 270,128 280,102" fill="none" stroke={shade(color, 0.4)} strokeWidth="9" strokeLinecap="round" />
+      <path d="M232,96 C242,122 270,122 280,96" fill="none" stroke={shade(color, 0.4)} strokeWidth="9" strokeLinecap="round" />
     </g>
   );
 }
@@ -127,13 +127,13 @@ function Bodice({ color }: { color: string }) {
 function PuffSleeves({ color, r = 40 }: { color: string; r?: number }) {
   return (
     <Pair>
-      <circle cx={168} cy={136} r={r} fill={color} {...O} />
+      <circle cx={150} cy={130} r={r} fill={color} {...O} />
     </Pair>
   );
 }
 
 function Sash({ color }: { color: string }) {
-  return <rect x="170" y="218" width="172" height="26" rx="13" fill={shade(color, -0.3)} {...O} strokeWidth={10} />;
+  return <rect x="170" y="180" width="172" height="26" rx="13" fill={shade(color, -0.3)} {...O} strokeWidth={10} />;
 }
 
 /** 1 — BALL GOWN: the widest one. A huge round bell with a scalloped hem. */
@@ -143,19 +143,19 @@ export function DressGown({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <path
-        d="M186,222 C120,252 52,292 34,332 Q72,368 110,336 Q148,370 186,338 Q222,370 256,338 Q290,370 326,338 Q364,370 402,336 Q440,368 478,332 C460,292 392,252 326,222 Z"
+        d="M186,184 C118,220 48,268 32,326 Q70,364 108,330 Q146,366 184,332 Q220,366 256,332 Q292,366 328,332 Q366,366 404,330 Q442,364 480,326 C464,268 394,220 326,184 Z"
         fill={c}
         {...O}
       />
       <path
-        d="M52,324 Q88,356 122,330 Q160,362 196,332 Q226,356 256,332 Q286,356 316,332 Q352,362 390,330 Q424,356 460,324"
+        d="M50,318 Q86,350 120,324 Q158,356 194,326 Q224,350 256,326 Q288,350 318,326 Q354,356 392,324 Q426,350 462,318"
         fill="none"
         stroke={shade(c, 0.45)}
         strokeWidth="10"
         strokeLinecap="round"
       />
       <path
-        d="M210,242 C186,284 150,314 108,330 M256,244 L256,336 M302,242 C326,284 362,314 404,330"
+        d="M210,206 C186,254 150,290 108,314 M256,208 L256,326 M302,206 C326,254 362,290 404,314"
         fill="none"
         stroke={shade(c, -0.16)}
         strokeWidth="9"
@@ -165,7 +165,7 @@ export function DressGown({ colors, className }: PartSvgProps) {
       <Bodice color={c} />
       <PuffSleeves color={c} r={42} />
       <Sash color={c} />
-      <ellipse cx="256" cy="150" rx="24" ry="12" fill={shade(c, 0.5)} />
+      <ellipse cx="256" cy="142" rx="24" ry="12" fill={shade(c, 0.5)} />
     </Svg>
   );
 }
@@ -176,9 +176,9 @@ export function DressAline({ colors, className }: PartSvgProps) {
   const skin = colors.skin || PRINCESS_DEFAULTS.skin;
   return (
     <Svg className={className}>
-      <path d="M182,220 C158,238 130,258 116,284 Q186,310 256,310 Q326,310 396,284 C382,258 354,238 330,220 Z" fill={c} {...O} />
+      <path d="M182,186 C158,206 132,230 118,262 Q186,292 256,292 Q326,292 394,262 C380,230 354,206 330,186 Z" fill={c} {...O} />
       <path
-        d="M196,232 L160,278 M226,234 L212,294 M256,234 L256,304 M286,234 L300,294 M316,232 L352,278"
+        d="M196,198 L164,256 M226,200 L214,282 M256,200 L256,290 M286,200 L298,282 M316,198 L348,256"
         fill="none"
         stroke={shade(c, -0.16)}
         strokeWidth="9"
@@ -188,11 +188,14 @@ export function DressAline({ colors, className }: PartSvgProps) {
       <Bodice color={c} />
       <PuffSleeves color={c} r={34} />
       <Sash color={c} />
-      {/* the bow at her waist */}
+      {/* the bow at her waist: one loop and one tail, plus their reflection */}
       <Pair>
-        <path d="M256,228 C222,194 178,204 186,232 C192,258 232,254 256,228 Z" fill="#FFD93D" {...O} strokeWidth={10} />
+        <g>
+          <path d="M250,196 L206,250 L240,242 Z" fill={shade('#FFD93D', -0.18)} {...O} strokeWidth={9} />
+          <path d="M252,188 C218,152 174,164 184,196 C192,222 230,214 252,188 Z" fill="#FFD93D" {...O} strokeWidth={10} />
+        </g>
       </Pair>
-      <circle cx="256" cy="228" r="20" fill="#FFB800" {...O} strokeWidth={10} />
+      <circle cx="256" cy="192" r="18" fill="#FFB800" {...O} strokeWidth={10} />
     </Svg>
   );
 }
@@ -205,17 +208,17 @@ export function DressMermaid({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <path
-        d="M184,222 C176,262 174,304 184,332 C146,350 106,370 78,396 L434,396 C406,370 366,350 328,332 C338,304 336,262 328,222 Z"
+        d="M184,186 C176,226 174,272 184,300 C146,322 106,352 78,396 L434,396 C406,352 366,322 328,300 C338,272 336,226 328,186 Z"
         fill={c}
         {...O}
       />
       <g fill="none" stroke={scale} strokeWidth="9" strokeLinecap="round">
-        <path d="M196,254 Q216,278 236,254 Q256,278 276,254 Q296,278 316,254" />
-        <path d="M186,296 Q209,320 232,296 Q256,320 280,296 Q303,320 326,296" />
-        <path d="M120,362 Q160,390 200,362 Q256,394 312,362 Q352,390 392,362" />
+        <path d="M196,222 Q216,246 236,222 Q256,246 276,222 Q296,246 316,222" />
+        <path d="M186,266 Q209,290 232,266 Q256,290 280,266 Q303,290 326,266" />
+        <path d="M120,352 Q160,380 200,352 Q256,384 312,352 Q352,380 392,352" />
       </g>
       {/* the seam where the tail flares out */}
-      <path d="M182,330 Q256,352 330,330" fill="none" stroke={shade(c, -0.24)} strokeWidth="10" strokeLinecap="round" />
+      <path d="M182,298 Q256,320 330,298" fill="none" stroke={shade(c, -0.24)} strokeWidth="10" strokeLinecap="round" />
       <Arms skin={skin} />
       <Bodice color={c} />
       <PuffSleeves color={c} r={30} />
@@ -240,22 +243,22 @@ export function DressStar({ colors, className }: PartSvgProps) {
   const skin = colors.skin || PRINCESS_DEFAULTS.skin;
   return (
     <Svg className={className}>
-      <path d="M138,284 L374,284 L404,332 Q256,356 108,332 Z" fill={shade(c, -0.16)} {...O} />
-      <path d="M160,250 L352,250 L378,296 Q256,320 134,296 Z" fill={shade(c, -0.07)} {...O} />
-      <path d="M182,220 L330,220 L352,262 Q256,284 160,262 Z" fill={c} {...O} />
+      <path d="M138,266 L374,266 L404,332 Q256,354 108,332 Z" fill={shade(c, -0.16)} {...O} />
+      <path d="M160,214 L352,214 L378,278 Q256,300 134,278 Z" fill={shade(c, -0.07)} {...O} />
+      <path d="M182,184 L330,184 L352,230 Q256,250 160,230 Z" fill={c} {...O} />
       <g fill="#FFD93D" stroke={INK} strokeWidth="6" strokeLinejoin="round">
-        <polygon points={star(190, 318, 20, 9)} />
-        <polygon points={star(256, 330, 22, 10)} />
-        <polygon points={star(322, 318, 20, 9)} />
-        <polygon points={star(212, 276, 16, 7)} />
-        <polygon points={star(300, 276, 16, 7)} />
-        <polygon points={star(256, 246, 14, 6)} />
+        <polygon points={star(190, 300, 20, 9)} />
+        <polygon points={star(256, 312, 22, 10)} />
+        <polygon points={star(322, 300, 20, 9)} />
+        <polygon points={star(212, 246, 16, 7)} />
+        <polygon points={star(300, 246, 16, 7)} />
+        <polygon points={star(256, 214, 14, 6)} />
       </g>
       <Arms skin={skin} />
       <Bodice color={c} />
       <PuffSleeves color={c} r={38} />
       <Sash color={c} />
-      <polygon points={star(256, 152, 18, 8)} fill="#FFD93D" stroke={INK} strokeWidth="6" strokeLinejoin="round" />
+      <polygon points={star(256, 144, 18, 8)} fill="#FFD93D" stroke={INK} strokeWidth="6" strokeLinejoin="round" />
     </Svg>
   );
 }

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import PartArt from '../../components/PartArt';
 import { PRINCESS, resolvePrincessColors } from './config';
-import { Feet, HAIR_LAYERS, Head, Neck } from './parts';
+import { BODY, Feet, HAIR_LAYERS, Head, Neck } from './parts';
 import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 const VW = 600;
@@ -12,7 +12,7 @@ const HEAD = { cx: 300, cy: 250, size: 300 };
 /**
  * Dress box: 520 virtual units. It starts just under the chin so her neck, her
  * shoulders and the floor all fall inside one 512 drawing. See parts.tsx for the
- * landmarks; the hands are at (408, 300) and the floor is at y = 396.
+ * landmarks; the hands are at (408, 266) and the floor is at y = 396.
  */
 const DRESS = { cx: 300, cy: 559, size: 520 };
 
@@ -21,8 +21,8 @@ const D_LEFT = DRESS.cx - DRESS.size / 2;
 const D_TOP = DRESS.cy - DRESS.size / 2;
 
 /** Her right hand, mapped out of the dress art into virtual units. */
-const HAND_X = D_LEFT + 408 * D_SCALE;
-const HAND_Y = D_TOP + 300 * D_SCALE;
+const HAND_X = D_LEFT + BODY.hand.x * D_SCALE;
+const HAND_Y = D_TOP + BODY.hand.y * D_SCALE;
 
 const HEAD_TOP = HEAD.cy - (170 / 512) * HEAD.size;
 
@@ -118,8 +118,8 @@ export default function Princess2D({ parts, colors, animate = true, className }:
             </div>
           </Layer>
         )}
+        {/* the back of her hair sits in front of the dress, so long hair falls over the skirt */}
         {layers && (
-          {/* in front of the dress, so the long hair really falls over the skirt */}
           <Layer key={`hairb-${hair!.id}`} part="hair" style={box(HEAD.cx, HEAD.cy, HEAD.size, 3)}>
             <layers.Back colors={eff} />
           </Layer>

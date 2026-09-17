@@ -12,10 +12,10 @@ export const DRAGON: CharacterDefinition = {
       label: 'Body',
       color: '#FF6B78',
       options: [
+        { id: 'classic', label: 'Dragon', phrase: 'a dragon body', Svg: P.BodyClassic },
         { id: 'chubby', label: 'Chubby', phrase: 'a chubby body', Svg: P.BodyChubby },
         { id: 'tall', label: 'Tall', phrase: 'a tall body', Svg: P.BodyTall },
         { id: 'spiky', label: 'Spiky', phrase: 'a spiky body', Svg: P.BodySpiky },
-        { id: 'round', label: 'Round', phrase: 'a round body', Svg: P.BodyRound },
       ],
     },
     {
@@ -28,18 +28,6 @@ export const DRAGON: CharacterDefinition = {
         { id: 'feather', label: 'Feather', phrase: 'feather wings', Svg: P.WingsFeather },
         { id: 'tiny', label: 'Tiny', phrase: 'tiny wings', Svg: P.WingsTiny },
         { id: 'butterfly', label: 'Butterfly', phrase: 'butterfly wings', Svg: P.WingsButterfly },
-      ],
-    },
-    {
-      id: 'horns',
-      label: 'Horns',
-      color: '#FFD93D',
-      optional: true,
-      options: [
-        { id: 'pointy', label: 'Pointy', phrase: 'pointy horns', Svg: P.HornsPointy },
-        { id: 'curly', label: 'Curly', phrase: 'curly horns', Svg: P.HornsCurly },
-        { id: 'antlers', label: 'Antlers', phrase: 'antlers', Svg: P.HornsAntlers },
-        { id: 'unicorn', label: 'Unicorn', phrase: 'a unicorn horn', Svg: P.HornsUnicorn },
       ],
     },
     {
@@ -72,9 +60,9 @@ export const DRAGON: CharacterDefinition = {
       color: '#A77BFF',
       optional: true,
       options: [
-        { id: 'fire', label: 'Fire', phrase: 'a tail of fire', Svg: P.TailFire },
-        { id: 'star', label: 'Star', phrase: 'a star tail', Svg: P.TailStar },
-        { id: 'crystal', label: 'Crystal', phrase: 'a crystal tail', Svg: P.TailCrystal },
+        { id: 'fire', label: 'Fire', phrase: 'a fire tail', Svg: P.TailFire },
+        { id: 'lightning', label: 'Lightning', phrase: 'a lightning tail', Svg: P.TailLightning },
+        { id: 'ice', label: 'Ice', phrase: 'an ice tail', Svg: P.TailIce },
         { id: 'leaf', label: 'Leaf', phrase: 'a leaf tail', Svg: P.TailLeaf },
       ],
     },
@@ -109,21 +97,21 @@ export const DRAGON: CharacterDefinition = {
       ],
     },
   ],
-  defaultParts: { body: 'chubby', wings: 'bat', horns: 'pointy', eyes: 'cute', mouth: 'smile', tail: 'fire' },
+  defaultParts: { body: 'classic', wings: 'bat', eyes: 'cute', mouth: 'smile', tail: 'fire' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
     const who = name ? `${name} the dragon` : 'My dragon';
-    const has = listPhrases(phrasesOf(DRAGON, parts, ['body', 'wings', 'horns', 'eyes', 'mouth', 'tail']));
+    const has = listPhrases(phrasesOf(DRAGON, parts, ['body', 'wings', 'eyes', 'mouth', 'tail']));
     return has ? `${who} has ${has}.` : `${who} is still just an idea!`;
   },
 };
 
 /** Face placement per body shape (fractions of the body height). */
-export const DRAGON_BODY_LAYOUT: Record<string, { eyeY: number; mouthY: number; eyeSize: number; mouthSize: number; hornY: number }> = {
-  chubby: { eyeY: 0.27, mouthY: 0.45, eyeSize: 170, mouthSize: 140, hornY: 0.0 },
-  tall: { eyeY: 0.24, mouthY: 0.4, eyeSize: 170, mouthSize: 140, hornY: 0.0 },
-  spiky: { eyeY: 0.36, mouthY: 0.56, eyeSize: 180, mouthSize: 150, hornY: 0.02 },
-  round: { eyeY: 0.34, mouthY: 0.55, eyeSize: 190, mouthSize: 150, hornY: 0.0 },
+export const DRAGON_BODY_LAYOUT: Record<string, { eyeY: number; mouthY: number; eyeSize: number; mouthSize: number }> = {
+  classic: { eyeY: 0.1604, mouthY: 0.3868, eyeSize: 195, mouthSize: 145 },
+  chubby: { eyeY: 0.27, mouthY: 0.45, eyeSize: 170, mouthSize: 140 },
+  tall: { eyeY: 0.24, mouthY: 0.4, eyeSize: 170, mouthSize: 140 },
+  spiky: { eyeY: 0.43, mouthY: 0.62, eyeSize: 180, mouthSize: 150 },
 };
 
 /** Effective colors: user choice, else the option's own default color. */
