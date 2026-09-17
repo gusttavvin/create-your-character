@@ -119,6 +119,7 @@ export default function Princess2D({ parts, colors, animate = true, className }:
           </Layer>
         )}
         {layers && (
+          {/* in front of the dress, so the long hair really falls over the skirt */}
           <Layer key={`hairb-${hair!.id}`} part="hair" style={box(HEAD.cx, HEAD.cy, HEAD.size, 3)}>
             <layers.Back colors={eff} />
           </Layer>
