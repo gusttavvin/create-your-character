@@ -8,6 +8,21 @@ export type ColorMap = Record<string, string>;
 /** Selected option id per category id. */
 export type PartMap = Record<string, string>;
 
+/** How far a child nudged a part from where the layout put it, and how big they made it. */
+export interface PartTransform {
+  /** Offset in the character's virtual canvas units. */
+  dx: number;
+  dy: number;
+  /** Size multiplier. */
+  s: number;
+}
+
+export type LayoutMap = Record<string, PartTransform>;
+
+export const NEUTRAL: PartTransform = { dx: 0, dy: 0, s: 1 };
+export const MIN_SCALE = 0.45;
+export const MAX_SCALE = 2.2;
+
 export interface PartSvgProps {
   colors: ColorMap;
   className?: string;
@@ -78,6 +93,7 @@ export interface SavedCharacter {
   name: string;
   parts: PartMap;
   colors: ColorMap;
+  layout: LayoutMap;
   created_at: string;
   updated_at: string;
   owner_id?: string | null;
@@ -140,7 +156,7 @@ export function normalizeParts(def: CharacterDefinition, parts?: Partial<PartMap
   if (parts) {
     for (const c of def.categories) {
       const v = parts[c.id];
-      if (v === ERASED && c.optional) out[c.id] = ERASED;
+      if (v === ERASED) out[c.id] = ERASED;
       else if (v && c.options.some((o) => o.id === v)) out[c.id] = v;
     }
   }
@@ -154,5 +170,48 @@ export function normalizeColors(def: CharacterDefinition, colors?: Partial<Color
       if (typeof v === 'string') out[k] = v;
     }
   }
+  return out;
+}
+
+/** A blank sheet: the child starts with nothing and builds the character up. */
+export function emptyParts(def: CharacterDefinition): PartMap {
+  const out: PartMap = {};
+  for (const c of def.categories) out[c.id] = ERASED;
+  return out;
+}
+
+export function isEmptyCharacter(parts: PartMap): boolean {
+  return Object.values(parts).every((v) => v === ERASED);
+}
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, n));
+}
+
+export function normalizeLayout(layout?: Partial<Record<string, Partial<PartTransform>>> | null): LayoutMap {
+  const out: LayoutMap = {};
+  if (!layout) return out;
+  for (const [k, v] of Object.entries(layout)) {
+    if (!v || typeof v !== 'object') continue;
+    const dx = Number(v.dx) || 0;
+    const dy = Number(v.dy) || 0;
+    const s = clamp(Number(v.s) || 1, MIN_SCALE, MAX_SCALE);
+    if (dx === 0 && dy === 0 && s === 1) continue;
+    out[k] = { dx, dy, s };
+  }
+  return out;
+}
+
+/** Applies a nudge or a resize to one part, keeping the scale inside its limits. */
+export function withTransform(layout: LayoutMap, categoryId: string, patch: Partial<PartTransform>): LayoutMap {
+  const cur = layout[categoryId] ?? NEUTRAL;
+  const next: PartTransform = {
+    dx: patch.dx ?? cur.dx,
+    dy: patch.dy ?? cur.dy,
+    s: clamp(patch.s ?? cur.s, MIN_SCALE, MAX_SCALE),
+  };
+  const out = { ...layout };
+  if (next.dx === 0 && next.dy === 0 && next.s === 1) delete out[categoryId];
+  else out[categoryId] = next;
   return out;
 }

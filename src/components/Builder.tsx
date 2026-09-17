@@ -2,13 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ERASED,
+  emptyParts,
   normalizeColors,
+  normalizeLayout,
   normalizeParts,
   randomColors,
   randomParts,
+  withTransform,
   type CharacterDefinition,
   type ColorMap,
   type ColorSlot,
+  type LayoutMap,
   type PartCategory,
   type PartMap,
   type PartOption,
@@ -26,6 +30,7 @@ import ColorRow from './ColorRow';
 import Stage from './Stage';
 import NameDialog from './NameDialog';
 import Sentence from './Sentence';
+import AdjustBar from './AdjustBar';
 
 interface Props {
   def: CharacterDefinition;
@@ -37,8 +42,10 @@ export default function Builder({ def, initial }: Props) {
   const store = useStore();
   const { role } = useAuth();
 
-  const [parts, setParts] = useState<PartMap>(() => normalizeParts(def, initial?.parts));
+  const [parts, setParts] = useState<PartMap>(() => (initial ? normalizeParts(def, initial.parts) : emptyParts(def)));
   const [colors, setColors] = useState<ColorMap>(() => normalizeColors(def, initial?.colors));
+  const [layout, setLayout] = useState<LayoutMap>(() => normalizeLayout(initial?.layout));
+  const [selected, setSelected] = useState<string | null>(null);
   const [name, setName] = useState(initial?.name ?? '');
   const [savedId, setSavedId] = useState<string | undefined>(initial?.id);
   const [dirty, setDirty] = useState(false);
@@ -48,8 +55,10 @@ export default function Builder({ def, initial }: Props) {
 
   // Reset when switching character or loading another saved one.
   useEffect(() => {
-    setParts(normalizeParts(def, initial?.parts));
+    setParts(initial ? normalizeParts(def, initial.parts) : emptyParts(def));
     setColors(normalizeColors(def, initial?.colors));
+    setLayout(normalizeLayout(initial?.layout));
+    setSelected(null);
     setName(initial?.name ?? '');
     setSavedId(initial?.id);
     setDirty(false);
@@ -75,9 +84,34 @@ export default function Builder({ def, initial }: Props) {
   /** Take a part off again. Base parts are not erasable, so they never reach here. */
   const erase = useCallback((category: PartCategory) => {
     setParts((p) => ({ ...p, [category.id]: ERASED }));
+    // a part that is gone should not keep the nudge it had
+    setLayout((l) => {
+      if (!l[category.id]) return l;
+      const next = { ...l };
+      delete next[category.id];
+      return next;
+    });
+    setSelected((cur) => (cur === category.id ? null : cur));
     setDirty(true);
     playClick();
     speak(`No ${category.label.toLowerCase()}`);
+  }, []);
+
+  const movePart = useCallback((categoryId: string, dx: number, dy: number) => {
+    setLayout((l) => withTransform(l, categoryId, { dx, dy }));
+    setDirty(true);
+  }, []);
+
+  const scalePart = useCallback((categoryId: string, s: number) => {
+    setLayout((l) => withTransform(l, categoryId, { s }));
+    setDirty(true);
+    playClick();
+  }, []);
+
+  const resetPart = useCallback((categoryId: string) => {
+    setLayout((l) => withTransform(l, categoryId, { dx: 0, dy: 0, s: 1 }));
+    setDirty(true);
+    playClick();
   }, []);
 
   const pickColor = useCallback((slot: ColorSlot, value: string, label: string) => {
@@ -90,14 +124,18 @@ export default function Builder({ def, initial }: Props) {
   const surprise = () => {
     setParts(randomParts(def));
     setColors(randomColors(def));
+    setLayout({});
+    setSelected(null);
     setDirty(true);
     playShuffle();
     speak('Surprise!');
   };
 
   const reset = () => {
-    setParts({ ...def.defaultParts });
+    setParts(emptyParts(def));
     setColors({ ...def.defaultColors });
+    setLayout({});
+    setSelected(null);
     setDirty(true);
     playClick();
   };
@@ -108,7 +146,7 @@ export default function Builder({ def, initial }: Props) {
   const doSave = async (chosen: string) => {
     setSaving(true);
     try {
-      const saved = await store.save({ id: savedId, kind: def.kind, name: chosen, parts, colors });
+      const saved = await store.save({ id: savedId, kind: def.kind, name: chosen, parts, colors, layout });
       setSavedId(saved.id);
       setName(chosen);
       setDirty(false);
@@ -155,7 +193,35 @@ export default function Builder({ def, initial }: Props) {
             </span>
           </div>
 
-          <Stage kind={def.kind} parts={parts} colors={colors} mode={mode} name={name} interactive />
+          <Stage
+            kind={def.kind}
+            parts={parts}
+            colors={colors}
+            layout={layout}
+            mode={mode}
+            name={name}
+            interactive
+            selected={selected}
+            onSelect={setSelected}
+            onMove={movePart}
+          />
+
+          {mode === '2d' && (
+            <AdjustBar
+              def={def}
+              parts={parts}
+              layout={layout}
+              selected={selected}
+              onSelect={setSelected}
+              onScale={scalePart}
+              onReset={resetPart}
+              onResetAll={() => {
+                setLayout({});
+                setDirty(true);
+                playClick();
+              }}
+            />
+          )}
 
           <Sentence def={def} parts={parts} name={name || undefined} onRead={readAloud} />
 

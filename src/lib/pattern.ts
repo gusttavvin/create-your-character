@@ -21,7 +21,7 @@ export type PatternKind = 'spots' | 'dots' | 'fur' | 'smooth' | 'stripes' | 'sca
 export interface PatternSpec {
   /** Main fill — normally the part's colour from the kit. */
   base: string;
-  /** Mark colour. Defaults to `shade(base, -0.18)`, which reads at a distance without being noisy. */
+  /** Mark colour. Defaults to `shade(base, -0.34)`, which reads at a distance without being noisy. */
   accent?: string;
   pattern: PatternKind;
   /** How many times the tile repeats over the mesh's UVs (default 1). */
@@ -86,10 +86,10 @@ function blobPath(ctx: CanvasRenderingContext2D, pts: Pt[]) {
 /** Irregular darker blobs — the round monster body, the claw arm, the dragon. */
 function paintSpots(ctx: CanvasRenderingContext2D, accent: string, rnd: () => number) {
   const blobs: Pt[][] = [];
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 11; i++) {
     const cx = rnd() * SIZE;
     const cy = rnd() * SIZE;
-    const r = SIZE * (0.035 + rnd() * 0.045);
+    const r = SIZE * (0.07 + rnd() * 0.075);
     const n = 8;
     const pts: Pt[] = [];
     for (let k = 0; k < n; k++) {
@@ -101,18 +101,22 @@ function paintSpots(ctx: CanvasRenderingContext2D, accent: string, rnd: () => nu
   }
   wrapped(ctx, () => {
     ctx.fillStyle = accent;
+    ctx.strokeStyle = rgba(accent, 0.95);
+    ctx.lineWidth = 5;
+    ctx.lineJoin = 'round';
     for (const pts of blobs) {
       blobPath(ctx, pts);
       ctx.fill();
+      ctx.stroke();
     }
   });
 }
 
 /** Even polka dots — the egg body, the tentacle arm. */
 function paintDots(ctx: CanvasRenderingContext2D, accent: string) {
-  const n = 4;
+  const n = 3;
   const step = SIZE / n;
-  const r = step * 0.27;
+  const r = step * 0.33;
   wrapped(ctx, () => {
     ctx.fillStyle = accent;
     for (let row = 0; row < n; row++) {
@@ -130,14 +134,14 @@ function paintDots(ctx: CanvasRenderingContext2D, accent: string) {
 /** Short strokes all leaning the same way — the square body, the fuzzy arm, hair. */
 function paintFur(ctx: CanvasRenderingContext2D, accent: string, rnd: () => number) {
   const strokes: { x: number; y: number; len: number; lean: number; w: number; a: number }[] = [];
-  for (let i = 0; i < 210; i++) {
+  for (let i = 0; i < 120; i++) {
     strokes.push({
       x: rnd() * SIZE,
       y: rnd() * SIZE,
-      len: SIZE * (0.045 + rnd() * 0.035),
+      len: SIZE * (0.1 + rnd() * 0.075),
       lean: 0.3 + rnd() * 0.28,
-      w: 1.4 + rnd() * 1.6,
-      a: 0.3 + rnd() * 0.45,
+      w: 3.4 + rnd() * 3.4,
+      a: 0.55 + rnd() * 0.4,
     });
   }
   wrapped(ctx, () => {
@@ -172,10 +176,10 @@ function paintSmooth(ctx: CanvasRenderingContext2D, base: string, accent: string
 
 /** Soft bands — the dragon's belly, the gown's trim. */
 function paintStripes(ctx: CanvasRenderingContext2D, accent: string) {
-  const bands = 4;
+  const bands = 3;
   const step = SIZE / bands;
-  const h = step * 0.4;
-  ctx.fillStyle = rgba(accent, 0.8);
+  const h = step * 0.45;
+  ctx.fillStyle = rgba(accent, 0.95);
   for (let i = 0; i < bands; i++) {
     const y0 = i * step + step * 0.32;
     ctx.beginPath();
@@ -188,13 +192,13 @@ function paintStripes(ctx: CanvasRenderingContext2D, accent: string) {
 
 /** Overlapping arcs — the mermaid dress, dragon skin. */
 function paintScales(ctx: CanvasRenderingContext2D, accent: string) {
-  const rows = 4;
-  const cols = 4;
+  const rows = 3;
+  const cols = 3;
   const w = SIZE / cols;
   const h = SIZE / rows;
   wrapped(ctx, () => {
-    ctx.strokeStyle = rgba(accent, 0.85);
-    ctx.lineWidth = 2.6;
+    ctx.strokeStyle = rgba(accent, 0.95);
+    ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -270,7 +274,7 @@ export function getPatternTexture(base: string, accent: string, pattern: Pattern
 export function usePatternTexture(spec?: PatternSpec | null): THREE.Texture | null {
   const base = spec?.base ?? '';
   const pattern = spec?.pattern;
-  const accent = spec?.accent ?? (base ? shade(base, -0.18) : '');
+  const accent = spec?.accent ?? (base ? shade(base, -0.34) : '');
   const scale = spec?.scale ?? 1;
   return useMemo(
     () => (base && pattern ? getPatternTexture(base, accent, pattern, scale) : null),

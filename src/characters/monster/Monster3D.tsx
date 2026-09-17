@@ -25,21 +25,21 @@ interface Skin {
 }
 
 const BODY_SKIN: Record<string, Skin> = {
-  round: { pattern: 'spots', scale: 2 }, // green body covered in darker blobs
-  egg: { pattern: 'dots', scale: 2 }, // purple egg with even polka dots
-  square: { pattern: 'fur', scale: 2 }, // blue fuzz, strokes all one way
+  round: { pattern: 'spots', scale: 1.3 }, // green body covered in darker blobs
+  egg: { pattern: 'dots', scale: 1.3 }, // purple egg with even polka dots
+  square: { pattern: 'fur', scale: 1.5 }, // blue fuzz, strokes all one way
   hourglass: { pattern: 'smooth', scale: 1 }, // orange jelly with a highlight
 };
 
 const ARM_SKIN: Record<string, Skin> = {
-  claw: { pattern: 'spots', scale: 1.4 },
-  tentacle: { pattern: 'dots', scale: 1.6 },
+  claw: { pattern: 'spots', scale: 1 },
+  tentacle: { pattern: 'dots', scale: 1.1 },
   pincher: { pattern: 'smooth', scale: 1 },
-  fuzzy: { pattern: 'fur', scale: 1.6 },
+  fuzzy: { pattern: 'fur', scale: 1.2 },
 };
 
 const LEG_SKIN: Record<string, Skin> = {
-  stubby: { pattern: 'dots', scale: 1.4 },
+  stubby: { pattern: 'dots', scale: 1 },
   bird: { pattern: 'smooth', scale: 1 },
   thick: { pattern: 'spots', scale: 1.3 },
   snake: { pattern: 'smooth', scale: 1 },
@@ -49,6 +49,38 @@ function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
   if (!kind) return null;
   const s = map[kind] ?? { pattern: 'smooth' as PatternKind, scale: 1 };
   return { base: color, pattern: s.pattern, scale: s.scale };
+}
+
+/** Tufts around a body's outline, so a furry monster still looks furry in profile. */
+function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataTexture; w: number; h: number; d: number }) {
+  const tufts = useMemo(() => {
+    const out: { pos: [number, number, number]; rot: [number, number, number]; len: number }[] = [];
+    const ringsAt = [-d * 0.36, 0, d * 0.36];
+    const n = 22;
+    for (const z of ringsAt) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        // a superellipse traces the rounded square the body actually is
+        const ca = Math.cos(a);
+        const sa = Math.sin(a);
+        const x = Math.sign(ca) * Math.abs(ca) ** 0.55 * w;
+        const y = Math.sign(sa) * Math.abs(sa) ** 0.55 * h;
+        const len = 0.34 + ((i * 7) % 5) * 0.05;
+        out.push({ pos: [x, y, z], rot: [0, 0, Math.atan2(y, x) - Math.PI / 2], len });
+      }
+    }
+    return out;
+  }, [w, h, d]);
+  return (
+    <group>
+      {tufts.map((t, i) => (
+        <mesh key={i} position={t.pos} rotation={t.rot}>
+          <coneGeometry args={[0.1, t.len, 5]} />
+          <meshToonMaterial color={color} gradientMap={grad} />
+        </mesh>
+      ))}
+    </group>
+  );
 }
 
 /* ------------------------------------------------------------------ body */
@@ -79,11 +111,14 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
   }
   if (kind === 'square') {
     return (
-      <RoundedBox args={[2.1, 2.1, 1.7]} radius={0.4} smoothness={6} position={[0, 0.35, 0]}>
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-        <FaceDecal tex={face} y={-0.3} z={0.85} size={0.9} />
-      </RoundedBox>
+      <group position={[0, 0.35, 0]}>
+        <FurRing color={color} grad={grad} w={1.12} h={1.12} d={1.7} />
+        <RoundedBox args={[2.1, 2.1, 1.7]} radius={0.4} smoothness={6}>
+          <Toon color={color} map={grad} tex={tex} />
+          <Ink />
+          <FaceDecal tex={face} y={-0.3} z={0.87} size={0.9} />
+        </RoundedBox>
+      </group>
     );
   }
   if (kind === 'hourglass') {

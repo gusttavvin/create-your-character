@@ -102,17 +102,17 @@ export default function Fairy2D({ parts, colors, animate = true, className }: Pr
     >
       <div className="char2d-bob" style={{ position: 'absolute', inset: 0 }}>
         {Wings && (
-          <div key={`wings-${wings!.id}`} className="part pop wing-flap" style={box(WINGS.cx, WINGS.cy, WINGS.size, 1)}>
+          <div data-part="wings" key={`wings-${wings!.id}`} className="part pop wing-flap" style={box(WINGS.cx, WINGS.cy, WINGS.size, 1)}>
             <Wings colors={eff} />
           </div>
         )}
         {Dress && (
-          <div key={`dress-${dress!.id}`} className="part pop dress-sway" style={{ ...box(BODY.cx, BODY.cy, BODY.size, 2), transformOrigin: '50% 20%' }}>
+          <div data-part="dress" key={`dress-${dress!.id}`} className="part pop dress-sway" style={{ ...box(BODY.cx, BODY.cy, BODY.size, 2), transformOrigin: '50% 20%' }}>
             <Dress colors={eff} />
           </div>
         )}
         {HairBack && (
-          <div key={`hairb-${hair!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 3)}>
+          <div data-part="hair" key={`hairb-${hair!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 3)}>
             <HairBack colors={eff} />
           </div>
         )}
@@ -120,22 +120,22 @@ export default function Fairy2D({ parts, colors, animate = true, className }: Pr
           <Head colors={eff} />
         </div>
         {Eyes && (
-          <div key={`eyes-${eyes!.id}`} className="part pop blink" style={box(HEAD.cx, 258, 170, 5)}>
+          <div data-part="eyes" key={`eyes-${eyes!.id}`} className="part pop blink" style={box(HEAD.cx, 258, 170, 5)}>
             <Eyes colors={eff} />
           </div>
         )}
         {HairFront && (
-          <div key={`hairf-${hair!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 6)}>
+          <div data-part="hair" key={`hairf-${hair!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 6)}>
             <HairFront colors={eff} />
           </div>
         )}
         {Crown && (
-          <div key={`crown-${crown!.id}`} className="part pop" style={box(HEAD.cx, crownCY, CROWN, 7)}>
+          <div data-part="crown" key={`crown-${crown!.id}`} className="part pop" style={box(HEAD.cx, crownCY, CROWN, 7)}>
             <Crown colors={eff} />
           </div>
         )}
         {Wand && (
-          <div key={`wand-${wand!.id}`} className="part pop acc-wave" style={{ ...box(wandCX, wandCY, WAND, 8), transformOrigin: '50% 86%' }}>
+          <div data-part="wand" key={`wand-${wand!.id}`} className="part pop acc-wave" style={{ ...box(wandCX, wandCY, WAND, 8), transformOrigin: '50% 86%' }}>
             <Wand colors={eff} />
           </div>
         )}

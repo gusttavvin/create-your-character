@@ -58,8 +58,12 @@ interface Props {
 
 /** A positioned layer. The pop animation owns the element's transform, so anything that
  *  needs its own transform (mirroring, wiggling) goes on a wrapper inside it. */
-function Layer({ style, children, extra }: { style: CSSProperties; children: ReactNode; extra?: string }) {
-  return <div className={`part pop${extra ? ` ${extra}` : ''}`} style={style}>{children}</div>;
+function Layer({ part, style, children, extra }: { part: string; style: CSSProperties; children: ReactNode; extra?: string }) {
+  return (
+    <div className={`part pop${extra ? ` ${extra}` : ''}`} data-part={part} style={style}>
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -104,19 +108,19 @@ export default function Monster2D({ parts, animate = true, className }: Props) {
     >
       <div className="char2d-bob" style={{ position: 'absolute', inset: 0 }}>
         {legs && (
-          <Layer key={`legs-${legs.id}`} style={box(BODY_CX, legTop + LEG / 2, LEG, 1)}>
+          <Layer part="legs" key={`legs-${legs.id}`} style={box(BODY_CX, legTop + LEG / 2, LEG, 1)}>
             <img src={legs.img} alt={legs.label} draggable={false} style={fill} />
           </Layer>
         )}
 
         {arms && (
           <>
-            <Layer key={`arm-r-${arms.id}`} style={armBox(rightAttachX - armBaseX)}>
+            <Layer part="arms" key={`arm-r-${arms.id}`} style={armBox(rightAttachX - armBaseX)}>
               <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
                 <img src={arms.img} alt={arms.label} draggable={false} style={fill} />
               </div>
             </Layer>
-            <Layer key={`arm-l-${arms.id}`} style={armBox(leftAttachX - (ARM - armBaseX))}>
+            <Layer part="arms" key={`arm-l-${arms.id}`} style={armBox(leftAttachX - (ARM - armBaseX))}>
               <div style={{ ...fill, transform: 'scaleX(-1)' }}>
                 <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
                   <img src={arms.img} alt="" draggable={false} style={fill} />
@@ -127,19 +131,19 @@ export default function Monster2D({ parts, animate = true, className }: Props) {
         )}
 
         {body && (
-          <Layer key={`body-${body.id}`} style={box(BODY_CX, BODY_CY, BODY_SIZE, 3)}>
+          <Layer part="body" key={`body-${body.id}`} style={box(BODY_CX, BODY_CY, BODY_SIZE, 3)}>
             <img src={body.img} alt={body.label} draggable={false} style={fill} />
           </Layer>
         )}
 
         {mouth && (
-          <Layer key={`mouth-${mouth.id}`} style={box(BODY_CX, mouthCY, L.mouthSize, 4)}>
+          <Layer part="mouth" key={`mouth-${mouth.id}`} style={box(BODY_CX, mouthCY, L.mouthSize, 4)}>
             <img src={mouth.img} alt={mouth.label} draggable={false} style={fill} />
           </Layer>
         )}
 
         {eyes && (
-          <Layer key={`eyes-${eyes.id}`} style={box(BODY_CX, eyeCY, L.eyeSize, 5)} extra="blink">
+          <Layer part="eyes" key={`eyes-${eyes.id}`} style={box(BODY_CX, eyeCY, L.eyeSize, 5)} extra="blink">
             <img src={eyes.img} alt={eyes.label} draggable={false} style={fill} />
           </Layer>
         )}

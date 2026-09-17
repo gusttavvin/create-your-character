@@ -29,7 +29,7 @@ create table if not exists public.characters (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null references auth.users(id) on delete cascade,
   class_id    uuid references public.classes(id) on delete set null,
-  kind        text not null check (kind in ('monster', 'dragon', 'princess')),
+  kind        text not null check (kind in ('monster', 'dragon', 'princess', 'superhero', 'fairy')),
   name        text not null,
   parts       jsonb not null default '{}'::jsonb,
   colors      jsonb not null default '{}'::jsonb,
@@ -176,3 +176,15 @@ drop policy if exists "owners or teacher delete characters" on public.characters
 create policy "owners or teacher delete characters" on public.characters
   for delete to authenticated
   using (owner_id = auth.uid() or public.is_class_teacher(class_id));
+
+-- --------------------------------------------------- newer characters + layout
+-- The kind list grew after the first release, and children can now nudge parts.
+alter table public.characters drop constraint if exists characters_kind_check;
+alter table public.characters
+  add constraint characters_kind_check
+  check (kind in ('monster', 'dragon', 'princess', 'superhero', 'fairy'));
+
+-- Children can nudge and resize individual parts; the offsets live here so a saved
+-- character comes back exactly as it was arranged.
+alter table public.characters
+  add column if not exists layout jsonb not null default '{}'::jsonb;

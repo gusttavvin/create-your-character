@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { CharacterKind, ColorMap, PartMap, SavedCharacter } from '../characters/types';
+import { normalizeLayout, type CharacterKind, type ColorMap, type LayoutMap, type PartMap, type SavedCharacter } from '../characters/types';
 
 export interface SaveInput {
   id?: string;
@@ -7,6 +7,8 @@ export interface SaveInput {
   name: string;
   parts: PartMap;
   colors: ColorMap;
+  /** Per-part nudges and resizes the child applied. */
+  layout: LayoutMap;
 }
 
 export interface CharacterStore {
@@ -57,7 +59,7 @@ export const localStore: CharacterStore = {
     const now = new Date().toISOString();
     const existing = input.id ? list.find((c) => c.id === input.id) : undefined;
     if (existing) {
-      Object.assign(existing, { name: input.name, parts: input.parts, colors: input.colors, updated_at: now });
+      Object.assign(existing, { name: input.name, parts: input.parts, colors: input.colors, layout: input.layout, updated_at: now });
       writeLocal(list);
       return existing;
     }
@@ -67,6 +69,7 @@ export const localStore: CharacterStore = {
       name: input.name,
       parts: input.parts,
       colors: input.colors,
+      layout: input.layout,
       created_at: now,
       updated_at: now,
       owner_name: 'Me',
@@ -86,6 +89,7 @@ interface Row {
   name: string;
   parts: PartMap;
   colors: ColorMap | null;
+  layout: LayoutMap | null;
   created_at: string;
   updated_at: string;
   owner_id: string;
@@ -101,6 +105,7 @@ function rowToCharacter(r: Row): SavedCharacter {
     name: r.name,
     parts: r.parts ?? {},
     colors: r.colors ?? {},
+    layout: normalizeLayout(r.layout),
     created_at: r.created_at,
     updated_at: r.updated_at,
     owner_id: r.owner_id,
@@ -109,7 +114,7 @@ function rowToCharacter(r: Row): SavedCharacter {
   };
 }
 
-const SELECT = 'id, kind, name, parts, colors, created_at, updated_at, owner_id, class_id, profiles(display_name)';
+const SELECT = 'id, kind, name, parts, colors, layout, created_at, updated_at, owner_id, class_id, profiles(display_name)';
 
 /** Supabase-backed storage for signed-in users (teachers and students). */
 export function cloudStore(userId: string, classId: string | null): CharacterStore {
@@ -131,7 +136,7 @@ export function cloudStore(userId: string, classId: string | null): CharacterSto
       if (input.id) {
         const { data, error } = await db
           .from('characters')
-          .update({ name: input.name, parts: input.parts, colors: input.colors, updated_at: new Date().toISOString() })
+          .update({ name: input.name, parts: input.parts, colors: input.colors, layout: input.layout, updated_at: new Date().toISOString() })
           .eq('id', input.id)
           .select(SELECT)
           .single();
@@ -140,7 +145,7 @@ export function cloudStore(userId: string, classId: string | null): CharacterSto
       }
       const { data, error } = await db
         .from('characters')
-        .insert({ kind: input.kind, name: input.name, parts: input.parts, colors: input.colors, owner_id: userId, class_id: classId })
+        .insert({ kind: input.kind, name: input.name, parts: input.parts, colors: input.colors, layout: input.layout, owner_id: userId, class_id: classId })
         .select(SELECT)
         .single();
       if (error) throw error;

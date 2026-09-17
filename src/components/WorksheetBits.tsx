@@ -3,22 +3,57 @@ import { useDrag } from '../lib/drag';
 
 const UI = '/assets/monster/ui';
 
-/** Big "CREATE YOUR ___" banner. The monster one is the original worksheet art. */
-export function TitleBanner({ def }: { def: CharacterDefinition }) {
-  if (def.kind === 'monster') {
-    return <img className="ws-title ws-title-img" src={`${UI}/title.png`} alt="Create Your Monster" />;
-  }
+/** The three little dashes the worksheet draws either side of its headings. */
+function Dashes({ side }: { side: 'l' | 'r' }) {
   return (
-    <h1 className="ws-title ws-title-text" aria-label={def.title}>
-      <span className="doodle doodle-l" aria-hidden />
-      <span className="t-cream">Create Your</span> <span className="t-yellow">{def.noun}</span>
-      <span className="doodle doodle-r" aria-hidden />
+    <svg className={'ws-dashes ws-dashes-' + side} viewBox="0 0 34 54" aria-hidden focusable="false">
+      <g stroke="currentColor" strokeWidth="7" strokeLinecap="round" fill="none">
+        <path d="M6 12 L28 5" />
+        <path d="M4 27 L29 27" />
+        <path d="M6 42 L28 49" />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * "CREATE YOUR ___", drawn the same way for every character.
+ * It used to be a crop of the worksheet for the monster, which clipped the first letter
+ * and could not spell any other character's name.
+ */
+export function TitleBanner({ def }: { def: CharacterDefinition }) {
+  return (
+    <h1 className="ws-title" aria-label={def.title}>
+      <Dashes side="l" />
+      <span className="ws-title-words">
+        <span className="t-cream">Create Your</span> <span className="t-yellow">{def.noun}</span>
+      </span>
+      <Dashes side="r" />
     </h1>
   );
 }
 
+/** The "USE YOUR IMAGINATION!" badge, redrawn so nothing is cut off. */
 export function Sticker() {
-  return <img className="ws-sticker" src={`${UI}/sticker.png`} alt="Use your imagination!" />;
+  return (
+    <div className="ws-sticker" aria-label="Use your imagination!">
+      <Dashes side="l" />
+      <span className="ws-sticker-brush">
+        <svg className="ws-sticker-ink" viewBox="0 0 320 120" aria-hidden focusable="false" preserveAspectRatio="none">
+          <path
+            d="M10,34 C60,16 120,10 180,14 C240,18 300,20 312,36 C318,58 306,86 292,98 C250,112 150,110 90,106 C40,102 8,94 6,72 C5,56 6,42 10,34 Z"
+            fill="var(--yellow)"
+          />
+        </svg>
+        <span className="ws-sticker-text">
+          Use your
+          <br />
+          imagination!
+        </span>
+      </span>
+      <Dashes side="r" />
+    </div>
+  );
 }
 
 /** Colored row label ("BODY", "EYES"...). Monster rows use the worksheet crops. */

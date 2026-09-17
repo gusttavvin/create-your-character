@@ -14,7 +14,7 @@ export default function CharacterCard({ c, canEdit, onDelete }: Props) {
   return (
     <article className="ccard" data-kind={c.kind}>
       <Link to={`/c/${c.id}`} className="ccard-art" title="Show">
-        <Character2D kind={c.kind} parts={c.parts} colors={c.colors} animate={false} />
+        <Character2D kind={c.kind} parts={c.parts} colors={c.colors} layout={c.layout} animate={false} />
       </Link>
       <div className="ccard-body">
         <h3 className="ccard-name">

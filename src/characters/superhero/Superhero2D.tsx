@@ -94,7 +94,7 @@ export default function Superhero2D({ parts, colors, animate = true, className }
       <div className="char2d-bob" style={{ position: 'absolute', inset: 0 }}>
         {Cape && (
           <div
-            key={`cape-${cape!.id}`}
+            data-part="cape" key={`cape-${cape!.id}`}
             className="part pop dress-sway"
             style={{ ...box(BODY.cx, BODY.cy, BODY.size, 0), transformOrigin: '50% 14%' }}
           >
@@ -105,17 +105,17 @@ export default function Superhero2D({ parts, colors, animate = true, className }
           <Body colors={eff} />
         </div>
         {Suit && (
-          <div key={`suit-${suit!.id}`} className="part pop" style={box(BODY.cx, BODY.cy, BODY.size, 2)}>
+          <div data-part="suit" key={`suit-${suit!.id}`} className="part pop" style={box(BODY.cx, BODY.cy, BODY.size, 2)}>
             <Suit colors={eff} />
           </div>
         )}
         {Boots && (
-          <div key={`boots-${boots!.id}`} className="part pop" style={box(BODY.cx, BODY.cy, BODY.size, 3)}>
+          <div data-part="boots" key={`boots-${boots!.id}`} className="part pop" style={box(BODY.cx, BODY.cy, BODY.size, 3)}>
             <Boots colors={eff} />
           </div>
         )}
         {Emblem && (
-          <div key={`emblem-${emblem!.id}`} className="part pop" style={box(EMBLEM.cx, EMBLEM.cy, EMBLEM.size, 4)}>
+          <div data-part="emblem" key={`emblem-${emblem!.id}`} className="part pop" style={box(EMBLEM.cx, EMBLEM.cy, EMBLEM.size, 4)}>
             <Emblem colors={eff} />
           </div>
         )}
@@ -126,13 +126,13 @@ export default function Superhero2D({ parts, colors, animate = true, className }
           <FaceEyes colors={eff} />
         </div>
         {Mask && (
-          <div key={`mask-${mask!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 7)}>
+          <div data-part="mask" key={`mask-${mask!.id}`} className="part pop" style={box(HEAD.cx, HEAD.cy, HEAD.size, 7)}>
             <Mask colors={eff} />
           </div>
         )}
         {Power && (
           <div
-            key={`power-${power!.id}`}
+            data-part="power" key={`power-${power!.id}`}
             className="part pop acc-wave"
             style={{ ...box(BODY.cx, BODY.cy, BODY.size, 8), transformOrigin: '50% 30%' }}
           >

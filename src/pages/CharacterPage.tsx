@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CHARACTERS } from '../characters/registry';
-import { normalizeColors, normalizeParts, type SavedCharacter } from '../characters/types';
+import { normalizeColors, normalizeLayout, normalizeParts, type SavedCharacter } from '../characters/types';
 import Stage from '../components/Stage';
 import Sentence from '../components/Sentence';
 import { usePrefs } from '../lib/prefs';
@@ -51,6 +51,7 @@ export default function CharacterPage() {
   const def = CHARACTERS[c.kind];
   const parts = normalizeParts(def, c.parts);
   const colors = normalizeColors(def, c.colors);
+  const layout = normalizeLayout(c.layout);
   const canEdit = !c.owner_id || c.owner_id === user?.id;
 
   return (
@@ -80,7 +81,7 @@ export default function CharacterPage() {
       </div>
 
       <div className="show-body">
-        <Stage kind={c.kind} parts={parts} colors={colors} mode={mode} name={c.name} big />
+        <Stage kind={c.kind} parts={parts} colors={colors} layout={layout} mode={mode} name={c.name} big />
         <div className="show-side">
           <Sentence def={def} parts={parts} name={c.name} onRead={() => speak(def.sentence(parts, c.name), { force: true, rate: 0.85 })} />
           {c.owner_name && <p className="show-by">Created by {c.owner_name}</p>}
