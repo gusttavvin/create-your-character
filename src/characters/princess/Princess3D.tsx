@@ -99,6 +99,7 @@ function skirtRadius(profile: [number, number][], y: number) {
 }
 
 const SHOE_Y = -1.84;
+const SHOE_Z = 0.2;
 
 /* ----------------------------------------------------------------- dress */
 
@@ -156,7 +157,7 @@ function Dress({ kind, color, skin, grad }: { kind: string | null; color: string
         })}
 
       {kind === 'mermaid' && (
-        <mesh position={[0, -1.8, -0.08]} scale={[1.45, 0.22, 1.15]}>
+        <mesh position={[0, -1.76, -0.06]} scale={[1.35, 0.2, 1.1]}>
           <sphereGeometry args={[0.82, 26, 26]} />
           <Toon color={shade(color, 0.3)} map={grad} />
           <Ink />
@@ -179,13 +180,13 @@ function Dress({ kind, color, skin, grad }: { kind: string | null; color: string
         [1, -1].map((s) => (
           <group key={s} scale={[s, 1, 1]}>
             {legs && (
-              <mesh position={[0.22, -1.4, 0.04]}>
+              <mesh position={[0.22, -1.4, SHOE_Z * 0.4]}>
                 <capsuleGeometry args={[0.1, 0.62, 4, 14]} />
                 <Toon color={skin} map={grad} />
                 <Ink thin />
               </mesh>
             )}
-            <group position={[0.22, SHOE_Y, 0.28]}>
+            <group position={[0.22, SHOE_Y, SHOE_Z]}>
               <Shoe color={shoeColor} grad={grad} />
             </group>
           </group>
@@ -229,7 +230,7 @@ function Dress({ kind, color, skin, grad }: { kind: string | null; color: string
               <Toon color={color} map={grad} tex={cloth} />
               <Ink thin />
             </mesh>
-            <mesh position={[0.19, -0.3, 0.1]} rotation={[0.25, 0, -0.55]}>
+            <mesh position={[0.19, -0.3, 0.1]} rotation={[0.25, 0, 0.55]}>
               <capsuleGeometry args={[0.082, 0.5, 4, 12]} />
               <Toon color={skin} map={grad} />
               <Ink thin />
