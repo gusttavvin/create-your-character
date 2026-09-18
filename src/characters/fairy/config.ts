@@ -1,4 +1,4 @@
-import type { CharacterDefinition, PartMap } from '../types';
+import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type PartMap } from '../types';
 import * as P from './parts';
 
 /**
@@ -138,10 +138,17 @@ export const FAIRY: CharacterDefinition = {
   defaultParts: { dress: 'petal', wings: 'butterfly', hair: 'long', crown: 'flower', eyes: 'sparkly', wand: 'star' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
-    const ph = (cat: string) =>
-      FAIRY.categories.find((c) => c.id === cat)?.options.find((o) => o.id === parts[cat])?.phrase ?? '';
     const who = name ? `${name} the fairy` : 'My fairy';
-    return `${who} has ${ph('hair')}, ${ph('crown')} and ${ph('eyes')}. She is wearing ${ph('dress')} with ${ph('wings')}, and she is holding ${ph('wand')}.`;
+    const has = listPhrases(phrasesOf(FAIRY, parts, ['hair', 'crown', 'eyes']));
+    const dress = pickOption(FAIRY, 'dress', parts.dress)?.phrase;
+    const wings = pickOption(FAIRY, 'wings', parts.wings)?.phrase;
+    const wand = pickOption(FAIRY, 'wand', parts.wand)?.phrase;
+    const worn = listPhrases([dress, wings].filter((p): p is string => !!p));
+    const lines = [has ? `${who} has ${has}.` : ''];
+    if (worn) lines.push(`She is wearing ${worn}.`);
+    if (wand) lines.push(`She is holding ${wand}.`);
+    const out = lines.filter(Boolean).join(' ');
+    return out || `${who} is still just an idea!`;
   },
 };
 

@@ -97,7 +97,7 @@ interface FaceSpec {
 function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null; grad: THREE.DataTexture }) {
   const color = (kind && MONSTER_COLORS.body[kind]) || '#8BD43B';
   // the round body is drawn as a lumpy blob, so the 3D one is a lumpy blob too
-  const blob = useMemo(() => blobGeometry({ radius: 1.02, bumps: 17, amount: 0.23, spread: 0.21 }), []);
+  const blob = useMemo(() => blobGeometry({ radius: 0.8, bumps: 18, amount: 0.34, spread: 0.19 }), []);
   const tex = usePatternTexture(skinOf(BODY_SKIN, kind, color));
   const face = useImageTexture(mouth ? `/assets/monster/parts/mouth/${mouth}.png` : null);
   if (!kind) return null;
@@ -150,13 +150,13 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
     <mesh geometry={blob} position={[0, 0.3, 0]} scale={[1, 1.12, 0.9]}>
       <Toon color={color} map={grad} tex={tex} />
       <Ink />
-      <FaceDecal tex={face} y={-0.3} z={1.05} size={0.9} />
+      <FaceDecal tex={face} y={-0.26} z={0.95} size={0.82} />
     </mesh>
   );
 }
 
 const FACES: Record<string, FaceSpec> = {
-  round: { eyeY: 0.75, mouthY: 0, z: 1.0, halfW: 1.05, armY: 0.35, bottom: -0.65 },
+  round: { eyeY: 0.72, mouthY: 0, z: 0.92, halfW: 1.02, armY: 0.32, bottom: -0.6 },
   egg: { eyeY: 0.85, mouthY: 0, z: 0.88, halfW: 0.85, armY: 0.3, bottom: -0.75 },
   square: { eyeY: 0.75, mouthY: 0, z: 0.85, halfW: 1.02, armY: 0.35, bottom: -0.7 },
   hourglass: { eyeY: 1.2, mouthY: 0, z: 0.75, halfW: 0.88, armY: -0.3, bottom: -1.15 },

@@ -84,7 +84,7 @@ const WING_SKIN: Record<string, Skin> = {
 const HAIR_SKIN: Record<string, Skin> = {
   long: { pattern: 'fur', scale: 2 },
   buns: { pattern: 'fur', scale: 2.4 },
-  curly: { pattern: 'spots', scale: 1.2 },
+  curly: { pattern: 'fur', scale: 1.6 },
   braid: { pattern: 'stripes', scale: 2 },
 };
 
@@ -115,22 +115,22 @@ function Arm({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
   return (
     <group position={SHOULDER}>
       <mesh position={[0.12, -0.2, 0.02]} rotation={[0, 0, -0.38]}>
-        <capsuleGeometry args={[0.075, 0.34, 4, 12]} />
+        <capsuleGeometry args={[0.105, 0.34, 4, 12]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       <mesh position={[0.22, -0.38, 0.04]}>
-        <sphereGeometry args={[0.075, 14, 14]} />
+        <sphereGeometry args={[0.1, 14, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       <mesh position={[0.28, -0.58, 0.07]} rotation={[0, 0, -0.18]}>
-        <capsuleGeometry args={[0.07, 0.3, 4, 12]} />
+        <capsuleGeometry args={[0.098, 0.3, 4, 12]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       <mesh position={[0.32, -0.78, 0.1]}>
-        <sphereGeometry args={[0.095, 16, 16]} />
+        <sphereGeometry args={[0.125, 16, 16]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
@@ -143,17 +143,17 @@ function Leg({ skin, shoe, grad }: { skin: string; shoe: string; grad: THREE.Dat
   return (
     <group position={HIP}>
       <mesh position={[0, -0.38, 0]}>
-        <capsuleGeometry args={[0.105, 0.62, 4, 14]} />
+        <capsuleGeometry args={[0.145, 0.62, 4, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       <mesh position={[0, -0.78, 0]}>
-        <sphereGeometry args={[0.105, 16, 16]} />
+        <sphereGeometry args={[0.14, 16, 16]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       <mesh position={[0, -1.15, 0]}>
-        <capsuleGeometry args={[0.095, 0.6, 4, 14]} />
+        <capsuleGeometry args={[0.132, 0.6, 4, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
@@ -553,16 +553,23 @@ function Wings({ kind, color, grad }: { kind: string | null; color: string; grad
 
 function Hair({ kind, color, grad }: { kind: string | null; color: string; grad: THREE.DataTexture }) {
   const tex = usePatternTexture(skinOf(HAIR_SKIN, kind, color));
+  /**
+   * Curls crowd round the back and the sides of her head and stop at her cheeks:
+   * a full ring closes over the face and buries it, which is what went wrong.
+   * The angle is measured from straight ahead, so the gap is centred on her face.
+   */
   const curls = useMemo(() => {
     const arr: [number, number, number, number][] = [];
-    for (let i = 0; i < 26; i++) {
-      const ring = i < 14 ? 0 : 1;
-      const n = ring === 0 ? 14 : 12;
-      const k = ring === 0 ? i : i - 14;
-      const a = (k / n) * Math.PI * 2 + ring * 0.25;
-      const r = ring === 0 ? 0.66 : 0.58;
-      const y = ring === 0 ? HEAD_Y + 0.16 + (k % 2 === 0 ? 0.12 : -0.04) : HEAD_Y - 0.36 + (k % 2 === 0 ? 0.1 : 0);
-      arr.push([Math.cos(a) * r, y, Math.sin(a) * r - 0.04, 0.21 + (k % 3) * 0.03]);
+    const gap = 1.15; // half the opening in front, in radians
+    for (let ring = 0; ring < 2; ring++) {
+      const n = ring === 0 ? 11 : 9;
+      const r = ring === 0 ? 0.58 : 0.52;
+      const base = ring === 0 ? HEAD_Y + 0.3 : HEAD_Y - 0.2;
+      for (let k = 0; k < n; k++) {
+        const a = gap + (k / (n - 1)) * (Math.PI * 2 - 2 * gap);
+        const y = base + (k % 2 === 0 ? 0.06 : -0.05);
+        arr.push([Math.sin(a) * r, y, Math.cos(a) * r, 0.19 + (k % 3) * 0.025]);
+      }
     }
     return arr;
   }, []);
@@ -576,9 +583,9 @@ function Hair({ kind, color, grad }: { kind: string | null; color: string; grad:
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
-      {/* fringe: a shallow shell swept forward over the cap, stopping above the eyes */}
-      <mesh position={[0, HEAD_Y, 0]} rotation={[0.3, 0, 0.1]}>
-        <sphereGeometry args={[HEAD_R + 0.12, 36, 36, 0, Math.PI * 2, 0, Math.PI * 0.34]} />
+      {/* fringe: a shallow shell resting on the forehead, well clear of her eyes */}
+      <mesh position={[0, HEAD_Y + 0.02, 0]} rotation={[0.16, 0, 0.08]}>
+        <sphereGeometry args={[HEAD_R + 0.06, 36, 36, 0, Math.PI * 2, 0, Math.PI * 0.2]} />
         <Toon color={color} map={grad} tex={tex} />
         <Ink thin />
       </mesh>
