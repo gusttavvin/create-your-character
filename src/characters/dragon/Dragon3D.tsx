@@ -9,6 +9,7 @@ import { findOption } from '../types';
 import { INK3D, leafShape, pickPart, useGradientMap, usePatternTexture, useSvgTexture } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Part3D from '../../components/Part3D';
 
 /** Toon surface; a pattern texture carries the colour itself, so the tint goes white. */
 function Toon({ color, map, tex }: { color: string; map: THREE.Texture; tex?: THREE.Texture | null }) {
@@ -609,16 +610,16 @@ export default function Dragon3D({ parts, colors }: { parts: PartMap; colors: Co
 
   return (
     <group position={[0, -0.1, 0]}>
-      <Tail kind={pickPart(parts.tail, 'fire')} grad={grad} y={spec.tailY} />
-      <Wings kind={pickPart(parts.wings, 'bat')} color={eff.wings} grad={grad} y={spec.wingY} halfW={spec.halfW} />
-      <Body kind={body} color={eff.body} grad={grad} eyesTex={eyesTex} mouthTex={mouthTex} spec={spec} />
+      <Part3D id="tail"><Tail kind={pickPart(parts.tail, 'fire')} grad={grad} y={spec.tailY} /></Part3D>
+      <Part3D id="wings"><Wings kind={pickPart(parts.wings, 'bat')} color={eff.wings} grad={grad} y={spec.wingY} halfW={spec.halfW} /></Part3D>
+      <Part3D id="body"><Body kind={body} color={eff.body} grad={grad} eyesTex={eyesTex} mouthTex={mouthTex} spec={spec} /></Part3D>
       {fire && body && (
-        <group>
+        <Part3D id="mouth">
           <OpenMouth grad={grad} pos={jaw} r={spec.snout ? spec.snout.r * 0.8 : 0.27} />
           <group position={jet}>
             <Flame grad={grad} len={0.9} />
           </group>
-        </group>
+        </Part3D>
       )}
     </group>
   );

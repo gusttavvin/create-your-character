@@ -8,6 +8,7 @@ import type { PartMap } from '../types';
 import { MONSTER_COLORS } from './config';
 import { INK3D, blobGeometry, pickPart, useGradientMap, useImageTexture, usePatternTexture } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
+import Part3D from '../../components/Part3D';
 
 /**
  * Toon surface. When a pattern texture is given it already carries the part's
@@ -451,10 +452,10 @@ export default function Monster3D({ parts }: { parts: PartMap }) {
   const face = FACES[body ?? ''] ?? FACES.round;
   return (
     <group position={[0, -0.2, 0]}>
-      <Body kind={body} mouth={pickPart(parts.mouth, 'teeth')} grad={grad} />
-      <Eyes kind={pickPart(parts.eyes, 'stalks')} y={face.eyeY} z={face.z} grad={grad} />
-      <Arms kind={pickPart(parts.arms, 'claw')} halfW={face.halfW} y={face.armY} grad={grad} />
-      <Legs kind={pickPart(parts.legs, 'stubby')} bottom={face.bottom} grad={grad} />
+      <Part3D id="body"><Body kind={body} mouth={pickPart(parts.mouth, 'teeth')} grad={grad} /></Part3D>
+      <Part3D id="eyes"><Eyes kind={pickPart(parts.eyes, 'stalks')} y={face.eyeY} z={face.z} grad={grad} /></Part3D>
+      <Part3D id="arms"><Arms kind={pickPart(parts.arms, 'claw')} halfW={face.halfW} y={face.armY} grad={grad} /></Part3D>
+      <Part3D id="legs"><Legs kind={pickPart(parts.legs, 'stubby')} bottom={face.bottom} grad={grad} /></Part3D>
     </group>
   );
 }

@@ -19,6 +19,7 @@ import {
 } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Part3D from '../../components/Part3D';
 
 /**
  * The fairy in 3D, built on the same skeleton as the drawing in `parts.tsx`.
@@ -877,9 +878,9 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
 
   return (
     <group position={[0, 0.02, 0]}>
-      <Wings kind={wings} color={eff.wings} grad={grad} />
+      <Part3D id="wings"><Wings kind={wings} color={eff.wings} grad={grad} /></Part3D>
       <Body skin={eff.skin} shoe={dress ? shade(eff.dress, -0.28) : shade(eff.skin, -0.22)} grad={grad} />
-      <Dress kind={dress} color={eff.dress} grad={grad} />
+      <Part3D id="dress"><Dress kind={dress} color={eff.dress} grad={grad} /></Part3D>
 
       {/* neck */}
       <mesh position={[0, 0.66, 0]}>
@@ -906,9 +907,9 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
         </mesh>
       </Pair>
 
-      <Hair kind={hair} color={eff.hair} grad={grad} />
-      <Crown kind={crown} grad={grad} />
-      <Wand kind={wand} grad={grad} />
+      <Part3D id="hair"><Hair kind={hair} color={eff.hair} grad={grad} /></Part3D>
+      <Part3D id="crown"><Crown kind={crown} grad={grad} /></Part3D>
+      <Part3D id="wand"><Wand kind={wand} grad={grad} /></Part3D>
     </group>
   );
 }

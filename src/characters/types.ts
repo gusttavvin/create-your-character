@@ -10,16 +10,25 @@ export type PartMap = Record<string, string>;
 
 /** How far a child nudged a part from where the layout put it, and how big they made it. */
 export interface PartTransform {
-  /** Offset in the character's virtual canvas units. */
+  /** Offset in the character's virtual canvas units. Positive dy is downwards, as on the sheet. */
   dx: number;
   dy: number;
+  /** Depth, only meaningful in 3D: towards the viewer is positive. */
+  dz?: number;
   /** Size multiplier. */
   s: number;
 }
 
+/**
+ * Virtual canvas units per world unit in 3D. The sheet is 720 units tall and the
+ * 3D characters are about four units tall, so one number moves a part by the same
+ * fraction of the character in either view.
+ */
+export const UNITS_PER_WORLD = 180;
+
 export type LayoutMap = Record<string, PartTransform>;
 
-export const NEUTRAL: PartTransform = { dx: 0, dy: 0, s: 1 };
+export const NEUTRAL: PartTransform = { dx: 0, dy: 0, dz: 0, s: 1 };
 export const MIN_SCALE = 0.45;
 export const MAX_SCALE = 2.2;
 
@@ -195,9 +204,10 @@ export function normalizeLayout(layout?: Partial<Record<string, Partial<PartTran
     if (!v || typeof v !== 'object') continue;
     const dx = Number(v.dx) || 0;
     const dy = Number(v.dy) || 0;
+    const dz = Number(v.dz) || 0;
     const s = clamp(Number(v.s) || 1, MIN_SCALE, MAX_SCALE);
-    if (dx === 0 && dy === 0 && s === 1) continue;
-    out[k] = { dx, dy, s };
+    if (dx === 0 && dy === 0 && dz === 0 && s === 1) continue;
+    out[k] = { dx, dy, dz, s };
   }
   return out;
 }
@@ -208,10 +218,11 @@ export function withTransform(layout: LayoutMap, categoryId: string, patch: Part
   const next: PartTransform = {
     dx: patch.dx ?? cur.dx,
     dy: patch.dy ?? cur.dy,
+    dz: patch.dz ?? cur.dz ?? 0,
     s: clamp(patch.s ?? cur.s, MIN_SCALE, MAX_SCALE),
   };
   const out = { ...layout };
-  if (next.dx === 0 && next.dy === 0 && next.s === 1) delete out[categoryId];
+  if (next.dx === 0 && next.dy === 0 && next.dz === 0 && next.s === 1) delete out[categoryId];
   else out[categoryId] = next;
   return out;
 }

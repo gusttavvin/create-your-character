@@ -97,8 +97,8 @@ export default function Builder({ def, initial }: Props) {
     speak(`No ${category.label.toLowerCase()}`);
   }, []);
 
-  const movePart = useCallback((categoryId: string, dx: number, dy: number) => {
-    setLayout((l) => withTransform(l, categoryId, { dx, dy }));
+  const movePart = useCallback((categoryId: string, dx: number, dy: number, dz?: number) => {
+    setLayout((l) => withTransform(l, categoryId, dz === undefined ? { dx, dy } : { dx, dy, dz }));
     setDirty(true);
   }, []);
 
@@ -109,7 +109,7 @@ export default function Builder({ def, initial }: Props) {
   }, []);
 
   const resetPart = useCallback((categoryId: string) => {
-    setLayout((l) => withTransform(l, categoryId, { dx: 0, dy: 0, s: 1 }));
+    setLayout((l) => withTransform(l, categoryId, { dx: 0, dy: 0, dz: 0, s: 1 }));
     setDirty(true);
     playClick();
   }, []);
@@ -189,7 +189,7 @@ export default function Builder({ def, initial }: Props) {
               </button>
             </div>
             <span className="hint">
-              {mode === '3d' ? 'Drag to spin · scroll to zoom' : 'Drag a piece onto the picture, or tap it'}
+              {mode === '3d' ? 'Drag a piece to move it · drag the background to spin' : 'Drag a piece onto the picture, or tap it'}
             </span>
           </div>
 
@@ -206,22 +206,21 @@ export default function Builder({ def, initial }: Props) {
             onMove={movePart}
           />
 
-          {mode === '2d' && (
-            <AdjustBar
-              def={def}
-              parts={parts}
-              layout={layout}
-              selected={selected}
-              onSelect={setSelected}
-              onScale={scalePart}
-              onReset={resetPart}
-              onResetAll={() => {
-                setLayout({});
-                setDirty(true);
-                playClick();
-              }}
-            />
-          )}
+          <AdjustBar
+            def={def}
+            mode={mode}
+            parts={parts}
+            layout={layout}
+            selected={selected}
+            onSelect={setSelected}
+            onScale={scalePart}
+            onReset={resetPart}
+            onResetAll={() => {
+              setLayout({});
+              setDirty(true);
+              playClick();
+            }}
+          />
 
           <Sentence def={def} parts={parts} name={name || undefined} onRead={readAloud} />
 

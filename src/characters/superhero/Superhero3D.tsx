@@ -18,6 +18,7 @@ import {
 } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Part3D from '../../components/Part3D';
 
 /**
  * The hero in 3D, built to the same skeleton as the drawing in `parts.tsx`.
@@ -904,10 +905,12 @@ export default function Superhero3D({ parts, colors }: { parts: PartMap; colors:
 
   return (
     <group position={[0, 0.02, 0]}>
-      <Cape kind={cape} color={eff.cape} grad={grad} />
-      <Suit kind={suit} color={eff.suit} skin={eff.skin} grad={grad} />
-      <Emblem kind={emblem} color={eff.suit} grad={grad} />
-      {boots ? <Boots kind={boots} color={eff.suit} grad={grad} /> : <BareFeet color={eff.skin} grad={grad} />}
+      <Part3D id="cape"><Cape kind={cape} color={eff.cape} grad={grad} /></Part3D>
+      <Part3D id="suit"><Suit kind={suit} color={eff.suit} skin={eff.skin} grad={grad} /></Part3D>
+      <Part3D id="emblem"><Emblem kind={emblem} color={eff.suit} grad={grad} /></Part3D>
+      <Part3D id="boots">
+        {boots ? <Boots kind={boots} color={eff.suit} grad={grad} /> : <BareFeet color={eff.skin} grad={grad} />}
+      </Part3D>
 
       {/* head — the face is the 2D drawing, projected */}
       <mesh position={[0, HEAD_Y, 0]}>
@@ -929,8 +932,8 @@ export default function Superhero3D({ parts, colors }: { parts: PartMap; colors:
       </Pair>
 
       {mask !== 'helmet' && <Hair grad={grad} />}
-      <Mask kind={mask} color={eff.suit} grad={grad} />
-      <Powers kind={power} grad={grad} />
+      <Part3D id="mask"><Mask kind={mask} color={eff.suit} grad={grad} /></Part3D>
+      <Part3D id="power"><Powers kind={power} grad={grad} /></Part3D>
     </group>
   );
 }

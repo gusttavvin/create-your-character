@@ -33,8 +33,8 @@ interface Props {
   /** Category the child is currently adjusting. */
   selected?: string | null;
   onSelect?: (categoryId: string | null) => void;
-  /** New offset for a part, in virtual canvas units. */
-  onMove?: (categoryId: string, dx: number, dy: number) => void;
+  /** New offset for a part, in virtual canvas units (dz only matters in 3D). */
+  onMove?: (categoryId: string, dx: number, dy: number, dz?: number) => void;
 }
 
 /** The taped sheet of paper where the character appears (2D layers or a 3D canvas). */
@@ -130,7 +130,16 @@ export default function Stage({
               </div>
             }
           >
-            <Character3D kind={kind} parts={parts} colors={colors} />
+            <Character3D
+              kind={kind}
+              parts={parts}
+              colors={colors}
+              layout={layout}
+              editable={!!interactive}
+              selected={selected}
+              onSelect={onSelect}
+              onMove={onMove}
+            />
           </Suspense>
         ) : (
           <Character2D kind={kind} parts={parts} colors={colors} layout={layout} />

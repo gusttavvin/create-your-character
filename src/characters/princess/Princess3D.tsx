@@ -11,6 +11,7 @@ import { DRESS_SHOWS_FEET, FaceBlush } from './parts';
 import { INK3D, pickPart, starShape, useGradientMap, usePatternTexture, useSvgTexture } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Part3D from '../../components/Part3D';
 
 /*
  * The same girl as the 2D drawing, in the round.
@@ -563,7 +564,7 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
 
   return (
     <group position={[0, -0.05, 0]}>
-      <Dress kind={dressKind} color={eff.dress} skin={eff.skin} grad={grad} />
+      <Part3D id="dress"><Dress kind={dressKind} color={eff.dress} skin={eff.skin} grad={grad} /></Part3D>
 
       {/* her neck: the bodice closes round the bottom of it, her chin covers the top */}
       <mesh position={[0, (CHIN_Y + SHOULDER_Y) / 2 - 0.04, 0]}>
@@ -593,9 +594,9 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
         </group>
       ))}
 
-      <Hair kind={pickPart(parts.hair, 'long')} dress={dressKind} color={eff.hair} grad={grad} />
-      <Crown kind={pickPart(parts.crown, 'tiara')} grad={grad} />
-      <Accessory kind={pickPart(parts.accessory, 'wand')} grad={grad} />
+      <Part3D id="hair"><Hair kind={pickPart(parts.hair, 'long')} dress={dressKind} color={eff.hair} grad={grad} /></Part3D>
+      <Part3D id="crown"><Crown kind={pickPart(parts.crown, 'tiara')} grad={grad} /></Part3D>
+      <Part3D id="accessory"><Accessory kind={pickPart(parts.accessory, 'wand')} grad={grad} /></Part3D>
     </group>
   );
 }
