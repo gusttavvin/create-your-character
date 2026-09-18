@@ -166,3 +166,58 @@ export function pickPart(id: string | undefined | null, fallback: string): strin
 
 export { usePatternTexture, getPatternTexture } from './pattern';
 export type { PatternKind, PatternSpec } from './pattern';
+
+/**
+ * A ball with soft lumps on it, the way the kit's round monster is drawn: the 2D
+ * body is not a circle but a blob with rounded nubs around its outline, and a
+ * plain sphere in 3D reads as a beach ball instead of the same creature.
+ *
+ * Bump centres are spread over the sphere with a golden-angle spiral (skipping the
+ * underside, which the drawing leaves smooth) and every vertex is pushed out along
+ * its own direction by the sum of a Gaussian falloff around each centre. Because
+ * the displacement is a function of the direction alone, it is seamless: no gap at
+ * the UV seam and no spike at the poles.
+ */
+export function blobGeometry(opts: {
+  radius?: number;
+  segments?: number;
+  bumps?: number;
+  /** Bump height, as a fraction of the radius. */
+  amount?: number;
+  /** Angular width of one bump, in radians. */
+  spread?: number;
+  /** Bumps below this height (-1 bottom, 1 top) are dropped. */
+  minY?: number;
+  seed?: number;
+} = {}) {
+  const { radius = 1, segments = 96, bumps = 14, amount = 0.13, spread = 0.3, minY = -0.45, seed = 1.7 } = opts;
+
+  const centres: THREE.Vector3[] = [];
+  const candidates = Math.ceil(bumps * 1.7);
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < candidates && centres.length < bumps; i++) {
+    const y = 1 - (2 * (i + 0.5)) / candidates;
+    if (y < minY) continue;
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = golden * i + seed;
+    centres.push(new THREE.Vector3(Math.cos(a) * ring, y, Math.sin(a) * ring));
+  }
+
+  const geo = new THREE.SphereGeometry(radius, segments, Math.round(segments * 0.7));
+  const pos = geo.attributes.position;
+  const v = new THREE.Vector3();
+  const twoSigmaSq = 2 * spread * spread;
+  for (let k = 0; k < pos.count; k++) {
+    v.fromBufferAttribute(pos, k).normalize();
+    let d = 0;
+    for (const c of centres) {
+      const ang = Math.acos(Math.min(1, Math.max(-1, v.dot(c))));
+      d += Math.exp(-(ang * ang) / twoSigmaSq);
+    }
+    v.multiplyScalar(radius * (1 + amount * Math.min(d, 1.7)));
+    pos.setXYZ(k, v.x, v.y, v.z);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  return geo;
+}
