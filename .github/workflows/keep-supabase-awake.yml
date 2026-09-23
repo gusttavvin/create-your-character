@@ -50,5 +50,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/keepalive.txt
-          git diff --staged --quiet || git commit -m 'Keep the scheduled workflow alive'
+          # [CI Skip] keeps Cloudflare from rebuilding the site for a date stamp
+          git diff --staged --quiet || git commit -m 'Keep the scheduled workflow alive [CI Skip]'
           git push
