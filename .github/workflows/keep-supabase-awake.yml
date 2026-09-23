@@ -1,0 +1,54 @@
+name: Keep Supabase awake
+
+# Supabase pauses a free project after about a week without activity, which would
+# take down sign-in, saving and the teacher area until someone unpauses it by hand.
+# A tiny read once a day counts as activity, so the project never goes to sleep
+# during a school break.
+
+on:
+  schedule:
+    - cron: '17 12 * * *' # every day, 09:17 in Brasília
+  workflow_dispatch: # and whenever you press "Run workflow"
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read one row from the database
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' \
+            "$URL/rest/v1/characters?select=id&limit=1" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "HTTP $code"
+          head -c 300 /tmp/body; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase answered $code — the project may be paused. Open https://supabase.com/dashboard to restore it."
+            exit 1
+          fi
+
+  # GitHub switches scheduled workflows off after 60 days with no commits, which
+  # would quietly stop the ping above. One commit a month keeps the repository
+  # awake so the schedule keeps running on its own.
+  heartbeat:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stamp the date on the first of the month
+        run: |
+          if [ "$(date -u +%d)" != "01" ]; then
+            echo "Not the first of the month, nothing to do."
+            exit 0
+          fi
+          date -u +'%Y-%m-%d' > .github/keepalive.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/keepalive.txt
+          git diff --staged --quiet || git commit -m 'Keep the scheduled workflow alive'
+          git push
