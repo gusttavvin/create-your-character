@@ -95,7 +95,10 @@ export default function Stage({
       if (ev.cancelable) ev.preventDefault();
       onMove?.(id, base.dx + px / unit, base.dy + py / unit);
     };
-    const stop = () => {
+    const stop = (ev: PointerEvent) => {
+      // a quick flick can end before the browser sends a single move, so the
+      // piece lands where the finger was lifted rather than not moving at all
+      if (ev.type === 'pointerup') move(ev);
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);

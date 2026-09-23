@@ -89,9 +89,15 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
     }
 
     const world = new THREE.Vector3();
+    let moved = false;
     const move = (ev: PointerEvent) => {
-      const px = (ev.clientX - startX) * perPx;
-      const py = (ev.clientY - startY) * perPx;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      // a tap only picks the piece up; it takes a real movement to shift it
+      if (!moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+      moved = true;
+      const px = dx * perPx;
+      const py = dy * perPx;
       world.set(0, 0, 0).addScaledVector(right, px).addScaledVector(up, -py);
       ctx?.onMove?.(
         id,
@@ -100,7 +106,10 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
         base.dz + world.z * UNITS_PER_WORLD,
       );
     };
-    const stop = () => {
+    const stop = (ev: PointerEvent) => {
+      // a quick flick can end before the browser sends a single move, so the
+      // piece lands where the finger was lifted rather than not moving at all
+      if (ev.type === 'pointerup') move(ev);
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
