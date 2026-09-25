@@ -26,6 +26,75 @@ function measure(group: THREE.Group, box: THREE.Box3) {
 }
 
 /**
+ * Picking a piece up and dragging it across the plane facing the camera, so it follows
+ * the finger from whatever angle the model is turned to. Shared by the pieces built from
+ * shapes (Part3D) and by the modelled characters, whose pieces are groups in a GLB.
+ *
+ * Returns a pointer-down handler: give it the row the piece belongs to and the point, in
+ * world space, the piece moves about.
+ */
+export function useDragPart() {
+  const ctx = useContext(Layout3DContext);
+  const camera = useThree((s) => s.camera);
+  const viewport = useThree((s) => s.size);
+  const controls = useThree((s) => s.controls) as { enabled?: boolean; autoRotate?: boolean } | null;
+
+  return (e: ThreeEvent<PointerEvent>, id: string, anchor: THREE.Vector3) => {
+    if (!ctx?.editable) return;
+    e.stopPropagation();
+    ctx.onSelect?.(id);
+
+    const t = ctx.layout[id] ?? NEUTRAL;
+    const dist = Math.max(0.5, camera.position.distanceTo(anchor));
+    const fov = ((camera as THREE.PerspectiveCamera).fov ?? 40) * (Math.PI / 180);
+    const perPx = (2 * Math.tan(fov / 2) * dist) / viewport.height;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+
+    const startX = e.nativeEvent.clientX;
+    const startY = e.nativeEvent.clientY;
+    const base = { dx: t.dx, dy: t.dy, dz: t.dz ?? 0 };
+    const wasRotating = controls?.autoRotate;
+    if (controls) {
+      controls.enabled = false; // the model holds still while the piece is dragged
+      controls.autoRotate = false;
+    }
+
+    const world = new THREE.Vector3();
+    let moved = false;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      // a tap only picks the piece up; it takes a real movement to shift it
+      if (!moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+      moved = true;
+      world.set(0, 0, 0).addScaledVector(right, dx * perPx).addScaledVector(up, -dy * perPx);
+      ctx.onMove?.(
+        id,
+        base.dx + world.x * UNITS_PER_WORLD,
+        base.dy - world.y * UNITS_PER_WORLD,
+        base.dz + world.z * UNITS_PER_WORLD,
+      );
+    };
+    const stop = (ev: PointerEvent) => {
+      // a quick flick can end before the browser sends a single move, so the
+      // piece lands where the finger was lifted rather than not moving at all
+      if (ev.type === 'pointerup') move(ev);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      if (controls) {
+        controls.enabled = true;
+        controls.autoRotate = wasRotating;
+      }
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+  };
+}
+
+/**
  * One movable piece of a 3D character.
  *
  * It carries the category's offset and size from the layout the child built, and lets
@@ -50,10 +119,6 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
   const spun = useRef(new THREE.Vector3());
   /** False while the category is erased: nothing to pick up or drag. */
   const solid = useRef(false);
-  const camera = useThree((s) => s.camera);
-  const viewport = useThree((s) => s.size);
-  const controls = useThree((s) => s.controls) as { enabled?: boolean; autoRotate?: boolean } | null;
-
   const editable = !!ctx?.editable;
   const picked = editable && ctx?.selected === id;
 
@@ -100,60 +165,10 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
     return () => undo.forEach((f) => f());
   });
 
+  const drag = useDragPart();
   const start = (e: ThreeEvent<PointerEvent>) => {
-    if (!editable || !solid.current) return;
-    e.stopPropagation();
-    ctx?.onSelect?.(id);
-
-    const g = inner.current;
-    if (!g) return;
-    const anchor = g.localToWorld(centre.current.clone());
-    const dist = Math.max(0.5, camera.position.distanceTo(anchor));
-    const fov = ((camera as THREE.PerspectiveCamera).fov ?? 40) * (Math.PI / 180);
-    const perPx = (2 * Math.tan(fov / 2) * dist) / viewport.height;
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-
-    const startX = e.nativeEvent.clientX;
-    const startY = e.nativeEvent.clientY;
-    const base = { dx: t.dx, dy: t.dy, dz: t.dz ?? 0 };
-    const wasRotating = controls?.autoRotate;
-    if (controls) {
-      controls.enabled = false; // the model holds still while the piece is dragged
-      controls.autoRotate = false;
-    }
-
-    const world = new THREE.Vector3();
-    let moved = false;
-    const move = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      // a tap only picks the piece up; it takes a real movement to shift it
-      if (!moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
-      moved = true;
-      world.set(0, 0, 0).addScaledVector(right, dx * perPx).addScaledVector(up, -dy * perPx);
-      ctx?.onMove?.(
-        id,
-        base.dx + world.x * UNITS_PER_WORLD,
-        base.dy - world.y * UNITS_PER_WORLD,
-        base.dz + world.z * UNITS_PER_WORLD,
-      );
-    };
-    const stop = (ev: PointerEvent) => {
-      // a quick flick can end before the browser sends a single move, so the
-      // piece lands where the finger was lifted rather than not moving at all
-      if (ev.type === 'pointerup') move(ev);
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', stop);
-      window.removeEventListener('pointercancel', stop);
-      if (controls) {
-        controls.enabled = true;
-        controls.autoRotate = wasRotating;
-      }
-    };
-    window.addEventListener('pointermove', move, { passive: true });
-    window.addEventListener('pointerup', stop);
-    window.addEventListener('pointercancel', stop);
+    if (!editable || !solid.current || !inner.current) return;
+    drag(e, id, inner.current.localToWorld(centre.current.clone()));
   };
 
   return (

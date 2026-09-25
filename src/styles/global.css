@@ -1789,6 +1789,12 @@ a.game-card:hover {
   cursor: grab;
 }
 
+/* The layers that are not pieces (a face, a body) still catch the pointer, so a finger
+   on them is not taken for a finger on whatever piece is drawn behind them. */
+.stage.is-editing .char2d .part:not([data-part]) {
+  pointer-events: auto;
+}
+
 body.is-dragging .stage.is-editing .char2d [data-part] {
   cursor: grabbing;
 }

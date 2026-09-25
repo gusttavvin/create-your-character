@@ -72,13 +72,21 @@ export default function Stage({
   /**
    * Which piece the finger landed on.
    *
-   * Layers overlap: the fairy's hair covers her whole face, so the topmost layer under
-   * the pointer was the hair even when the child was clearly aiming at an eye. Of every
-   * piece under that point, the smallest one wins, which is the one they meant.
+   * First, the piece actually drawn under the finger: each layer is a square box that is
+   * mostly empty, and the fairy's wand box reaches over half her dress, so a finger on
+   * the dress used to pick the wand up. When what is drawn there is no piece at all (her
+   * face, which is not a row of the sheet), every piece whose box is under that point is
+   * a candidate and the smallest wins: a finger on her cheek is aiming at an eye, not at
+   * the hair behind her head.
    */
   const partAt = (x: number, y: number): HTMLElement | null => {
+    const under = document.elementsFromPoint(x, y);
+    const drawn = under.find((el) => el instanceof SVGGeometryElement && innerRef.current?.contains(el));
+    const piece = drawn?.closest<HTMLElement>('[data-part]');
+    if (piece) return piece;
+
     const hosts: HTMLElement[] = [];
-    for (const el of document.elementsFromPoint(x, y)) {
+    for (const el of under) {
       const host = (el as HTMLElement).closest?.<HTMLElement>('[data-part]');
       if (host && innerRef.current?.contains(host) && !hosts.includes(host)) hosts.push(host);
     }

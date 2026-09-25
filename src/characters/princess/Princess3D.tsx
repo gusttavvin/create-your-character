@@ -696,7 +696,7 @@ function Accessory({ kind, grad }: { kind: string | null; grad: THREE.DataTextur
               <Ink thin />
             </mesh>
           )}
-          <Sparkles count={14} scale={[0.6, 0.6, 0.6]} position={[0, 0.85, 0]} size={3} speed={0.6} color="#FFD93D" />
+          <Sparkles raycast={() => null} count={14} scale={[0.6, 0.6, 0.6]} position={[0, 0.85, 0]} size={3} speed={0.6} color="#FFD93D" />
         </group>
       )}
     </group>

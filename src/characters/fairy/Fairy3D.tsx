@@ -1,4 +1,5 @@
-import { useContext, useMemo } from 'react';
+import { useContext, useLayoutEffect, useMemo, useRef } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import type { ColorMap, PartMap } from '../types';
@@ -7,7 +8,8 @@ import { resolveFairyColors } from './config';
 import { pickPart, starShape } from '../../lib/three';
 import { shade } from '../../lib/color';
 import { Layout3DContext } from '../../components/layout3d';
-import { Fadinha, type FadinhaPart, type PartOverride } from '../../components/Fadinha';
+import { Fadinha, type FadinhaHandle, type FadinhaPart, type PartOverride } from '../../components/Fadinha';
+import Part3D, { useDragPart } from '../../components/Part3D';
 
 /**
  * The fairy in 3D: a modelled character (`public/models/fadinha.glb`) rather than a pile
@@ -31,6 +33,12 @@ const OWNS: Record<string, FadinhaPart[]> = {
   crown: ['Flor_E', 'Flor_D'],
   eyes: ['Olhos'],
 };
+
+/** The row each group of the model belongs to, for picking a piece up off the model. */
+const ROW_OF = new Map<string, string>(Object.entries(OWNS).flatMap(([row, groups]) => groups.map((g) => [g, row] as const)));
+
+/** The blue the sheet glows with when a piece is picked (--sky). */
+const PICKED = new THREE.Color('#2bb3ff');
 
 /**
  * How each choice in a row changes the piece it owns.
@@ -123,7 +131,9 @@ function Wand({ kind }: { kind: string | null }) {
             </mesh>
           </group>
         )}
-        <Sparkles count={14} scale={[0.7, 0.7, 0.7]} size={3} speed={0.6} color="#FFD93D" />
+        {/* the sparkles are a wide cloud of points: left pickable, they caught the finger
+            meant for the dress and dragged the wand instead */}
+        <Sparkles raycast={() => null} count={14} scale={[0.7, 0.7, 0.7]} size={3} speed={0.6} color="#FFD93D" />
       </group>
     </group>
   );
@@ -131,7 +141,10 @@ function Wand({ kind }: { kind: string | null }) {
 
 export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: ColorMap }) {
   const eff = resolveFairyColors(parts, colors);
-  const layout = useContext(Layout3DContext)?.layout;
+  const ctx = useContext(Layout3DContext);
+  const layout = ctx?.layout;
+  const model = useRef<FadinhaHandle>(null);
+  const drag = useDragPart();
 
   const dress = pickPart(parts.dress, 'petal');
   const wings = pickPart(parts.wings, 'butterfly');
@@ -177,10 +190,53 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
     return out;
   }, [dress, wings, hair, crown, eyes, eff.dress, eff.hair, eff.wings, layout]);
 
+  /**
+   * A finger on the model picks up the piece under it: the dress, the wings, the hair,
+   * the blossoms or the eyes. Her face, arms and legs belong to no row, so a finger there
+   * turns the model instead, as a finger on the background does.
+   */
+  const pickUp = (e: ThreeEvent<PointerEvent>) => {
+    if (!ctx?.editable) return;
+    let o: THREE.Object3D | null = e.object;
+    while (o && !ROW_OF.has(o.name)) o = o.parent;
+    if (!o || !o.visible) return;
+    const row = ROW_OF.get(o.name)!;
+    const anchor = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    drag(e, row, anchor);
+  };
+
+  // the picked piece glows blue, as a picked piece does on the sheet
+  const selected = ctx?.editable ? ctx.selected : null;
+  useLayoutEffect(() => {
+    const groups = selected ? OWNS[selected] : undefined;
+    const parts = model.current?.parts;
+    if (!groups || !parts) return;
+    const undo: (() => void)[] = [];
+    for (const name of groups) {
+      parts[name as FadinhaPart]?.traverse((child) => {
+        const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+        if (!(child as THREE.Mesh).isMesh || !mat?.emissive) return;
+        const was = mat.emissive.clone();
+        const wasI = mat.emissiveIntensity;
+        mat.emissive.copy(PICKED);
+        mat.emissiveIntensity = 0.45;
+        undo.push(() => {
+          mat.emissive.copy(was);
+          mat.emissiveIntensity = wasI;
+        });
+      });
+    }
+    return () => undo.forEach((f) => f());
+  }, [selected, overrides]);
+
   return (
     <group>
-      <Fadinha scale={MODEL_SCALE} position={[0, FEET_Y, 0]} parts={overrides} />
-      <Wand kind={wand} />
+      <group onPointerDown={ctx?.editable ? pickUp : undefined}>
+        <Fadinha ref={model} scale={MODEL_SCALE} position={[0, FEET_Y, 0]} parts={overrides} />
+      </group>
+      <Part3D id="wand">
+        <Wand kind={wand} />
+      </Part3D>
     </group>
   );
 }

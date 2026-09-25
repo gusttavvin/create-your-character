@@ -433,7 +433,7 @@ function Boot({ kind, base, grad }: { kind: string; base: string; grad: THREE.Da
                 <meshBasicMaterial color="#FFD93D" />
               </mesh>
             </group>
-            <Sparkles count={8} scale={[0.35, 0.5, 0.35]} position={[0, -0.24, 0]} size={2.5} speed={1.2} color="#FF8A2A" />
+            <Sparkles raycast={() => null} count={8} scale={[0.35, 0.5, 0.35]} position={[0, -0.24, 0]} size={2.5} speed={1.2} color="#FF8A2A" />
           </group>
         </>
       )}
@@ -755,7 +755,7 @@ function Power({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
             </mesh>
           ))}
       </group>
-      <Sparkles
+      <Sparkles raycast={() => null}
         count={kind === 'ice' ? 10 : 14}
         scale={[0.6, 0.7, 0.6]}
         position={[0.06, -0.2, 0.04]}
