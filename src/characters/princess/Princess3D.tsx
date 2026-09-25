@@ -276,39 +276,105 @@ function hairEnvelope(y: number) {
 }
 
 /**
- * Long hair falls all the way to her shoes. Below the waist it follows whichever
- * skirt she is wearing (a little outside it), so it drapes over the dress instead
- * of disappearing inside it.
+ * One lock of hair: a round strand that runs down the points given and ends in a soft
+ * point. A dozen of them side by side read as a head of hair, where one revolved shell
+ * only ever read as two flat planks with a cut edge down each side of her face.
  */
-function longHairProfile(skirt: [number, number][]): [number, number][] {
-  const top = HEAD_Y + HEAD_R + 0.06;
-  const bottom = -1.68;
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= 30; i++) {
-    const y = bottom + ((top - bottom) * i) / 30;
-    const sk = skirtRadius(skirt, y);
-    pts.push([Math.max(hairEnvelope(y), sk > 0 ? sk + 0.07 : 0), y]);
-  }
-  return pts;
+function Lock({
+  pts,
+  r,
+  color,
+  grad,
+  tex,
+}: {
+  pts: [number, number, number][];
+  r: number;
+  color: string;
+  grad: THREE.DataTexture;
+  tex: THREE.Texture | null;
+}) {
+  const curve = useMemo(() => new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))), [pts]);
+  const top = pts[0];
+  const end = pts[pts.length - 1];
+  return (
+    <group>
+      <mesh>
+        <tubeGeometry args={[curve, 30, r, 12, false]} />
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink thin />
+      </mesh>
+      <mesh position={top}>
+        <sphereGeometry args={[r, 14, 14]} />
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink thin />
+      </mesh>
+      <mesh position={end} scale={[1, 1.5, 1]}>
+        <sphereGeometry args={[r * 0.72, 14, 14]} />
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink thin />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Where a lock hangs: round the back and the sides of her head, never across her face.
+ * `spread` is how far round from straight back each side reaches, in radians.
+ */
+function lockAngles(n: number, spread: number) {
+  return Array.from({ length: n }, (_, i) => Math.PI - spread + ((2 * spread) / (n - 1)) * i);
 }
 
 function Hair({ kind, dress, color, grad }: { kind: string | null; dress: string | null; color: string; grad: THREE.DataTexture }) {
   const tex = usePatternTexture(skinOf(HAIR_SKIN, kind, color));
-  // open at the front by 150°, so her face stays clear
-  const fall = useMemo(() => lathe(longHairProfile(SKIRT[dress ?? 'gown'] ?? SKIRT.gown), Math.PI * 0.42, Math.PI * 1.16), [dress]);
+  const skirt = SKIRT[dress ?? 'gown'] ?? SKIRT.gown;
+
+  /** Long hair: strands from under the cap down past the waist, draping over the skirt. */
+  const long = useMemo(() => {
+    const out: { pts: [number, number, number][]; r: number }[] = [];
+    const angles = lockAngles(13, 1.75);
+    angles.forEach((a, i) => {
+      const sway = Math.sin(i * 1.7) * 0.05;
+      const at = (y: number, pad: number) => {
+        const rad = Math.max(hairEnvelope(y), skirtRadius(skirt, y) + 0.05) + pad;
+        return [Math.sin(a) * rad, y, Math.cos(a) * rad] as [number, number, number];
+      };
+      out.push({
+        pts: [at(HEAD_Y + 0.42, 0.02), at(HEAD_Y - 0.15, 0.03), at(SHOULDER_Y - 0.1, 0.05), at(-0.62, 0.06 + sway), at(-1.34, 0.05 + sway)],
+        r: 0.105,
+      });
+    });
+    return out;
+  }, [skirt]);
+
+  /** The two locks brought forward over her shoulders, so hair frames her face. */
+  const front = useMemo(
+    () =>
+      [1, -1].map((side) => ({
+        side,
+        pts: [
+          [side * 0.5, HEAD_Y + 0.2, 0.26],
+          [side * 0.58, HEAD_Y - 0.3, 0.3],
+          [side * 0.52, -0.1, 0.34],
+          [side * 0.44, -0.72, 0.3],
+        ] as [number, number, number][],
+      })),
+    [],
+  );
+
   const curls = useMemo(() => {
     const arr: [number, number, number, number][] = [];
-    for (let i = 0; i < 26; i++) {
-      const ring = i < 18 ? 0 : 1;
-      const n = ring === 0 ? 18 : 8;
-      const k = ring === 0 ? i : i - 18;
-      const a = (k / n) * Math.PI * 2;
-      const rad = ring === 0 ? 0.64 : 0.52;
-      const y = ring === 0 ? HEAD_Y + 0.18 + (k % 2 === 0 ? 0.14 : -0.06) : HEAD_Y - 0.62 + (k % 2 === 0 ? 0.1 : 0);
-      arr.push([Math.cos(a) * rad, y, Math.sin(a) * rad - 0.05, 0.2 + (k % 3) * 0.035]);
-    }
+    const angles = lockAngles(11, 2.1);
+    angles.forEach((a, i) => {
+      const rows = [HEAD_Y + 0.28, HEAD_Y - 0.12, HEAD_Y - 0.52];
+      rows.forEach((y, row) => {
+        const rad = HEAD_R + 0.12 + row * 0.06;
+        arr.push([Math.sin(a) * rad, y + (i % 2 === 0 ? 0.05 : -0.04), Math.cos(a) * rad, 0.19 + ((i + row) % 3) * 0.03]);
+      });
+    });
     return arr;
   }, []);
+
   if (!kind) return null;
 
   return (
@@ -320,52 +386,74 @@ function Hair({ kind, dress, color, grad }: { kind: string | null; dress: string
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
+      {/* and the back of her head, which the cap alone leaves bare */}
+      <mesh position={[0, HEAD_Y, -0.08]} scale={[1, 1, 0.92]}>
+        <sphereGeometry args={[HEAD_R + 0.06, 40, 40, Math.PI * 0.16, Math.PI * 1.68, 0, Math.PI * 0.72]} />
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink />
+      </mesh>
 
       {kind === 'long' && (
         <>
-          <mesh geometry={fall}>
-            <Toon color={color} map={grad} tex={tex} side={THREE.DoubleSide} />
-            <Ink />
-          </mesh>
-          {/* two locks brought forward over her shoulders */}
-          {[1, -1].map((s) => (
-            <group key={s} scale={[s, 1, 1]}>
-              <mesh position={[0.42, 0.06, 0.38]} rotation={[0.15, 0, 0.1]}>
-                <capsuleGeometry args={[0.15, 0.78, 6, 16]} />
-                <Toon color={color} map={grad} tex={tex} />
-                <Ink thin />
-              </mesh>
+          {long.map((l, i) => (
+            <Lock key={i} pts={l.pts} r={l.r} color={color} grad={grad} tex={tex} />
+          ))}
+          {front.map((f) => (
+            <Lock key={f.side} pts={f.pts} r={0.11} color={color} grad={grad} tex={tex} />
+          ))}
+        </>
+      )}
+
+      {kind === 'braids' && (
+        <>
+          {lockAngles(7, 1.5).map((a, i) => {
+            const rad = HEAD_R + 0.08;
+            const pts: [number, number, number][] = [
+              [Math.sin(a) * rad, HEAD_Y + 0.3, Math.cos(a) * rad],
+              [Math.sin(a) * (rad + 0.02), HEAD_Y - 0.25, Math.cos(a) * (rad + 0.02)],
+              [Math.sin(a) * (rad + 0.02), HEAD_Y - 0.5, Math.cos(a) * (rad + 0.02)],
+            ];
+            return <Lock key={i} pts={pts} r={0.1} color={color} grad={grad} tex={tex} />;
+          })}
+          {[1, -1].map((side) => (
+            <group key={side} scale={[side, 1, 1]}>
+              <group position={[0.58, HEAD_Y - 0.22, 0.12]}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <mesh key={i} position={[i % 2 === 0 ? 0.035 : -0.035, -i * 0.26, 0]} scale={[1, 0.92, 1]}>
+                    <sphereGeometry args={[0.165, 18, 18]} />
+                    <Toon color={color} map={grad} tex={tex} />
+                    <Ink thin />
+                  </mesh>
+                ))}
+                <mesh position={[0, -1.22, 0]} rotation={[0, 0, Math.PI / 2]}>
+                  <boxGeometry args={[0.12, 0.3, 0.12]} />
+                  <Toon color="#FF6B78" map={grad} />
+                  <Ink thin />
+                </mesh>
+              </group>
             </group>
           ))}
         </>
       )}
 
-      {kind === 'braids' &&
-        [1, -1].map((s) => (
-          <group key={s} scale={[s, 1, 1]}>
-            <group position={[0.6, 0.8, 0.18]}>
-              {[0, 1, 2, 3, 4].map((i) => (
-                <mesh key={i} position={[i % 2 === 0 ? 0.035 : -0.035, -i * 0.26, 0]}>
-                  <sphereGeometry args={[0.17, 18, 18]} />
-                  <Toon color={color} map={grad} tex={tex} />
-                  <Ink thin />
-                </mesh>
-              ))}
-              <mesh position={[0, -1.22, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <boxGeometry args={[0.12, 0.3, 0.12]} />
-                <Toon color="#FF6B78" map={grad} />
-                <Ink thin />
-              </mesh>
-            </group>
-          </group>
-        ))}
-
       {kind === 'bun' && (
-        <mesh position={[0, HEAD_Y + HEAD_R + 0.22, -0.08]}>
-          <sphereGeometry args={[0.32, 24, 24]} />
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink />
-        </mesh>
+        <>
+          <mesh position={[0, HEAD_Y + HEAD_R + 0.2, -0.06]}>
+            <sphereGeometry args={[0.34, 26, 26]} />
+            <Toon color={color} map={grad} tex={tex} />
+            <Ink />
+          </mesh>
+          {/* the hair gathered up into it */}
+          {lockAngles(9, 1.9).map((a, i) => {
+            const rad = HEAD_R + 0.05;
+            const pts: [number, number, number][] = [
+              [Math.sin(a) * rad, HEAD_Y - 0.36, Math.cos(a) * rad],
+              [Math.sin(a) * rad * 0.7, HEAD_Y + 0.28, Math.cos(a) * rad * 0.7],
+              [Math.sin(a) * 0.12, HEAD_Y + HEAD_R + 0.05, Math.cos(a) * 0.12],
+            ];
+            return <Lock key={i} pts={pts} r={0.085} color={color} grad={grad} tex={tex} />;
+          })}
+        </>
       )}
 
       {kind === 'curly' &&

@@ -98,3 +98,13 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] 2D: o braço **atrás do corpo** e **na horizontal**, encaixando no corpinho.
 - [x] 3D: os braços também ficam na horizontal, como no desenho, com as mãos mais gordas.
 - [x] 3D: o **square** ficou peludo no corpo inteiro, não só na borda.
+
+## Terceira rodada
+
+- [x] **Fogo do dragão ainda não parecia fogo**: refeito a partir da silhueta desenhada
+      (pontas e reentrâncias), em cartas cruzadas para ter cara de chama de qualquer
+      ângulo, com laranja por fora, amarelo e branco no miolo, faíscas soltando e o jato
+      saindo na diagonal como no cartão.
+- [x] **Cabelo da princesa ainda ruim**: era uma casca revolvida que virava duas tábuas
+      lisas ao lado do rosto. Agora são mechas redondas — atrás, dos lados e duas por
+      cima dos ombros — e o mesmo vale para braids, bun e curly.

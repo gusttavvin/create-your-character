@@ -74,36 +74,49 @@ function aim(dir: THREE.Vector3) {
 
 /* ------------------------------------------------------------------ fire */
 
-/** The outline of one tongue of fire: fat near the mouth, drawn out to a point. */
-const TONGUE = latheBody(
-  [
-    [0, 0],
-    [0.26, 0.18],
-    [0.34, 0.5],
-    [0.28, 0.82],
-    [0.14, 1.12],
-    [0.04, 1.3],
-    [0, 1.4],
-  ],
-  24,
-  40,
-);
+/**
+ * The outline a child draws for fire: a tall middle point with smaller licks breaking
+ * away either side, and notches between them. It points up (+y) and is one unit wide.
+ */
+function flameShape() {
+  const f = new THREE.Shape();
+  // sharp points with round valleys between them, tall and narrow, the way fire is drawn
+  f.moveTo(0.24, 0);
+  f.quadraticCurveTo(0.34, 0.14, 0.38, 0.34); // right lick
+  f.quadraticCurveTo(0.2, 0.42, 0.16, 0.5);
+  f.quadraticCurveTo(0.3, 0.62, 0.34, 0.86); // second lick
+  f.quadraticCurveTo(0.18, 0.92, 0.12, 1.02);
+  f.quadraticCurveTo(0.18, 1.2, 0.14, 1.36);
+  f.lineTo(0.0, 1.82); // the tip
+  f.lineTo(-0.14, 1.3);
+  f.quadraticCurveTo(-0.2, 1.14, -0.12, 0.98);
+  f.quadraticCurveTo(-0.34, 0.9, -0.36, 0.64); // left lick
+  f.quadraticCurveTo(-0.2, 0.56, -0.16, 0.46);
+  f.quadraticCurveTo(-0.34, 0.32, -0.26, 0.1);
+  f.quadraticCurveTo(-0.16, 0.02, 0.24, 0);
+  f.closePath();
+  return f;
+}
 
-/** One tongue of flame, leaning by `tilt` and breathing at its own pace. */
-function Tongue({
+/** The flame silhouette, flat, ready to be crossed into a 3D-looking fire. */
+const FLAME_GEO = new THREE.ExtrudeGeometry(flameShape(), { depth: 0.07, bevelEnabled: false });
+
+/**
+ * One layer of fire: the same silhouette on three cards crossed about the jet, so the
+ * flame keeps a flame's outline from whatever side the model is turned to. Each layer
+ * breathes at its own pace, and the inner ones are shorter and hotter, which is how the
+ * drawing shades it: orange outside, yellow inside, white at the heart.
+ */
+function FlameLayer({
   grad,
   color,
   len,
-  tilt,
-  spin,
   phase,
   ink,
 }: {
   grad: THREE.DataTexture;
   color: string;
   len: number;
-  tilt: number;
-  spin: number;
   phase: number;
   ink?: boolean;
 }) {
@@ -111,36 +124,45 @@ function Tongue({
   useFrame(({ clock }) => {
     const g = ref.current;
     if (!g) return;
-    const t = clock.getElapsedTime() * 6 + phase;
-    g.scale.set(1 + Math.sin(t * 1.7) * 0.12, 1 + Math.sin(t) * 0.22, 1 + Math.sin(t * 1.3 + 1) * 0.12);
-    g.rotation.z = Math.sin(t * 0.8) * 0.12;
+    const t = clock.getElapsedTime() * 7 + phase;
+    g.scale.set(len * (1 + Math.sin(t * 1.6) * 0.09), len * (1 + Math.sin(t) * 0.2), len);
+    g.rotation.z = Math.sin(t * 0.7) * 0.1;
   });
   return (
-    <group rotation={[0, spin, 0]}>
-      <group rotation={[tilt, 0, 0]} ref={ref}>
-        <mesh geometry={TONGUE} scale={len} rotation={[Math.PI / 2, 0, 0]}>
-          <meshToonMaterial color={color} gradientMap={grad} />
-          {ink && <Ink thin />}
-        </mesh>
-      </group>
+    <group ref={ref} scale={len}>
+      {[0, 60, 120].map((deg) => (
+        <group key={deg} rotation={[0, (deg * Math.PI) / 180, 0]}>
+          <mesh geometry={FLAME_GEO} position={[0, 0, -0.035]}>
+            <meshToonMaterial color={color} gradientMap={grad} side={THREE.DoubleSide} />
+            {ink && <Ink thin />}
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
 
 /**
- * Fire, the way a child draws it: a bunch of pointed tongues of different sizes
- * licking out of the mouth, orange outside and white-hot in the middle, each one
- * breathing at its own pace. A single long cone only ever looked like a traffic cone.
+ * Fire: three crossed layers, hottest in the middle, leaning out of the mouth.
+ * A single cone only ever looked like a traffic cone, and smooth teardrops looked like
+ * balloons; this keeps the drawn outline from every angle.
  */
 function Flame({ grad, len = 1 }: { grad: THREE.DataTexture; len?: number }) {
   return (
-    <group>
-      <Tongue grad={grad} color="#FF7A1A" len={0.95 * len} tilt={0.06} spin={0} phase={0} ink />
-      <Tongue grad={grad} color="#FF9A1F" len={0.68 * len} tilt={0.38} spin={0.5} phase={1.7} />
-      <Tongue grad={grad} color="#FF9A1F" len={0.62 * len} tilt={-0.34} spin={-0.7} phase={3.1} />
-      <Tongue grad={grad} color="#FFC400" len={0.55 * len} tilt={0.18} spin={2.2} phase={0.9} />
-      <Tongue grad={grad} color="#FFC400" len={0.48 * len} tilt={-0.2} spin={-2.4} phase={2.4} />
-      <Tongue grad={grad} color="#FFF0C2" len={0.38 * len} tilt={0.04} spin={1.1} phase={4.2} />
+    <group rotation={[Math.PI / 2, 0, 0]}>
+      <FlameLayer grad={grad} color="#FF6A00" len={0.62 * len} phase={0} ink />
+      <FlameLayer grad={grad} color="#FFB01F" len={0.42 * len} phase={2.1} />
+      <FlameLayer grad={grad} color="#FFF0B8" len={0.24 * len} phase={4.2} />
+      {/* little licks breaking away past the tip, which is what says "fire" at a glance */}
+      {([
+        [0.3, 0.72, 0.17, '#FF8A1F'],
+        [-0.32, 0.9, 0.13, '#FFB01F'],
+        [0.12, 1.16, 0.11, '#FF6A00'],
+      ] as const).map(([x, y, k, c], i) => (
+        <group key={i} position={[x * len, y * len, 0]}>
+          <FlameLayer grad={grad} color={c} len={k * len} phase={1.1 + i * 1.7} ink />
+        </group>
+      ))}
     </group>
   );
 }
@@ -627,9 +649,9 @@ function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTex
           </CappedTube>
           {stations.slice(0, 5).map((s, i) => (
             <group key={i} position={[s.p.x, s.p.y, s.p.z]} quaternion={aim(s.out)}>
-              <group rotation={[-Math.PI / 2, 0, 0]}>
-                <Tongue grad={grad} color="#FF7A1A" len={0.34 + s.t * 0.3} tilt={0} spin={0} phase={i * 1.3} ink />
-                <Tongue grad={grad} color="#FFC400" len={0.2 + s.t * 0.2} tilt={0.1} spin={0.6} phase={i * 1.3 + 2} />
+              <group rotation={[Math.PI / 2, 0, 0]}>
+                <FlameLayer grad={grad} color="#FF6A00" len={0.24 + s.t * 0.22} phase={i * 1.3} ink />
+                <FlameLayer grad={grad} color="#FFB01F" len={0.14 + s.t * 0.14} phase={i * 1.3 + 2} />
               </group>
             </group>
           ))}
@@ -742,9 +764,10 @@ export default function Dragon3D({ parts, colors }: { parts: PartMap; colors: Co
       {fire && body && (
         <Part3D id="mouth">
           <OpenMouth grad={grad} pos={jaw} r={spec.snout ? spec.snout.r * 0.8 : 0.27} />
-          {/* the jet leans up and out, so the flame reads as a flame from the front */}
-          <group position={jet} rotation={[-0.45, 0, 0]}>
-            <Flame grad={grad} len={0.9} />
+          {/* the jet climbs and leans aside, the way the card draws it: fire aimed at the
+              viewer is only an orange blob, and fire straight up hides his own face */}
+          <group position={jet} rotation={[-0.62, 0.62, 0]}>
+            <Flame grad={grad} len={1.2} />
           </group>
         </Part3D>
       )}
