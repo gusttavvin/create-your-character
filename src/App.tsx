@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import GamesHome from './pages/GamesHome';
 import CharacterPicker from './pages/CharacterPicker';
 import BuilderPage from './pages/BuilderPage';
@@ -9,17 +10,19 @@ import TeacherPage from './pages/TeacherPage';
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<GamesHome />} />
-        <Route path="/create-your-character" element={<CharacterPicker />} />
-        <Route path="/build/:kind" element={<BuilderPage />} />
-        <Route path="/build/:kind/:id" element={<BuilderPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/c/:id" element={<CharacterPage />} />
-        <Route path="/teacher" element={<TeacherPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<GamesHome />} />
+          <Route path="/create-your-character" element={<CharacterPicker />} />
+          <Route path="/build/:kind" element={<BuilderPage />} />
+          <Route path="/build/:kind/:id" element={<BuilderPage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/c/:id" element={<CharacterPage />} />
+          <Route path="/teacher" element={<TeacherPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </ErrorBoundary>
   );
 }

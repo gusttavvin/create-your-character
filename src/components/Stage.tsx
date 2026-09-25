@@ -69,10 +69,30 @@ export default function Stage({
     });
   });
 
+  /**
+   * Which piece the finger landed on.
+   *
+   * Layers overlap: the fairy's hair covers her whole face, so the topmost layer under
+   * the pointer was the hair even when the child was clearly aiming at an eye. Of every
+   * piece under that point, the smallest one wins, which is the one they meant.
+   */
+  const partAt = (x: number, y: number): HTMLElement | null => {
+    const hosts: HTMLElement[] = [];
+    for (const el of document.elementsFromPoint(x, y)) {
+      const host = (el as HTMLElement).closest?.<HTMLElement>('[data-part]');
+      if (host && innerRef.current?.contains(host) && !hosts.includes(host)) hosts.push(host);
+    }
+    const area = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return r.width * r.height;
+    };
+    return hosts.reduce<HTMLElement | null>((best, el) => (!best || area(el) < area(best) ? el : best), null);
+  };
+
   /** Dragging a part that is already on the sheet moves it. */
   const startMove = (e: ReactPointerEvent) => {
     if (!editing) return;
-    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-part]');
+    const target = partAt(e.clientX, e.clientY);
     if (!target) {
       onSelect?.(null);
       return;

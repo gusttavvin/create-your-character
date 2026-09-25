@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ERASED,
+  NEUTRAL,
   emptyParts,
   normalizeColors,
   normalizeLayout,
@@ -18,6 +19,7 @@ import {
   type PartOption,
   type SavedCharacter,
 } from '../characters/types';
+import { movable3d } from '../characters/movable3d';
 import { usePrefs } from '../lib/prefs';
 import { useDropTarget } from '../lib/drag';
 import { useStore } from '../lib/useStore';
@@ -31,6 +33,7 @@ import Stage from './Stage';
 import NameDialog from './NameDialog';
 import Sentence from './Sentence';
 import AdjustBar from './AdjustBar';
+import SizeRail from './SizeRail';
 
 interface Props {
   def: CharacterDefinition;
@@ -47,6 +50,14 @@ export default function Builder({ def, initial }: Props) {
   const [layout, setLayout] = useState<LayoutMap>(() => normalizeLayout(initial?.layout));
   const [selected, setSelected] = useState<string | null>(null);
   const [name, setName] = useState(initial?.name ?? '');
+
+  // the piece the size buttons act on: it has to be on the sheet, and in 3D it has to be
+  // one of the pieces that stand on their own there
+  const adjusting = useMemo(() => {
+    if (!selected || parts[selected] === ERASED) return null;
+    if (mode === '3d' && !movable3d(def.kind, parts).includes(selected)) return null;
+    return def.categories.find((c) => c.id === selected) ?? null;
+  }, [selected, parts, mode, def]);
   const [savedId, setSavedId] = useState<string | undefined>(initial?.id);
   const [dirty, setDirty] = useState(false);
   const [naming, setNaming] = useState(false);
@@ -193,28 +204,36 @@ export default function Builder({ def, initial }: Props) {
             </span>
           </div>
 
-          <Stage
-            kind={def.kind}
-            parts={parts}
-            colors={colors}
-            layout={layout}
-            mode={mode}
-            name={name}
-            interactive
-            selected={selected}
-            onSelect={setSelected}
-            onMove={movePart}
-          />
+          <div className="stage-wrap">
+            <Stage
+              kind={def.kind}
+              parts={parts}
+              colors={colors}
+              layout={layout}
+              mode={mode}
+              name={name}
+              interactive
+              selected={selected}
+              onSelect={setSelected}
+              onMove={movePart}
+            />
+            {adjusting && (
+              <SizeRail
+                category={adjusting}
+                transform={layout[adjusting.id] ?? NEUTRAL}
+                onScale={scalePart}
+                onReset={resetPart}
+              />
+            )}
+          </div>
 
           <AdjustBar
             def={def}
             mode={mode}
             parts={parts}
-            layout={layout}
+            touched={Object.keys(layout).length > 0}
             selected={selected}
             onSelect={setSelected}
-            onScale={scalePart}
-            onReset={resetPart}
             onResetAll={() => {
               setLayout({});
               setDirty(true);

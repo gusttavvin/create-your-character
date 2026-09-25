@@ -1,14 +1,11 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useContext, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { NEUTRAL, UNITS_PER_WORLD } from '../characters/types';
 import { Layout3DContext } from './layout3d';
 
-type Triple = [number, number, number];
-
-function near(a: Triple, b: Triple) {
-  return Math.abs(a[0] - b[0]) < 1e-4 && Math.abs(a[1] - b[1]) < 1e-4 && Math.abs(a[2] - b[2]) < 1e-4;
-}
+/** The blue the 2D sheet glows with when a piece is picked (--sky). */
+const PICKED = new THREE.Color('#2bb3ff');
 
 /** The part's own box, in the group's local space (so our own offset does not count). */
 function measure(group: THREE.Group, box: THREE.Box3) {
@@ -36,43 +33,78 @@ function measure(group: THREE.Group, box: THREE.Box3) {
  * facing the camera, so it follows the finger from whatever angle the model is turned to.
  * Distances are the sheet's own units, so nudging a piece in 2D moves it by the same
  * fraction of the character here.
+ *
+ * The piece is measured so that it grows around itself rather than around the
+ * character's feet. That measurement is written straight onto the group instead of
+ * into React state: parts that animate (the dragon's flame, the fairy's sparkles) change
+ * size every frame, and a measurement kept in state would ask React to render again on
+ * every one of them, which ends in a render loop and a blank page.
  */
 export default function Part3D({ id, children }: { id: string; children: ReactNode }) {
   const ctx = useContext(Layout3DContext);
   const t = ctx?.layout[id] ?? NEUTRAL;
+  const outer = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
   const box = useRef(new THREE.Box3());
-  const [centre, setCentre] = useState<Triple>([0, 0, 0]);
-  const [size, setSize] = useState<Triple>([0, 0, 0]);
+  const centre = useRef(new THREE.Vector3());
+  /** False while the category is erased: nothing to pick up or drag. */
+  const solid = useRef(false);
   const camera = useThree((s) => s.camera);
   const viewport = useThree((s) => s.size);
   const controls = useThree((s) => s.controls) as { enabled?: boolean; autoRotate?: boolean } | null;
 
-  // the piece grows and shrinks around itself, not around the character's feet
-  useLayoutEffect(() => {
-    const g = inner.current;
-    if (!g) return;
-    measure(g, box.current);
-    const b = box.current;
-    const c: Triple = b.isEmpty() ? [0, 0, 0] : [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2];
-    const s: Triple = b.isEmpty() ? [0, 0, 0] : [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
-    if (!near(c, centre)) setCentre(c);
-    if (!near(s, size)) setSize(s);
-  });
-
   const editable = !!ctx?.editable;
   const picked = editable && ctx?.selected === id;
-  const empty = size[0] <= 0 && size[1] <= 0 && size[2] <= 0;
+
+  useLayoutEffect(() => {
+    const g = inner.current;
+    const o = outer.current;
+    if (!g || !o) return;
+    measure(g, box.current);
+    solid.current = !box.current.isEmpty();
+    if (solid.current) box.current.getCenter(centre.current);
+    else centre.current.set(0, 0, 0);
+
+    // final = centre + s * (p - centre) + offset
+    const k = 1 - t.s;
+    o.position.set(
+      centre.current.x * k + t.dx / UNITS_PER_WORLD,
+      centre.current.y * k - t.dy / UNITS_PER_WORLD, // the sheet counts y downwards
+      centre.current.z * k + (t.dz ?? 0) / UNITS_PER_WORLD,
+    );
+    o.scale.setScalar(t.s);
+  });
+
+  // a picked piece is ringed in blue, the same hint the drawing gives on the sheet:
+  // the ink outline it already wears simply changes colour and thickens
+  useLayoutEffect(() => {
+    const g = inner.current;
+    if (!g || !picked) return;
+    const undo: (() => void)[] = [];
+    g.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      const mat = mesh.material as THREE.ShaderMaterial | undefined;
+      if (!mesh.isMesh || !mat?.uniforms?.color || !mat.uniforms.thickness) return;
+      const wasColor = (mat.uniforms.color.value as THREE.Color).clone();
+      const wasThick = mat.uniforms.thickness.value as number;
+      (mat.uniforms.color.value as THREE.Color).copy(PICKED);
+      mat.uniforms.thickness.value = wasThick * 2.4;
+      undo.push(() => {
+        (mat.uniforms.color.value as THREE.Color).copy(wasColor);
+        mat.uniforms.thickness.value = wasThick;
+      });
+    });
+    return () => undo.forEach((f) => f());
+  });
 
   const start = (e: ThreeEvent<PointerEvent>) => {
-    if (!editable || empty) return;
+    if (!editable || !solid.current) return;
     e.stopPropagation();
     ctx?.onSelect?.(id);
 
     const g = inner.current;
     if (!g) return;
-    const anchor = new THREE.Vector3(...centre);
-    g.localToWorld(anchor);
+    const anchor = g.localToWorld(centre.current.clone());
     const dist = Math.max(0.5, camera.position.distanceTo(anchor));
     const fov = ((camera as THREE.PerspectiveCamera).fov ?? 40) * (Math.PI / 180);
     const perPx = (2 * Math.tan(fov / 2) * dist) / viewport.height;
@@ -96,13 +128,11 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
       // a tap only picks the piece up; it takes a real movement to shift it
       if (!moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
       moved = true;
-      const px = dx * perPx;
-      const py = dy * perPx;
-      world.set(0, 0, 0).addScaledVector(right, px).addScaledVector(up, -py);
+      world.set(0, 0, 0).addScaledVector(right, dx * perPx).addScaledVector(up, -dy * perPx);
       ctx?.onMove?.(
         id,
         base.dx + world.x * UNITS_PER_WORLD,
-        base.dy - world.y * UNITS_PER_WORLD, // the sheet counts y downwards
+        base.dy - world.y * UNITS_PER_WORLD,
         base.dz + world.z * UNITS_PER_WORLD,
       );
     };
@@ -123,29 +153,9 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
     window.addEventListener('pointercancel', stop);
   };
 
-  // the pink box that shows which piece is picked: just the twelve edges, no diagonals
-  const frame = useMemo(
-    () => new THREE.EdgesGeometry(new THREE.BoxGeometry(size[0] + 0.12, size[1] + 0.12, size[2] + 0.12)),
-    [size],
-  );
-  useEffect(() => () => frame.dispose(), [frame]);
-
-  const off: Triple = [(t.dx / UNITS_PER_WORLD), (-t.dy / UNITS_PER_WORLD), ((t.dz ?? 0) / UNITS_PER_WORLD)];
-  const k = 1 - t.s;
-
   return (
-    <group
-      name={`part:${id}`}
-      position={[centre[0] * k + off[0], centre[1] * k + off[1], centre[2] * k + off[2]]}
-      scale={t.s}
-      onPointerDown={editable ? start : undefined}
-    >
+    <group ref={outer} name={`part:${id}`} onPointerDown={editable ? start : undefined}>
       <group ref={inner}>{children}</group>
-      {picked && !empty && (
-        <lineSegments position={centre} geometry={frame} raycast={() => {}} renderOrder={999}>
-          <lineBasicMaterial color="#ff8fc8" transparent opacity={0.95} depthTest={false} />
-        </lineSegments>
-      )}
     </group>
   );
 }
