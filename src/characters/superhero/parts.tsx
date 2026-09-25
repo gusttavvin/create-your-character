@@ -79,10 +79,10 @@ export function FaceEyes({ className }: PartSvgProps) {
     <Svg className={className}>
       <Mirror>
         <g>
-          <circle cx="162" cy="246" r="52" fill="#fff" {...O} strokeWidth={12} />
-          <circle cx="168" cy="252" r="26" fill={INK} />
-          <circle cx="180" cy="238" r="10" fill="#fff" />
-          <circle cx="156" cy="264" r="5" fill="#fff" />
+          <path d="M132,196 C154,178 188,178 208,192" fill="none" stroke={INK} strokeWidth="14" strokeLinecap="round" />
+          <circle cx="170" cy="250" r="38" fill="#fff" {...O} strokeWidth={12} />
+          <circle cx="175" cy="255" r="19" fill={INK} />
+          <circle cx="184" cy="244" r="7" fill="#fff" />
         </g>
       </Mirror>
     </Svg>
@@ -92,7 +92,8 @@ export function FaceEyes({ className }: PartSvgProps) {
 export function FaceMouth({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
-      <path d="M164,326 Q256,400 348,326" fill="none" stroke={INK} strokeWidth="20" strokeLinecap="round" />
+      <path d="M256,286 L256,318" fill="none" stroke={INK} strokeWidth="12" strokeLinecap="round" />
+      <path d="M196,340 Q256,386 316,340" fill="none" stroke={INK} strokeWidth="18" strokeLinecap="round" />
     </Svg>
   );
 }

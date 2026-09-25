@@ -129,7 +129,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
         <sphereGeometry args={[1, 48, 48]} />
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
-        <FaceDecal tex={face} y={-0.25} z={1} size={0.75} />
+        <FaceDecal part="mouth" tex={face} y={-0.25} z={1} size={0.75} />
       </mesh>
     );
   }
@@ -140,7 +140,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
         <RoundedBox args={[2.05, 2.05, 1.65]} radius={0.62} smoothness={8}>
           <Toon color={color} map={grad} tex={tex} />
           <Ink />
-          <FaceDecal tex={face} y={-0.3} z={0.87} size={0.9} />
+          <FaceDecal part="mouth" tex={face} y={-0.3} z={0.87} size={0.9} />
         </RoundedBox>
       </group>
     );
@@ -150,7 +150,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
       <mesh key="hourglass" geometry={peanut} position={[0, -0.1, 0]}>
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
-        <FaceDecal tex={face} y={1.0} z={0.8} size={0.7} />
+        <FaceDecal part="mouth" tex={face} y={1.0} z={0.8} size={0.7} />
       </mesh>
     );
   }
@@ -160,7 +160,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
     <mesh key="round" geometry={blob} position={[0, 0.3, 0]} scale={[0.95, 1.18, 0.82]}>
       <Toon color={color} map={grad} tex={tex} />
       <Ink />
-      <FaceDecal tex={face} y={-0.26} z={0.95} size={0.82} />
+      <FaceDecal part="mouth" tex={face} y={-0.26} z={0.95} size={0.82} />
     </mesh>
   );
 }

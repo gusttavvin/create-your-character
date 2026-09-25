@@ -119,6 +119,15 @@ export default function Builder({ def, initial }: Props) {
     playClick();
   }, []);
 
+  const nudgePart = useCallback((categoryId: string, dx: number, dy: number) => {
+    setLayout((l) => {
+      const cur = l[categoryId] ?? NEUTRAL;
+      return withTransform(l, categoryId, { dx: cur.dx + dx, dy: cur.dy + dy });
+    });
+    setDirty(true);
+    playClick();
+  }, []);
+
   const scalePart = useCallback((categoryId: string, s: number) => {
     setLayout((l) => withTransform(l, categoryId, { s }));
     setDirty(true);
@@ -229,6 +238,7 @@ export default function Builder({ def, initial }: Props) {
                 transform={layout[adjusting.id] ?? NEUTRAL}
                 onScale={scalePart}
                 onTurn={turnPart}
+                onNudge={nudgePart}
                 onReset={resetPart}
               />
             )}

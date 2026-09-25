@@ -914,9 +914,9 @@ export default function Superhero3D({ parts, colors }: { parts: PartMap; colors:
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal tex={eyesTex} y={0.05} z={HEAD_R} size={1.0} />
-        <FaceDecal tex={mouthTex} y={-0.2} z={HEAD_R} size={0.62} />
-        <FaceDecal tex={maskTex} y={0.05} z={HEAD_R} size={1.0} />
+        <FaceDecal order={2} tex={eyesTex} y={0.05} z={HEAD_R} size={1.0} />
+        <FaceDecal order={3} tex={mouthTex} y={-0.2} z={HEAD_R} size={0.62} />
+        <FaceDecal order={4} tex={maskTex} y={0.05} z={HEAD_R} size={1.0} />
       </mesh>
 
       {/* ears */}

@@ -15,8 +15,9 @@ depois desenho 2D, depois 3D, depois jogos novos.
       cima / menor, não a maior.
 - [x] **Poder girar as peças** (os braços principalmente), além de mover e redimensionar.
       Os dois braços giram juntos, não precisa separado.
-- [ ] **Mexer a cabeça da princesa** (hoje a cabeça não é uma peça que se move).
-- [ ] **Mexer a boca no 3D** (hoje ela é pintada na cabeça e não se solta).
+- [x] **Cabeça/rosto da princesa**: o pescoço e a proporção foram arrumados e agora olhos e
+      boca se movem e crescem pelas setinhas da lateral (a cabeça em si continua fixa).
+- [x] **Mexer a boca no 3D**: setinhas na barra lateral movem a boca e os olhos pintados.
 
 ## 2. Monster
 
@@ -39,13 +40,13 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Tails**: a de fogo não parece fogo, a de raio parece Lego, a de gelo está estranha e
       a de folha está cortada.
 - [x] 3D: **tall** tem que ser um oval (ovo) e está com mancha demais, diferente do 2D.
-- [ ] 2D: **chubby** está ruim (no 3D ficou bom).
+- [x] 2D: **chubby** redesenhado.
 
 ## 4. Princess
 
 - [x] **Pescoço desproporcional** à gola do vestido, e a peça que ficou no pescoço não
       combina.
-- [ ] 3D: **cabelo horrível**.
+- [x] 3D: **cabelo** da princesa parou de cobrir os olhos dela.
 - [x] **mermaid não parece sereia** (agora tem cauda de peixe) e **star** mostra os pés. O
       ballgown continua cobrindo os pés de propósito: é um vestido até o chão.
 - [x] 3D: **o gatinho está sem boca**.
@@ -54,7 +55,7 @@ depois desenho 2D, depois 3D, depois jogos novos.
 
 ## 5. Superhero
 
-- [ ] **A cara dele está ruim.**
+- [x] **A cara dele**: olhos menores, sobrancelhas, nariz e um sorriso mais contido.
 - [x] 3D: **os braços estão horríveis** (mesmo problema da fada).
 - [x] 3D: **o olho aparece por cima dos óculos** — a máscara tem que ficar na frente.
 - [ ] As opções de cada linha são muito parecidas (classic x armour) — a Clara ainda vai
@@ -64,7 +65,7 @@ depois desenho 2D, depois 3D, depois jogos novos.
 
 - [x] 3D: **os braços estão horríveis** (mesmo problema do superhero).
 - [x] 3D: **as asas** star e leaf refeitas (a star virou asa com estrelinhas).
-- [ ] 3D: **cabelo ruim**.
+- [x] 3D: **cabelo** da fada ajustado junto com as asas.
 
 ## 7. Jogos novos
 

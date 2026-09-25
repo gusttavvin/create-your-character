@@ -126,17 +126,36 @@ export function BodyClassic({ colors, className }: PartSvgProps) {
 
 export function BodyChubby({ colors, className }: PartSvgProps) {
   const c = colors.body || DRAGON_DEFAULTS.body.chubby;
+  const mid = shade(c, -0.12);
+  const dark = shade(c, -0.22);
+  // a chubby dragon, not a pear: a round head over a round tummy, with a pinch between
+  // them, little arms on the sides, a row of spikes down the back and feet on the floor
+  const arm = (
+    <path
+      d="M392,300 C428,306 448,330 448,358 C448,378 430,388 414,380 C394,370 384,340 386,306 Z"
+      fill={mid}
+      {...O}
+    />
+  );
   return (
     <Svg className={className}>
-      <Feet color={c} />
+      {/* spikes first, so they sit behind the body like a crest */}
       <path
-        d="M256,54 C344,54 398,116 398,194 C398,232 386,262 366,288 C424,318 456,372 456,414 C456,452 400,470 256,470 C112,470 56,452 56,414 C56,372 88,318 146,288 C126,262 114,232 114,194 C114,116 168,54 256,54 Z"
+        d="M256,28 L286,72 L226,72 Z M330,64 L376,92 L318,112 Z M386,132 L438,146 L388,178 Z"
+        fill={dark}
+        {...O}
+      />
+      <Feet color={c} />
+      <Mirror>{arm}</Mirror>
+      <path
+        d="M256,50 C334,50 390,104 390,172 C390,204 378,230 358,250 C420,278 452,330 452,382 C452,438 372,466 256,466 C140,466 60,438 60,382 C60,330 92,278 154,250 C134,230 122,204 122,172 C122,104 178,50 256,50 Z"
         fill={c}
         {...O}
       />
-      <Belly cx={256} cy={392} rx={118} ry={58} color={c} />
-      <Spots color={c} pts={[[150, 350, 14], [372, 340, 12], [120, 420, 9]]} />
-      <Shine x={190} y={110} />
+      <Belly cx={256} cy={378} rx={122} ry={70} color={c} />
+      <path d="M160,346 L352,346 M140,386 L372,386 M164,424 L348,424" fill="none" stroke={shade(c, 0.12)} strokeWidth="10" strokeLinecap="round" />
+      <Spots color={c} pts={[[150, 208, 14], [366, 214, 11], [110, 300, 9]]} />
+      <Shine x={190} y={106} />
     </Svg>
   );
 }

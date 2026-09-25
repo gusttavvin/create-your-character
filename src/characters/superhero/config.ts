@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PartMap } from '../types';
+import { listPhrases, phrasesOf, pickOption } from '../types';
 import * as P from './parts';
 
 /**
@@ -126,11 +127,17 @@ export const SUPERHERO: CharacterDefinition = {
   ],
   defaultParts: { suit: 'classic', mask: 'eye', cape: 'long', emblem: 'star', power: 'fire', boots: 'tall' },
   defaultColors: {},
+  // built from the pieces he actually has, so erasing one never leaves "has , and ."
   sentence: (parts: PartMap, name?: string) => {
-    const ph = (cat: string) =>
-      SUPERHERO.categories.find((c) => c.id === cat)?.options.find((o) => o.id === parts[cat])?.phrase ?? '';
     const who = name ? `Captain ${name}` : 'My superhero';
-    return `${who} has ${ph('mask')}, ${ph('cape')} and ${ph('emblem')}. He is wearing ${ph('suit')} and ${ph('boots')}, and he has ${ph('power')}.`;
+    const has = listPhrases(phrasesOf(SUPERHERO, parts, ['mask', 'cape', 'emblem']));
+    const worn = listPhrases(phrasesOf(SUPERHERO, parts, ['suit', 'boots']));
+    const power = pickOption(SUPERHERO, 'power', parts.power)?.phrase;
+    const lines = [has ? `${who} has ${has}.` : ''];
+    if (worn) lines.push(`He is wearing ${worn}.`);
+    if (power) lines.push(`His power is ${power}.`);
+    const out = lines.filter(Boolean).join(' ');
+    return out || `${who} is still just an idea!`;
   },
 };
 

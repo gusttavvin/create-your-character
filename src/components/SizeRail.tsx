@@ -1,11 +1,15 @@
 import type { PartCategory, PartTransform } from '../characters/types';
 import { MAX_SCALE, MIN_SCALE, TURN_STEP } from '../characters/types';
 
+/** How far one press of an arrow slides a piece, in the sheet's units. */
+const NUDGE = 12;
+
 interface Props {
   category: PartCategory;
   transform: PartTransform;
   onScale: (categoryId: string, s: number) => void;
   onTurn: (categoryId: string, r: number) => void;
+  onNudge: (categoryId: string, dx: number, dy: number) => void;
   onReset: (categoryId: string) => void;
 }
 
@@ -17,8 +21,9 @@ const STEP = 0.12;
  * They used to sit under the sheet, which meant scrolling the page in the middle of a
  * lesson to make an eye smaller. Here they are always next to the character, in reach.
  */
-export default function SizeRail({ category, transform, onScale, onTurn, onReset }: Props) {
+export default function SizeRail({ category, transform, onScale, onTurn, onNudge, onReset }: Props) {
   const word = category.label.toLowerCase();
+  const step = NUDGE;
   return (
     <div className="rail" style={{ ['--row' as string]: category.color }}>
       <span className="rail-name">{category.label}</span>
@@ -41,6 +46,22 @@ export default function SizeRail({ category, transform, onScale, onTurn, onReset
       >
         −
       </button>
+      {/* arrows: the only way to move a face, which is painted on and cannot be dragged */}
+      <div className="rail-pad">
+        <button type="button" className="rail-btn rail-btn-small rail-up" onClick={() => onNudge(category.id, 0, -step)} aria-label={`Move the ${word} up`}>
+          ↑
+        </button>
+        <button type="button" className="rail-btn rail-btn-small rail-left" onClick={() => onNudge(category.id, -step, 0)} aria-label={`Move the ${word} left`}>
+          ←
+        </button>
+        <button type="button" className="rail-btn rail-btn-small rail-right" onClick={() => onNudge(category.id, step, 0)} aria-label={`Move the ${word} right`}>
+          →
+        </button>
+        <button type="button" className="rail-btn rail-btn-small rail-down" onClick={() => onNudge(category.id, 0, step)} aria-label={`Move the ${word} down`}>
+          ↓
+        </button>
+      </div>
+
       <div className="rail-turn">
         <button
           type="button"

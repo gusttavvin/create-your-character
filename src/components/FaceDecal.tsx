@@ -1,6 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Decal } from '@react-three/drei';
 import type * as THREE from 'three';
+import { Layout3DContext } from './layout3d';
+import { NEUTRAL, UNITS_PER_WORLD } from '../characters/types';
 
 interface Props {
   tex: THREE.Texture | null;
@@ -8,6 +10,18 @@ interface Props {
   y: number;
   z: number;
   size: number;
+  /**
+   * Faces printed on the same spot (cheeks, eyes, mouth) are exactly coplanar, so the
+   * order they paint in has to be stated or the renderer is free to pick, and an eye can
+   * end up behind a cheek. Low numbers paint first.
+   */
+  order?: number;
+  /**
+   * The category this face belongs to. A painted face cannot be dragged like a piece of
+   * geometry, but the child can still nudge and resize it from the buttons beside the
+   * picture, and it slides across the head it is printed on.
+   */
+  part?: string;
 }
 
 /**
@@ -20,7 +34,12 @@ interface Props {
  * the eyes instead of the eyes showing straight through them; the polygon offset keeps
  * it clear of the surface it is printed on.
  */
-export default function FaceDecal({ tex, x = 0, y, z, size }: Props) {
+export default function FaceDecal({ tex, x = 0, y, z, size, part, order = 1 }: Props) {
+  const layout = useContext(Layout3DContext)?.layout;
+  const t = (part && layout?.[part]) || NEUTRAL;
+  const ox = x + t.dx / UNITS_PER_WORLD;
+  const oy = y - t.dy / UNITS_PER_WORLD;
+  const scaled = size * t.s;
   const ref = useRef<THREE.Mesh>(null);
   const probe = useRef<THREE.Object3D>(null);
   /**
@@ -50,7 +69,7 @@ export default function FaceDecal({ tex, x = 0, y, z, size }: Props) {
     <>
       <object3D ref={probe} />
       {tex && host && (
-        <Decal key={host.uuid} ref={ref} map={tex} position={[x, y, z]} rotation={[0, 0, 0]} scale={[size, size, 1.2]}>
+        <Decal key={host.uuid} ref={ref} renderOrder={order} map={tex} position={[ox, oy, z]} rotation={[0, 0, ((t.r ?? 0) * Math.PI) / -180]} scale={[scaled, scaled, 1.2]}>
           <meshBasicMaterial
             map={tex}
             transparent

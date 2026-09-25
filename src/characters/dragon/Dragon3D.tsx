@@ -251,8 +251,8 @@ function Body({
   if (!kind) return null;
   const face = (
     <>
-      <FaceDecal tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.15} />
-      <FaceDecal tex={mouthTex} y={spec.mouthY} z={spec.headR} size={spec.headR * 0.9} />
+      <FaceDecal order={2} part="eyes" tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.15} />
+      <FaceDecal order={3} part="mouth" tex={mouthTex} y={spec.mouthY} z={spec.headR} size={spec.headR * 0.9} />
     </>
   );
 
@@ -282,13 +282,13 @@ function Body({
           <sphereGeometry args={[spec.headR, 48, 48]} />
           <Toon color={color} map={grad} tex={skin} />
           <Ink />
-          <FaceDecal tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.5} />
+          <FaceDecal order={2} part="eyes" tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.5} />
         </mesh>
         <mesh position={[0, s.y, s.z]}>
           <sphereGeometry args={[s.r, 32, 32]} />
           <Toon color={shade(color, 0.12)} map={grad} />
           <Ink />
-          <FaceDecal tex={mouthTex} y={-0.02} z={s.r} size={s.r * 1.8} />
+          <FaceDecal order={3} part="mouth" tex={mouthTex} y={-0.02} z={s.r} size={s.r * 1.8} />
         </mesh>
         {[-1, 1].map((x) => (
           <mesh key={x} position={[x * 0.11, s.y + 0.14, s.z + s.r * 0.82]} scale={[1, 0.65, 0.5]}>

@@ -897,8 +897,8 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal tex={smileTex} y={-0.26} z={HEAD_R} size={0.55} />
+        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
+        <FaceDecal order={3} tex={smileTex} y={-0.26} z={HEAD_R} size={0.55} />
       </mesh>
 
       {/* pointed fairy ears */}

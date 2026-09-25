@@ -2407,3 +2407,25 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
     grid-template-columns: 1fr;
   }
 }
+
+.rail-pad {
+  display: grid;
+  grid-template-areas: '. up .' 'left . right' '. down .';
+  gap: 3px;
+}
+
+.rail-up {
+  grid-area: up;
+}
+
+.rail-left {
+  grid-area: left;
+}
+
+.rail-right {
+  grid-area: right;
+}
+
+.rail-down {
+  grid-area: down;
+}

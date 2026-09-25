@@ -313,9 +313,10 @@ function Hair({ kind, dress, color, grad }: { kind: string | null; dress: string
 
   return (
     <group>
-      {/* the cap over the top of her head */}
-      <mesh position={[0, HEAD_Y + 0.03, -0.05]}>
-        <sphereGeometry args={[HEAD_R + 0.07, 40, 40, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+      {/* the cap over the top of her head: it stops on her forehead, well above her
+          eyes — coming down any further it covered them and hid her face */}
+      <mesh position={[0, HEAD_Y + 0.05, -0.05]}>
+        <sphereGeometry args={[HEAD_R + 0.07, 40, 40, 0, Math.PI * 2, 0, Math.PI * 0.42]} />
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
       </mesh>
@@ -644,9 +645,9 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal tex={blushTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal tex={mouthTex} y={-0.26} z={HEAD_R} size={0.55} />
+        <FaceDecal order={1} tex={blushTex} y={0.02} z={HEAD_R} size={0.95} />
+        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
+        <FaceDecal order={3} part="mouth" tex={mouthTex} y={-0.26} z={HEAD_R} size={0.55} />
       </mesh>
 
       {/* ears — one shape and its mirror */}
