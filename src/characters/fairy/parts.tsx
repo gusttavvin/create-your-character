@@ -16,9 +16,9 @@ const O = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, stro
 
 export const FAIRY_DEFAULTS = {
   skin: '#FCE1C8',
-  dress: { petal: '#FF6EC7', leaf: '#7ED957', star: '#A77BFF', bubble: '#4FC3FF' } as Record<string, string>,
-  wings: { butterfly: '#4FC3FF', dragonfly: '#2ED8C3', leaf: '#7ED957', star: '#FFD93D' } as Record<string, string>,
-  hair: { long: '#FFC93C', buns: '#FF6EC7', curly: '#D2461F', braid: '#8B4513' } as Record<string, string>,
+  dress: { petal: '#7ED957', leaf: '#4FAF3C', star: '#A77BFF', bubble: '#4FC3FF' } as Record<string, string>,
+  wings: { butterfly: '#E7C9FF', dragonfly: '#CFE9FF', leaf: '#7ED957', star: '#FFD93D' } as Record<string, string>,
+  hair: { long: '#FFC93C', buns: '#F8C63C', curly: '#D2461F', braid: '#8B4513' } as Record<string, string>,
 };
 
 function Svg({ children, className }: { children: ReactNode; className?: string }) {
