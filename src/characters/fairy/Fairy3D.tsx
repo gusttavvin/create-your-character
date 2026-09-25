@@ -267,9 +267,15 @@ function Hair({ kind, color, grad }: { kind: string | null; color: string; grad:
         <Toon color={color} map={grad} />
         <Ink />
       </mesh>
-      {/* the fringe, swept across her forehead and parted to one side */}
-      <mesh position={[0.06, 0.12, 0.04]} rotation={[0.26, 0, -0.22]} scale={[1.05, 1, 1.02]}>
-        <sphereGeometry args={[HEAD_R + 0.05, 36, 36, Math.PI * 0.05, Math.PI * 1.25, 0, Math.PI * 0.3]} />
+      {/* the fringe: a long sweep from the parting across her forehead… */}
+      <mesh position={[0.05, 0.1, 0.03]} rotation={[0.3, -0.18, -0.26]} scale={[1.06, 1, 1.03]}>
+        <sphereGeometry args={[HEAD_R + 0.05, 36, 36, Math.PI * 0.62, Math.PI * 0.86, 0, Math.PI * 0.34]} />
+        <Toon color={color} map={grad} side={THREE.DoubleSide} />
+        <Ink thin />
+      </mesh>
+      {/* …and the short side of the parting, which leaves her forehead showing */}
+      <mesh position={[-0.02, 0.14, 0.02]} rotation={[0.22, 0.5, 0.18]} scale={[1.05, 1, 1.02]}>
+        <sphereGeometry args={[HEAD_R + 0.045, 32, 32, Math.PI * 0.05, Math.PI * 0.4, 0, Math.PI * 0.26]} />
         <Toon color={color} map={grad} side={THREE.DoubleSide} />
         <Ink thin />
       </mesh>
@@ -296,9 +302,9 @@ function Hair({ kind, color, grad }: { kind: string | null; color: string; grad:
 
       {kind === 'buns' && (
         <Pair>
-          <group position={[0.62, HEAD_Y + 0.46, -0.08]}>
+          <group position={[0.6, HEAD_Y + 0.62, -0.12]}>
             <mesh scale={[1, 0.95, 0.9]}>
-              <sphereGeometry args={[0.36, 30, 30]} />
+              <sphereGeometry args={[0.38, 30, 30]} />
               <Toon color={color} map={grad} />
               <Ink />
             </mesh>
@@ -381,7 +387,7 @@ function Crown({ kind, grad }: { kind: string | null; grad: THREE.DataTexture })
     // the two blooms pinned to her buns, exactly where the picture has them
     return (
       <Pair>
-        <group position={[0.46, y + 0.12, 0.2]} rotation={[0.3, 0.4, 0]}>
+        <group position={[0.44, y + 0.26, 0.24]} rotation={[0.3, 0.4, 0]}>
           <Bloom color="#C9A7FF" grad={grad} r={1.25} />
           <group position={[-0.1, -0.02, 0.08]} scale={0.85}>
             <Bloom color="#E9DAFF" grad={grad} r={1.05} />
@@ -614,8 +620,9 @@ function Wings({ kind, color, grad }: { kind: string | null; color: string; grad
   });
   if (!kind) return null;
 
-  const upper = kind === 'dragonfly' ? 1.5 : 1.3;
-  const lower = kind === 'dragonfly' ? 1.15 : 0.95;
+  // in the picture a single wing is nearly as long as she is tall
+  const upper = kind === 'dragonfly' ? 2.15 : 1.95;
+  const lower = kind === 'dragonfly' ? 1.6 : 1.4;
 
   return (
     <group position={[0, 0.5, -0.16]}>
@@ -623,25 +630,25 @@ function Wings({ kind, color, grad }: { kind: string | null; color: string; grad
         <group ref={hinge}>
           {kind === 'leaf' ? (
             <>
-              <Pane len={upper} wide={0.5} color={color} tilt={0.45} grad={grad} />
-              <Pane len={lower * 0.8} wide={0.4} color={shade(color, 0.2)} tilt={-0.35} grad={grad} />
+              <Pane len={upper} wide={0.66} color={color} tilt={0.45} grad={grad} />
+              <Pane len={lower * 0.82} wide={0.54} color={shade(color, 0.2)} tilt={-0.35} grad={grad} />
             </>
           ) : kind === 'star' ? (
             <>
-              <Pane len={upper} wide={0.42} color={color} tilt={0.55} grad={grad} />
-              <Pane len={lower} wide={0.34} color={shade(color, 0.25)} tilt={-0.15} grad={grad} />
-              <Pane len={lower * 0.7} wide={0.28} color={color} tilt={-0.6} grad={grad} />
+              <Pane len={upper} wide={0.56} color={color} tilt={0.55} grad={grad} />
+              <Pane len={lower} wide={0.46} color={shade(color, 0.25)} tilt={-0.15} grad={grad} />
+              <Pane len={lower * 0.7} wide={0.38} color={color} tilt={-0.6} grad={grad} />
             </>
           ) : (
             <>
               {/* the picture's wings: a long upper pane and a shorter one under it */}
-              <Pane len={upper} wide={0.46} color={color} tilt={0.32} grad={grad} />
-              <Pane len={lower} wide={0.36} color={shade(color, 0.25)} tilt={-0.42} grad={grad} />
+              <Pane len={upper} wide={0.62} color={color} tilt={0.3} grad={grad} />
+              <Pane len={lower} wide={0.5} color={shade(color, 0.22)} tilt={-0.38} grad={grad} />
             </>
           )}
         </group>
       </Pair>
-      <Sparkles count={16} scale={[2.6, 1.6, 0.8]} position={[0, -0.1, -0.1]} size={2.4} speed={0.4} color="#FFF3B0" />
+      <Sparkles count={20} scale={[3.6, 2, 0.8]} position={[0, -0.1, -0.1]} size={2.4} speed={0.4} color="#FFF3B0" />
     </group>
   );
 }
