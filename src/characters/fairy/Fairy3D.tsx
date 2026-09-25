@@ -105,18 +105,53 @@ const RING7 = [0, 1, 2, 3, 4, 5, 6].map((i) => (i / 7) * Math.PI * 2);
 
 /* ------------------------------------------------------------------- body */
 
-/** Slim bodice, waist at y=0.08 up to the collar at y=0.62. */
+/**
+ * The bodice, waist at the bottom. It nips in at y=0.1 and swells again over the chest,
+ * so she has a figure: a straight tube is what made her look like a peg doll.
+ */
 const BODICE: [number, number][] = [
-  [0.0, 0.05],
-  [0.24, 0.06],
-  [0.27, 0.2],
-  [0.3, 0.38],
-  [0.28, 0.52],
-  [0.18, 0.6],
-  [0.0, 0.62],
+  [0.0, 0.02],
+  [0.21, 0.04],
+  [0.195, 0.14],
+  [0.23, 0.28],
+  [0.28, 0.42],
+  [0.27, 0.54],
+  [0.17, 0.61],
+  [0.0, 0.63],
 ];
 
-/** One arm, shoulder to hand: a single bent limb, not a chain of beads. */
+/**
+ * A little hand: a soft palm with four short fingers and a thumb tucked along the side.
+ * A limb that ends in a ball has no hand at all, which is the first thing the eye misses.
+ */
+function Hand({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
+  return (
+    <group>
+      <mesh scale={[1, 1.05, 0.7]}>
+        <sphereGeometry args={[0.105, 20, 20]} />
+        <Toon color={skin} map={grad} />
+        <Ink thin />
+      </mesh>
+      {[-1.2, -0.4, 0.4, 1.2].map((k) => {
+        const a = k * 0.3;
+        return (
+          <mesh key={k} position={[Math.sin(a) * 0.075, -0.09 - Math.cos(a) * 0.02, 0]} rotation={[0, 0, -a]} scale={[1, 1, 0.8]}>
+            <capsuleGeometry args={[0.03, 0.05, 4, 10]} />
+            <Toon color={skin} map={grad} />
+            <Ink thin />
+          </mesh>
+        );
+      })}
+      <mesh position={[-0.08, -0.02, 0.03]} rotation={[0, 0, 0.9]} scale={[1, 1, 0.8]}>
+        <capsuleGeometry args={[0.03, 0.04, 4, 10]} />
+        <Toon color={skin} map={grad} />
+        <Ink thin />
+      </mesh>
+    </group>
+  );
+}
+
+/** One arm, shoulder to hand: a single bent limb that ends in a real little hand. */
 function Arm({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
   return (
     <group position={SHOULDER}>
@@ -124,14 +159,17 @@ function Arm({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
         pts={[
           [0.05, -0.05, 0],
           [0.17, -0.3, 0.03],
-          [0.25, -0.52, 0.06],
-          [0.3, -0.74, 0.09],
+          [0.25, -0.5, 0.06],
+          [0.29, -0.68, 0.08],
         ]}
-        r={0.105}
-        tip={0.13}
+        r={0.098}
+        tip={0.05}
       >
         <Toon color={skin} map={grad} />
       </Limb>
+      <group position={[0.3, -0.75, 0.09]} rotation={[0, 0, -0.12]}>
+        <Hand skin={skin} grad={grad} />
+      </group>
     </group>
   );
 }
@@ -141,30 +179,30 @@ function Leg({ skin, shoe, grad }: { skin: string; shoe: string; grad: THREE.Dat
   return (
     <group position={HIP}>
       <mesh position={[0, -0.33, 0]}>
-        <capsuleGeometry args={[0.145, 0.52, 4, 14]} />
-        <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0, -0.66, 0]}>
-        <sphereGeometry args={[0.14, 16, 16]} />
-        <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0, -1.0, 0]}>
         <capsuleGeometry args={[0.132, 0.52, 4, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
-      {/* slipper */}
-      <group position={[0.01, -1.44, 0.06]}>
-        <mesh scale={[1, 0.55, 1.7]}>
-          <sphereGeometry args={[0.15, 22, 22]} />
+      <mesh position={[0, -0.66, 0]}>
+        <sphereGeometry args={[0.125, 16, 16]} />
+        <Toon color={skin} map={grad} />
+        <Ink thin />
+      </mesh>
+      <mesh position={[0, -1.0, 0]}>
+        <capsuleGeometry args={[0.115, 0.5, 4, 14]} />
+        <Toon color={skin} map={grad} />
+        <Ink thin />
+      </mesh>
+      {/* ballet flats, round at the toe with a low opening, like the picture */}
+      <group position={[0.01, -1.44, 0.07]}>
+        <mesh scale={[1, 0.62, 1.75]}>
+          <sphereGeometry args={[0.145, 24, 24]} />
           <Toon color={shoe} map={grad} />
           <Ink thin />
         </mesh>
-        <mesh position={[0, 0.03, -0.04]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.12, 0.022, 8, 18]} />
-          <Toon color={shade(shoe, -0.25)} map={grad} />
+        <mesh position={[0, 0.055, -0.05]} scale={[0.82, 0.5, 1.1]}>
+          <sphereGeometry args={[0.115, 20, 20]} />
+          <Toon color={shade(shoe, -0.3)} map={grad} />
         </mesh>
       </group>
     </group>
@@ -215,8 +253,8 @@ function Dress({ kind, color, grad }: { kind: string | null; color: string; grad
         <Toon color={shade(color, -0.12)} map={grad} tex={bodiceTex} />
         <Ink />
       </mesh>
-      <mesh position={[0, 0.14, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.85, 1]}>
-        <torusGeometry args={[0.27, 0.045, 8, 36]} />
+      <mesh position={[0, 0.13, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.85, 1]}>
+        <torusGeometry args={[0.205, 0.042, 8, 36]} />
         <Toon color={dark} map={grad} />
         <Ink thin />
       </mesh>
@@ -362,12 +400,13 @@ function Body({ skin, shoe, grad }: { skin: string; shoe: string; grad: THREE.Da
   const torso = useMemo(
     () =>
       lathe([
-        [0.0, -0.04],
-        [0.22, 0.0],
-        [0.25, 0.16],
-        [0.23, 0.3],
-        [0.27, 0.46],
-        [0.22, 0.58],
+        [0.0, -0.06],
+        [0.2, -0.02],
+        [0.18, 0.12],
+        [0.21, 0.28],
+        [0.26, 0.44],
+        [0.24, 0.55],
+        [0.16, 0.6],
         [0.0, 0.62],
       ]),
     [],
@@ -470,9 +509,18 @@ function Wing({ kind, color, grad, tex }: { kind: string; color: string; grad: T
 
   return (
     <group ref={hinge}>
+      {/* a fairy's wing is a pane of coloured glass: you can see the world through it */}
       {geos.map((g, i) => (
         <mesh key={i} geometry={g} position={[0, i === 1 ? -0.02 : 0, -i * 0.02]}>
-          <Toon color={i === 1 ? light : color} map={grad} tex={i === 1 ? null : tex} />
+          <meshToonMaterial
+            color={i === 1 ? light : color}
+            gradientMap={grad}
+            map={i === 1 ? null : tex}
+            transparent
+            opacity={0.6}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
           <Ink thin />
         </mesh>
       ))}
@@ -869,7 +917,9 @@ function Wand({ kind, grad }: { kind: string | null; grad: THREE.DataTexture }) 
 /* ------------------------------------------------------------------- root */
 
 export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: ColorMap }) {
-  const grad = useGradientMap();
+  // five steps instead of three: the shading rolls round her arms and cheeks instead
+  // of banding, which is most of what makes the picture Clara sent look soft
+  const grad = useGradientMap(5);
   const eff = resolveFairyColors(parts, colors);
 
   const dress = pickPart(parts.dress, 'petal');

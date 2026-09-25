@@ -706,7 +706,9 @@ function Accessory({ kind, grad }: { kind: string | null; grad: THREE.DataTextur
 /* ------------------------------------------------------------------ root */
 
 export default function Princess3D({ parts, colors }: { parts: PartMap; colors: ColorMap }) {
-  const grad = useGradientMap();
+  // five steps instead of three: the shading rolls round her arms and cheeks instead
+  // of banding, which is most of what makes the picture Clara sent look soft
+  const grad = useGradientMap(5);
   const eff = resolvePrincessColors(parts, colors);
   const dressKind = pickPart(parts.dress, 'gown');
   const EyesSvg = findOption(PRINCESS, 'eyes', pickPart(parts.eyes, 'sparkly') ?? '')?.Svg;
