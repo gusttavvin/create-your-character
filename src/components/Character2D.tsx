@@ -25,7 +25,7 @@ interface Props {
  *
  * Each compositor tags its layers with `data-part="<category id>"`. The offsets are
  * stored in virtual canvas units, so they are converted with the live pixel size of
- * the stage. They are written to the `translate` and `scale` properties rather than
+ * the stage. They are written to the `translate`, `scale` and `rotate` properties rather than
  * `transform`, which the pop animation already owns.
  */
 export default function Character2D({ kind, parts, colors, layout, animate = true, className }: Props) {
@@ -40,6 +40,9 @@ export default function Character2D({ kind, parts, colors, layout, animate = tru
         const t = layout?.[el.dataset.part ?? ''];
         el.style.translate = t ? `${t.dx * unit}px ${t.dy * unit}px` : '';
         el.style.scale = t ? String(t.s) : '';
+        // a mirrored half turns the other way, so a pair of arms keeps its symmetry
+        const turn = t?.r ? (el.dataset.mirror ? -t.r : t.r) : 0;
+        el.style.rotate = turn ? `${turn}deg` : '';
       });
     };
     apply();

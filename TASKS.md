@@ -13,15 +13,15 @@ depois desenho 2D, depois 3D, depois jogos novos.
       a página no meio da aula.
 - [x] **No 2D, clicar no olho pega o cabelo** (fada). O clique tem que pegar a peça de
       cima / menor, não a maior.
-- [ ] **Poder girar as peças** (os braços principalmente), além de mover e redimensionar.
+- [x] **Poder girar as peças** (os braços principalmente), além de mover e redimensionar.
       Os dois braços giram juntos, não precisa separado.
 - [ ] **Mexer a cabeça da princesa** (hoje a cabeça não é uma peça que se move).
 - [ ] **Mexer a boca no 3D** (hoje ela é pintada na cabeça e não se solta).
 
 ## 2. Monster
 
-- [ ] 2D: a **Big Tongue corta a língua** na borda do desenho.
-- [ ] 2D: **os braços ficam atrás do corpo** e mal posicionados — têm que vir para a frente.
+- [x] 2D: a **Big Tongue corta a língua** na borda do desenho.
+- [x] 2D: **os braços ficam atrás do corpo** e mal posicionados — têm que vir para a frente.
 - [ ] 3D: **corpo round** tem que ser um oval com as voltinhas só na borda, não uma bola
       cheia de calombos por todo lado.
 - [ ] 3D: **square e hourglass não estão fofinhos** (o egg ficou bom, serve de referência).

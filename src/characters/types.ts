@@ -15,6 +15,8 @@ export interface PartTransform {
   dy: number;
   /** Depth, only meaningful in 3D: towards the viewer is positive. */
   dz?: number;
+  /** Turn, in degrees, clockwise on the picture. Mirrored halves turn the other way. */
+  r?: number;
   /** Size multiplier. */
   s: number;
 }
@@ -28,7 +30,10 @@ export const UNITS_PER_WORLD = 180;
 
 export type LayoutMap = Record<string, PartTransform>;
 
-export const NEUTRAL: PartTransform = { dx: 0, dy: 0, dz: 0, s: 1 };
+export const NEUTRAL: PartTransform = { dx: 0, dy: 0, dz: 0, r: 0, s: 1 };
+
+/** How far one press of the turn button moves a piece, in degrees. */
+export const TURN_STEP = 12;
 export const MIN_SCALE = 0.45;
 export const MAX_SCALE = 2.2;
 
@@ -197,6 +202,12 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));
 }
 
+/** Keeps a turn inside -180..180 so it never winds up out of sight. */
+function wrapAngle(deg: number) {
+  const a = ((deg + 180) % 360 + 360) % 360 - 180;
+  return Math.round(a * 10) / 10;
+}
+
 export function normalizeLayout(layout?: Partial<Record<string, Partial<PartTransform>>> | null): LayoutMap {
   const out: LayoutMap = {};
   if (!layout) return out;
@@ -205,9 +216,10 @@ export function normalizeLayout(layout?: Partial<Record<string, Partial<PartTran
     const dx = Number(v.dx) || 0;
     const dy = Number(v.dy) || 0;
     const dz = Number(v.dz) || 0;
+    const r = wrapAngle(Number(v.r) || 0);
     const s = clamp(Number(v.s) || 1, MIN_SCALE, MAX_SCALE);
-    if (dx === 0 && dy === 0 && dz === 0 && s === 1) continue;
-    out[k] = { dx, dy, dz, s };
+    if (dx === 0 && dy === 0 && dz === 0 && r === 0 && s === 1) continue;
+    out[k] = { dx, dy, dz, r, s };
   }
   return out;
 }
@@ -219,10 +231,11 @@ export function withTransform(layout: LayoutMap, categoryId: string, patch: Part
     dx: patch.dx ?? cur.dx,
     dy: patch.dy ?? cur.dy,
     dz: patch.dz ?? cur.dz ?? 0,
+    r: wrapAngle(patch.r ?? cur.r ?? 0),
     s: clamp(patch.s ?? cur.s, MIN_SCALE, MAX_SCALE),
   };
   const out = { ...layout };
-  if (next.dx === 0 && next.dy === 0 && next.dz === 0 && next.s === 1) delete out[categoryId];
+  if (next.dx === 0 && next.dy === 0 && next.dz === 0 && next.r === 0 && next.s === 1) delete out[categoryId];
   else out[categoryId] = next;
   return out;
 }

@@ -113,6 +113,12 @@ export default function Builder({ def, initial }: Props) {
     setDirty(true);
   }, []);
 
+  const turnPart = useCallback((categoryId: string, r: number) => {
+    setLayout((l) => withTransform(l, categoryId, { r }));
+    setDirty(true);
+    playClick();
+  }, []);
+
   const scalePart = useCallback((categoryId: string, s: number) => {
     setLayout((l) => withTransform(l, categoryId, { s }));
     setDirty(true);
@@ -120,7 +126,7 @@ export default function Builder({ def, initial }: Props) {
   }, []);
 
   const resetPart = useCallback((categoryId: string) => {
-    setLayout((l) => withTransform(l, categoryId, { dx: 0, dy: 0, dz: 0, s: 1 }));
+    setLayout((l) => withTransform(l, categoryId, { dx: 0, dy: 0, dz: 0, r: 0, s: 1 }));
     setDirty(true);
     playClick();
   }, []);
@@ -222,6 +228,7 @@ export default function Builder({ def, initial }: Props) {
                 category={adjusting}
                 transform={layout[adjusting.id] ?? NEUTRAL}
                 onScale={scalePart}
+                onTurn={turnPart}
                 onReset={resetPart}
               />
             )}

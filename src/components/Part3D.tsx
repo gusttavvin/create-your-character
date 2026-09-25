@@ -47,6 +47,7 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
   const inner = useRef<THREE.Group>(null);
   const box = useRef(new THREE.Box3());
   const centre = useRef(new THREE.Vector3());
+  const spun = useRef(new THREE.Vector3());
   /** False while the category is erased: nothing to pick up or drag. */
   const solid = useRef(false);
   const camera = useThree((s) => s.camera);
@@ -65,14 +66,16 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
     if (solid.current) box.current.getCenter(centre.current);
     else centre.current.set(0, 0, 0);
 
-    // final = centre + s * (p - centre) + offset
-    const k = 1 - t.s;
-    o.position.set(
-      centre.current.x * k + t.dx / UNITS_PER_WORLD,
-      centre.current.y * k - t.dy / UNITS_PER_WORLD, // the sheet counts y downwards
-      centre.current.z * k + (t.dz ?? 0) / UNITS_PER_WORLD,
-    );
+    // final = centre + turn * size * (p - centre) + offset, so the piece grows and
+    // turns about itself and then moves to where the child dropped it
+    o.rotation.set(0, 0, ((t.r ?? 0) * Math.PI) / -180);
     o.scale.setScalar(t.s);
+    spun.current.copy(centre.current).multiplyScalar(t.s).applyEuler(o.rotation);
+    o.position.set(
+      centre.current.x - spun.current.x + t.dx / UNITS_PER_WORLD,
+      centre.current.y - spun.current.y - t.dy / UNITS_PER_WORLD, // the sheet counts y downwards
+      centre.current.z - spun.current.z + (t.dz ?? 0) / UNITS_PER_WORLD,
+    );
   });
 
   // a picked piece is ringed in blue, the same hint the drawing gives on the sheet:
