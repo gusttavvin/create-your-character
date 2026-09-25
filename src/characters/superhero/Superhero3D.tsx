@@ -31,13 +31,15 @@ import Part3D from '../../components/Part3D';
  */
 
 const HEAD_Y = 1.15;
-const HEAD_R = 0.62;
+/** A big head on a small body, like the heroes Clara sent: a child in a costume. */
+const HEAD_R = 0.7;
 /** Right shoulder joint; the left one is this reflected. */
 const SHOULDER: [number, number, number] = [0.46, 0.4, 0];
 /** Right fist, where the powers burn. */
-const HAND: [number, number, number] = [0.8, -0.52, 0.08];
+const HAND: [number, number, number] = [0.66, -0.4, 0.12];
 /** Right hip and the ankle under it. */
-const HIP: [number, number, number] = [0.21, -0.45, 0];
+/** Right hip. Wide, because a hero stands with his feet apart. */
+const HIP: [number, number, number] = [0.3, -0.45, 0];
 const ANKLE_Y = -1.42;
 
 /** Toon surface; a pattern texture carries the colour itself, so the tint goes white. */
@@ -120,24 +122,33 @@ const PLATE: [number, number][] = [
   [0.0, 0.6],
 ];
 
-/** One arm, shoulder to fist: a single bent limb, not a chain of beads. */
+/**
+ * One arm, shoulder to fist. It goes out at the elbow and comes back in to the waist,
+ * so he stands with his fists on his hips, which is how the heroes in Clara's picture
+ * stand; the drawing's arm is one bend, not a chain of beads.
+ */
 function Arm({ suit, glove, grad, tex }: { suit: string; glove: string; grad: THREE.DataTexture; tex: THREE.Texture | null }) {
   return (
     <group position={SHOULDER}>
       <Limb
         pts={[
-          [0.06, -0.06, 0],
-          [0.2, -0.36, 0.02],
-          [0.29, -0.62, 0.04],
-          [0.33, -0.84, 0.06],
+          [0.02, -0.06, 0],
+          [0.2, -0.32, -0.04],
+          [0.08, -0.62, -0.03],
+          [-0.12, -0.74, 0.02],
         ]}
-        r={0.125}
+        r={0.12}
       >
         <Toon color={suit} map={grad} tex={tex} />
       </Limb>
-      {/* the glove closes the arm off at the fist */}
-      <mesh position={[0.35, -0.95, 0.06]} scale={[1, 1.05, 1.1]}>
-        <sphereGeometry args={[0.15, 20, 20]} />
+      {/* the glove: a cuff and a fist, planted on his hip */}
+      <mesh position={[-0.05, -0.7, 0.01]} rotation={[0, 0, 0.7]}>
+        <cylinderGeometry args={[0.145, 0.135, 0.12, 18]} />
+        <Toon color={glove} map={grad} />
+        <Ink thin />
+      </mesh>
+      <mesh position={[-0.17, -0.76, 0.02]} scale={[1, 1.05, 1.05]}>
+        <sphereGeometry args={[0.145, 20, 20]} />
         <Toon color={glove} map={grad} />
         <Ink thin />
       </mesh>
@@ -168,13 +179,13 @@ function Leg({ suit, grad, tex }: { suit: string; grad: THREE.DataTexture; tex: 
   );
 }
 
-function Suit({ kind, color, skin, grad }: { kind: string | null; color: string; skin: string; grad: THREE.DataTexture }) {
+function Suit({ kind, color, trim, skin, grad }: { kind: string | null; color: string; trim: string; skin: string; grad: THREE.DataTexture }) {
   const torso = useMemo(() => lathe(TORSO), []);
   const plate = useMemo(() => lathe(PLATE), []);
   const cloth = usePatternTexture(skinOf(SUIT_SKIN, kind, color));
   // erased suit: the hero underneath is still drawn, exactly like the 2D <Body>
   const body = kind ? color : skin;
-  const glove = kind ? shade(color, -0.24) : skin;
+  const glove = kind ? trim : skin;
   const dark = shade(color, -0.2);
   const light = shade(color, 0.42);
   return (
@@ -255,16 +266,16 @@ function Suit({ kind, color, skin, grad }: { kind: string | null; color: string;
         </Pair>
       )}
 
-      {/* belt */}
+      {/* belt: a wide band with a buckle, the way every hero in the picture wears one */}
       {kind && (
-        <group position={[0, -0.3, 0]}>
+        <group position={[0, -0.28, 0]}>
           <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.75, 1]}>
-            <torusGeometry args={[0.36, 0.07, 10, 32]} />
-            <Toon color={shade(color, -0.34)} map={grad} />
+            <torusGeometry args={[0.37, 0.1, 12, 36]} />
+            <Toon color={shade(color, -0.38)} map={grad} />
             <Ink thin />
           </mesh>
-          <mesh position={[0, 0, 0.3]} scale={[1, 1, 0.6]}>
-            <sphereGeometry args={[0.09, 16, 16]} />
+          <mesh position={[0, 0, 0.29]} scale={[1.25, 1, 0.55]}>
+            <boxGeometry args={[0.2, 0.17, 0.12]} />
             <Toon color="#FFD93D" map={grad} />
             <Ink thin />
           </mesh>
@@ -903,10 +914,10 @@ export default function Superhero3D({ parts, colors }: { parts: PartMap; colors:
   return (
     <group position={[0, 0.02, 0]}>
       <Part3D id="cape"><Cape kind={cape} color={eff.cape} grad={grad} /></Part3D>
-      <Part3D id="suit"><Suit kind={suit} color={eff.suit} skin={eff.skin} grad={grad} /></Part3D>
+      <Part3D id="suit"><Suit kind={suit} color={eff.suit} trim={eff.cape} skin={eff.skin} grad={grad} /></Part3D>
       <Part3D id="emblem"><Emblem kind={emblem} color={eff.suit} grad={grad} /></Part3D>
       <Part3D id="boots">
-        {boots ? <Boots kind={boots} color={eff.suit} grad={grad} /> : <BareFeet color={eff.skin} grad={grad} />}
+        {boots ? <Boots kind={boots} color={eff.cape} grad={grad} /> : <BareFeet color={eff.skin} grad={grad} />}
       </Part3D>
 
       {/* head — the face is the 2D drawing, projected */}
@@ -914,9 +925,9 @@ export default function Superhero3D({ parts, colors }: { parts: PartMap; colors:
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal order={2} tex={eyesTex} y={0.05} z={HEAD_R} size={1.0} />
-        <FaceDecal order={3} tex={mouthTex} y={-0.2} z={HEAD_R} size={0.62} />
-        <FaceDecal order={4} tex={maskTex} y={0.05} z={HEAD_R} size={1.0} />
+        <FaceDecal order={2} tex={eyesTex} y={0.05} z={HEAD_R} size={1.12} />
+        <FaceDecal order={3} tex={mouthTex} y={-0.24} z={HEAD_R} size={0.7} />
+        <FaceDecal order={4} tex={maskTex} y={0.05} z={HEAD_R} size={1.12} />
       </mesh>
 
       {/* ears */}

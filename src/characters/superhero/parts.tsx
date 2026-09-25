@@ -23,8 +23,8 @@ const O = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, stro
 
 export const SUPERHERO_DEFAULTS = {
   skin: '#FCE1C8',
-  suit: { classic: '#FF6B78', armour: '#4FC3FF', stripes: '#A77BFF', hoodie: '#2ED8C3' } as Record<string, string>,
-  cape: { long: '#A77BFF', short: '#FF8A2A', torn: '#2ED8C3', star: '#4FC3FF' } as Record<string, string>,
+  suit: { classic: '#2F6BE0', armour: '#4FC3FF', stripes: '#A77BFF', hoodie: '#2ED8C3' } as Record<string, string>,
+  cape: { long: '#E8323C', short: '#FF8A2A', torn: '#2ED8C3', star: '#FFD93D' } as Record<string, string>,
 };
 
 const suitOf = (colors: Record<string, string>) => colors.suit || SUPERHERO_DEFAULTS.suit.classic;
@@ -134,7 +134,8 @@ export function Head(props: PartSvgProps) {
 
 /* ------------------------------------------------------------------ BODY */
 
-const ARM_PATH = 'M172,116 C124,146 92,202 92,248';
+/** Shoulder, out at the elbow, back in to the waist: fists on hips. */
+const ARM_PATH = 'M178,118 C116,152 102,214 152,254';
 const LEG_PATH = 'M172,296 L172,442 C172,458 186,466 205,466 C224,466 238,458 238,442 L238,296 Z';
 const TORSO_PATH =
   'M256,70 C198,70 160,82 152,98 C142,178 158,252 168,304 L344,304 C354,252 370,178 360,98 C352,82 314,70 256,70 Z';
@@ -150,7 +151,7 @@ export function Body({ colors, className }: PartSvgProps) {
           <path d={LEG_PATH} fill={skin} {...O} />
           <path d={ARM_PATH} fill="none" stroke={INK} strokeWidth="48" strokeLinecap="round" />
           <path d={ARM_PATH} fill="none" stroke={skin} strokeWidth="30" strokeLinecap="round" />
-          <circle cx="92" cy="272" r="32" fill={skin} {...O} strokeWidth={12} />
+          <circle cx="158" cy="266" r="30" fill={skin} {...O} strokeWidth={12} />
         </g>
       </Mirror>
       <path d={TORSO_PATH} fill={skin} {...O} />
@@ -169,7 +170,7 @@ function SuitBase({ c }: { c: string }) {
           <path d={LEG_PATH} fill={c} {...O} />
           <path d={ARM_PATH} fill="none" stroke={INK} strokeWidth="48" strokeLinecap="round" />
           <path d={ARM_PATH} fill="none" stroke={c} strokeWidth="30" strokeLinecap="round" />
-          <circle cx="92" cy="272" r="32" fill={shade(c, -0.22)} {...O} strokeWidth={12} />
+          <circle cx="158" cy="266" r="30" fill={shade(c, -0.22)} {...O} strokeWidth={12} />
         </g>
       </Mirror>
       <path d={TORSO_PATH} fill={c} {...O} />

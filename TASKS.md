@@ -111,3 +111,6 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Corpinhos no estilo da fada de referência** (foto que a Clara mandou): cabeça
       maior sobre um corpo menor, tronco arredondado e pernas mais curtas, na fada e na
       princesa.
+- [x] **Super-herói refeito** com as ilustrações de referência: cabeça maior, pose de
+      herói (punhos na cintura, pés afastados), cinto com fivela, e luvas e botas na cor
+      da capa, com o azul/vermelho clássico como cor inicial.
