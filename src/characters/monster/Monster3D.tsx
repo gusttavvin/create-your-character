@@ -125,7 +125,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
   if (!kind) return null;
   if (kind === 'egg') {
     return (
-      <mesh position={[0, 0.35, 0]} scale={[0.9, 1.2, 0.9]}>
+      <mesh key="egg" position={[0, 0.35, 0]} scale={[0.9, 1.2, 0.9]}>
         <sphereGeometry args={[1, 48, 48]} />
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
@@ -135,7 +135,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
   }
   if (kind === 'square') {
     return (
-      <group position={[0, 0.35, 0]}>
+      <group key="square" position={[0, 0.35, 0]}>
         <FurRing color={color} grad={grad} w={1.02} h={1.02} d={1.62} />
         <RoundedBox args={[2.05, 2.05, 1.65]} radius={0.62} smoothness={8}>
           <Toon color={color} map={grad} tex={tex} />
@@ -147,7 +147,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
   }
   if (kind === 'hourglass') {
     return (
-      <mesh geometry={peanut} position={[0, -0.1, 0]}>
+      <mesh key="hourglass" geometry={peanut} position={[0, -0.1, 0]}>
         <Toon color={color} map={grad} tex={tex} />
         <Ink />
         <FaceDecal tex={face} y={1.0} z={0.8} size={0.7} />
@@ -157,7 +157,7 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
 
   // round (default)
   return (
-    <mesh geometry={blob} position={[0, 0.3, 0]} scale={[0.95, 1.18, 0.82]}>
+    <mesh key="round" geometry={blob} position={[0, 0.3, 0]} scale={[0.95, 1.18, 0.82]}>
       <Toon color={color} map={grad} tex={tex} />
       <Ink />
       <FaceDecal tex={face} y={-0.26} z={0.95} size={0.82} />

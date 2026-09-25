@@ -33,12 +33,12 @@ depois desenho 2D, depois 3D, depois jogos novos.
 
 ## 3. Dragon
 
-- [ ] O dragão principal está **sem os espetinhos** das costas (só apareceu um).
-- [ ] **spiky** precisa de bem mais espetos.
-- [ ] 3D: **boca de fogo está péssima**.
-- [ ] **Tails**: a de fogo não parece fogo, a de raio parece Lego, a de gelo está estranha e
+- [x] O dragão principal está **sem os espetinhos** das costas (só apareceu um).
+- [x] **spiky** precisa de bem mais espetos.
+- [x] 3D: **boca de fogo está péssima**.
+- [x] **Tails**: a de fogo não parece fogo, a de raio parece Lego, a de gelo está estranha e
       a de folha está cortada.
-- [ ] 3D: **tall** tem que ser um oval (ovo) e está com mancha demais, diferente do 2D.
+- [x] 3D: **tall** tem que ser um oval (ovo) e está com mancha demais, diferente do 2D.
 - [ ] 2D: **chubby** está ruim (no 3D ficou bom).
 
 ## 4. Princess

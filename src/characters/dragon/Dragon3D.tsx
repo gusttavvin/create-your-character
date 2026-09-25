@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import type { ColorMap, PartMap } from '../types';
 import { DRAGON, resolveDragonColors } from './config';
 import { findOption } from '../types';
-import { INK3D, leafShape, pickPart, useGradientMap, usePatternTexture, useSvgTexture } from '../../lib/three';
+import { INK3D, leafShape, pickPart, useGradientMap, usePatternTexture, useSvgTexture, latheBody } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
 import Part3D from '../../components/Part3D';
@@ -51,7 +51,7 @@ const WING_SKIN: Record<string, PatternKind> = {
 
 /** Evenly spread directions over a sphere, minus the patch where the face goes. */
 const SPIKE_DIRS: THREE.Vector3[] = (() => {
-  const n = 22;
+  const n = 54;
   const out: THREE.Vector3[] = [];
   for (let i = 0; i < n; i++) {
     const y = 1 - (i / (n - 1)) * 2;
@@ -74,62 +74,74 @@ function aim(dir: THREE.Vector3) {
 
 /* ------------------------------------------------------------------ fire */
 
-/**
- * Real 3D fire: three nested cones pointing down +Z (orange shell, yellow
- * middle, white-hot core) plus a few small licks breaking away. Only the outer
- * shell is inked, so the flame keeps one clean cartoon edge from every angle.
- * The whole jet wobbles in scale and position so it flickers.
- */
-function Flame({ grad, len = 1 }: { grad: THREE.DataTexture; len?: number }) {
+/** The outline of one tongue of fire: fat near the mouth, drawn out to a point. */
+const TONGUE = latheBody(
+  [
+    [0, 0],
+    [0.26, 0.18],
+    [0.34, 0.5],
+    [0.28, 0.82],
+    [0.14, 1.12],
+    [0.04, 1.3],
+    [0, 1.4],
+  ],
+  24,
+  40,
+);
+
+/** One tongue of flame, leaning by `tilt` and breathing at its own pace. */
+function Tongue({
+  grad,
+  color,
+  len,
+  tilt,
+  spin,
+  phase,
+  ink,
+}: {
+  grad: THREE.DataTexture;
+  color: string;
+  len: number;
+  tilt: number;
+  spin: number;
+  phase: number;
+  ink?: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const g = ref.current;
     if (!g) return;
-    const t = clock.getElapsedTime();
-    g.scale.set(1 + Math.sin(t * 13.1) * 0.07, 1 + Math.sin(t * 9.3 + 1.1) * 0.06, 1 + Math.sin(t * 11.2 + 0.6) * 0.14);
-    g.position.x = Math.sin(t * 7.5) * 0.03 * len;
-    g.position.y = Math.sin(t * 6.1 + 2.0) * 0.025 * len;
-    g.rotation.z = Math.sin(t * 5.2) * 0.09;
+    const t = clock.getElapsedTime() * 6 + phase;
+    g.scale.set(1 + Math.sin(t * 1.7) * 0.12, 1 + Math.sin(t) * 0.22, 1 + Math.sin(t * 1.3 + 1) * 0.12);
+    g.rotation.z = Math.sin(t * 0.8) * 0.12;
   });
-  const shell = 1.55 * len;
-  const mid = 1.15 * len;
-  const core = 0.72 * len;
   return (
-    <group ref={ref}>
-      <mesh position={[0, 0, shell * 0.5 - 0.06]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.36 * len, shell, 16]} />
-        <meshToonMaterial color="#FF7A1A" gradientMap={grad} />
-        <Ink />
-      </mesh>
-      <mesh position={[0, 0, mid * 0.5 - 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.24 * len, mid, 14]} />
-        <meshToonMaterial color="#FFC400" gradientMap={grad} />
-      </mesh>
-      <mesh position={[0, 0, core * 0.5 + 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.13 * len, core, 12]} />
-        <meshBasicMaterial color="#FFF6D6" toneMapped={false} />
-      </mesh>
-      {([
-        [0.2, 0.13, 0.95, 0.4],
-        [-0.18, 0.17, 1.15, 0.34],
-        [0.06, -0.19, 0.82, 0.3],
-      ] as const).map(([x, y, z, h], i) => (
-        <mesh key={i} position={[x * len, y * len, z * len]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.08 * len, h * len, 10]} />
-          <meshToonMaterial color="#FFB020" gradientMap={grad} />
+    <group rotation={[0, spin, 0]}>
+      <group rotation={[tilt, 0, 0]} ref={ref}>
+        <mesh geometry={TONGUE} scale={len} rotation={[Math.PI / 2, 0, 0]}>
+          <meshToonMaterial color={color} gradientMap={grad} />
+          {ink && <Ink thin />}
         </mesh>
-      ))}
+      </group>
     </group>
   );
 }
 
-/** One flame lick, for fire that burns along a whole tail. */
-function Lick({ grad, at, dir, size, color }: { grad: THREE.DataTexture; at: THREE.Vector3; dir: THREE.Vector3; size: number; color: string }) {
+/**
+ * Fire, the way a child draws it: a bunch of pointed tongues of different sizes
+ * licking out of the mouth, orange outside and white-hot in the middle, each one
+ * breathing at its own pace. A single long cone only ever looked like a traffic cone.
+ */
+function Flame({ grad, len = 1 }: { grad: THREE.DataTexture; len?: number }) {
   return (
-    <mesh position={[at.x, at.y, at.z]} quaternion={aim(dir)}>
-      <coneGeometry args={[size * 0.42, size * 1.7, 10]} />
-      <meshToonMaterial color={color} gradientMap={grad} />
-    </mesh>
+    <group>
+      <Tongue grad={grad} color="#FF7A1A" len={0.95 * len} tilt={0.06} spin={0} phase={0} ink />
+      <Tongue grad={grad} color="#FF9A1F" len={0.68 * len} tilt={0.38} spin={0.5} phase={1.7} />
+      <Tongue grad={grad} color="#FF9A1F" len={0.62 * len} tilt={-0.34} spin={-0.7} phase={3.1} />
+      <Tongue grad={grad} color="#FFC400" len={0.55 * len} tilt={0.18} spin={2.2} phase={0.9} />
+      <Tongue grad={grad} color="#FFC400" len={0.48 * len} tilt={-0.2} spin={-2.4} phase={2.4} />
+      <Tongue grad={grad} color="#FFF0C2" len={0.38 * len} tilt={0.04} spin={1.1} phase={4.2} />
+    </group>
   );
 }
 
@@ -146,6 +158,63 @@ function OpenMouth({ grad, pos, r }: { grad: THREE.DataTexture; pos: [number, nu
 
 /* ------------------------------------------------------------------ body */
 
+/**
+ * The row of spikes down a dragon's head and back.
+ *
+ * They used to be placed by hand at fixed heights and all but the top one ended up
+ * buried inside the head or the belly, so the dragon looked like it had a single fin.
+ * Each spike now sits on the surface it grows from and points straight out of it.
+ */
+function Crest({ spec, color, grad }: { spec: Spec; color: string; grad: THREE.DataTexture }) {
+  const spikes = useMemo(() => {
+    const out: { pos: [number, number, number]; dir: THREE.Vector3; h: number }[] = [];
+    // over the head: from the crown backwards
+    for (const [a, h] of [
+      [0.1, 0.34],
+      [0.55, 0.38],
+      [1.0, 0.34],
+      [1.45, 0.28],
+    ] as const) {
+      const dir = new THREE.Vector3(0, Math.cos(a), -Math.sin(a));
+      out.push({
+        pos: [0, spec.headY + dir.y * spec.headR * 0.94, dir.z * spec.headR * 0.94],
+        dir,
+        h,
+      });
+    }
+    // down the neck and along the back, on the far side of the body
+    const bodyY = -0.5;
+    const bodyR = 0.92;
+    for (const [a, h] of [
+      [0.62, 0.3],
+      [0.95, 0.32],
+      [1.3, 0.28],
+      [1.7, 0.22],
+    ] as const) {
+      const dir = new THREE.Vector3(0, Math.cos(a), -Math.sin(a));
+      out.push({
+        pos: [0, bodyY + dir.y * bodyR * 0.96, dir.z * bodyR * 0.96],
+        dir,
+        h,
+      });
+    }
+    return out;
+  }, [spec.headY, spec.headR]);
+
+  return (
+    <group>
+      {spikes.map((sp, i) => (
+        <mesh key={i} position={sp.pos} quaternion={aim(sp.dir)}>
+          <coneGeometry args={[sp.h * 0.45, sp.h, 8]} />
+          <Toon color={color} map={grad} />
+          <Ink />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+
 function Body({
   kind,
   color,
@@ -161,8 +230,23 @@ function Body({
   mouthTex: THREE.Texture | null;
   spec: Spec;
 }) {
+  // a standing egg: narrow at the top, heavy at the bottom, no seams
+  const egg = useMemo(
+    () =>
+      latheBody([
+        [0, -1.0],
+        [0.5, -0.9],
+        [0.78, -0.55],
+        [0.85, -0.05],
+        [0.78, 0.5],
+        [0.58, 0.95],
+        [0.3, 1.25],
+        [0, 1.35],
+      ]),
+    [],
+  );
   const belly = shade(color, 0.45);
-  const skin = usePatternTexture({ base: color, pattern: BODY_SKIN, scale: 2 });
+  const skin = usePatternTexture({ base: color, pattern: BODY_SKIN, scale: 2.8 });
   const bellySkin = usePatternTexture({ base: belly, pattern: BELLY_SKIN, scale: 1.6 });
   if (!kind) return null;
   const face = (
@@ -177,7 +261,7 @@ function Body({
     const s = spec.snout!;
     const crest = shade(color, -0.2);
     return (
-      <group>
+      <group key="classic">
         <mesh position={[0, -0.5, 0]} scale={[1.02, 0.92, 0.95]}>
           <sphereGeometry args={[0.92, 48, 48]} />
           <Toon color={color} map={grad} tex={skin} />
@@ -212,20 +296,8 @@ function Body({
             <meshToonMaterial color={INK3D} gradientMap={grad} />
           </mesh>
         ))}
-        {/* crest running from the crown down the neck */}
-        {([
-          [1.5, -0.02, 0.4, -0.2],
-          [1.32, -0.34, 0.38, -0.7],
-          [0.98, -0.52, 0.34, -1.1],
-          [0.62, -0.46, 0.3, -1.3],
-          [0.26, -0.5, 0.26, -1.45],
-        ] as const).map(([y, z, h, tilt], i) => (
-          <mesh key={i} position={[0, y, z]} rotation={[tilt, 0, 0]}>
-            <coneGeometry args={[h * 0.42, h, 8]} />
-            <Toon color={crest} map={grad} />
-            <Ink />
-          </mesh>
-        ))}
+        {/* the row of spikes, riding the outside of the head, neck and back */}
+        <Crest spec={spec} color={crest} grad={grad} />
         <Feet color={color} grad={grad} y={-1.26} />
       </group>
     );
@@ -234,13 +306,20 @@ function Body({
   if (kind === 'chubby' || kind === 'tall') {
     const tall = kind === 'tall';
     return (
-      <group>
-        {/* torso */}
-        <mesh position={[0, -0.35, 0]} scale={tall ? [0.85, 1.15, 0.85] : [1.15, 0.95, 1.0]}>
-          <sphereGeometry args={[0.95, 48, 48]} />
-          <Toon color={color} map={grad} tex={skin} />
-          <Ink />
-        </mesh>
+      <group key={kind}>
+        {/* torso: the tall one is a standing egg, the chubby one a wide ball */}
+        {tall ? (
+          <mesh geometry={egg} position={[0, -0.62, 0]} scale={[0.95, 0.72, 0.95]}>
+            <Toon color={color} map={grad} tex={skin} />
+            <Ink />
+          </mesh>
+        ) : (
+          <mesh position={[0, -0.35, 0]} scale={[1.15, 0.95, 1.0]}>
+            <sphereGeometry args={[0.95, 48, 48]} />
+            <Toon color={color} map={grad} tex={skin} />
+            <Ink />
+          </mesh>
+        )}
         <mesh position={[0, -0.4, tall ? 0.62 : 0.78]} scale={[0.7, 0.8, 0.35]}>
           <sphereGeometry args={[0.8, 32, 32]} />
           <Toon color={belly} map={grad} tex={bellySkin} />
@@ -259,7 +338,7 @@ function Body({
 
   // spiky: one big ball, bristling on every side
   return (
-    <group>
+    <group key="spiky">
       <mesh position={[0, spec.headY, 0]}>
         <sphereGeometry args={[spec.headR, 48, 48]} />
         <Toon color={color} map={grad} tex={skin} />
@@ -276,7 +355,7 @@ function Body({
           position={[d.x * (spec.headR - 0.08), spec.headY + d.y * (spec.headR - 0.08), d.z * (spec.headR - 0.08)]}
           quaternion={aim(d)}
         >
-          <coneGeometry args={[0.15, 0.5, 8]} />
+          <coneGeometry args={[0.12, 0.38 + ((i * 7) % 5) * 0.08, 8]} />
           <Toon color={shade(color, -0.2)} map={grad} />
           <Ink />
         </mesh>
@@ -447,6 +526,41 @@ function Wings({ kind, color, grad, y, halfW }: { kind: string | null; color: st
   );
 }
 
+/**
+ * A length of tail. A bare tube is open at both ends, which is why the leaf tail
+ * looked snipped off, so each end is closed with a ball.
+ */
+function CappedTube({
+  curve,
+  r,
+  tip = 1,
+  children,
+}: {
+  curve: THREE.CatmullRomCurve3;
+  r: number;
+  tip?: number;
+  children: React.ReactNode;
+}) {
+  const a = curve.getPoint(0);
+  const b = curve.getPoint(1);
+  return (
+    <group>
+      <mesh>
+        <tubeGeometry args={[curve, 40, r, 14, false]} />
+        {children}
+      </mesh>
+      <mesh position={[a.x, a.y, a.z]}>
+        <sphereGeometry args={[r, 18, 18]} />
+        {children}
+      </mesh>
+      <mesh position={[b.x, b.y, b.z]}>
+        <sphereGeometry args={[r * tip, 18, 18]} />
+        {children}
+      </mesh>
+    </group>
+  );
+}
+
 /* ------------------------------------------------------------------ tail */
 
 /** Each tail is themed from root to tip, so the whole length tells the story. */
@@ -461,11 +575,13 @@ function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTex
   });
   const curve = useMemo(
     () =>
+      // the tail sweeps out to the side rather than straight backwards, so the child
+      // can see what it is from the front, where the picture is taken
       new THREE.CatmullRomCurve3([
         new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0.2, -0.2, -0.6),
-        new THREE.Vector3(0.6, -0.1, -1.1),
-        new THREE.Vector3(1.0, 0.3, -1.4),
+        new THREE.Vector3(0.45, -0.25, -0.4),
+        new THREE.Vector3(1.05, -0.12, -0.62),
+        new THREE.Vector3(1.62, 0.5, -0.7),
       ]),
     [],
   );
@@ -503,27 +619,27 @@ function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTex
 
   return (
     <group ref={ref} position={[0, y, -0.4]}>
-      {/* fire: an orange tail that burns all the way, with a blast at the tip */}
+      {/* fire: the tail itself burns, tongue after tongue, up to a blast at the tip */}
       {kind === 'fire' && (
         <group>
-          <mesh>
-            <tubeGeometry args={[curve, 32, 0.15, 12, false]} />
-            <meshToonMaterial color="#FF7A1A" gradientMap={grad} />
-            <Ink />
-          </mesh>
+          <CappedTube curve={curve} r={0.15} tip={0.7}>
+            <meshToonMaterial color="#E8541B" gradientMap={grad} />
+          </CappedTube>
           {stations.slice(0, 5).map((s, i) => (
-            <group key={i}>
-              <Lick grad={grad} at={s.p} dir={s.out} size={0.24 + s.t * 0.3} color="#FF7A1A" />
-              <Lick grad={grad} at={s.p} dir={s.out} size={0.15 + s.t * 0.2} color="#FFC400" />
+            <group key={i} position={[s.p.x, s.p.y, s.p.z]} quaternion={aim(s.out)}>
+              <group rotation={[-Math.PI / 2, 0, 0]}>
+                <Tongue grad={grad} color="#FF7A1A" len={0.34 + s.t * 0.3} tilt={0} spin={0} phase={i * 1.3} ink />
+                <Tongue grad={grad} color="#FFC400" len={0.2 + s.t * 0.2} tilt={0.1} spin={0.6} phase={i * 1.3 + 2} />
+              </group>
             </group>
           ))}
           <group position={[tip.p.x, tip.p.y, tip.p.z]} quaternion={tipQuat}>
-            <Flame grad={grad} len={0.6} />
+            <Flame grad={grad} len={0.5} />
           </group>
         </group>
       )}
 
-      {/* lightning: a jagged bolt, segment by segment from root to tip */}
+      {/* lightning: a flat, angular bolt rather than a string of fat sausages */}
       {kind === 'lightning' &&
         bolt.slice(0, -1).map((a, i) => {
           const b = bolt[i + 1];
@@ -532,39 +648,45 @@ function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTex
           const k = 1 - i / bolt.length;
           return (
             <mesh key={i} position={[(a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2]} quaternion={aim(dir)}>
-              <cylinderGeometry args={[0.18 * k, 0.2 * k, len * 1.25, 6]} />
+              <boxGeometry args={[0.26 * k, len * 1.3, 0.09]} />
               <Toon color="#FFD93D" map={grad} />
               <Ink />
             </mesh>
           );
         })}
 
-      {/* ice: a crystal core with shards growing out of it the whole way */}
+      {/* ice: a crystal tail, shards growing along it and a long point at the end */}
       {kind === 'ice' && (
         <group>
-          <mesh>
-            <tubeGeometry args={[curve, 32, 0.12, 8, false]} />
-            <Toon color="#A7EEFF" map={grad} tex={iceSkin} />
-            <Ink />
-          </mesh>
+          <CappedTube curve={curve} r={0.12} tip={0.6}>
+            <meshToonMaterial color="#BDEFFF" gradientMap={grad} map={iceSkin} />
+          </CappedTube>
           {stations.map((s, i) => (
-            <mesh key={i} position={[s.p.x, s.p.y, s.p.z]} quaternion={aim(i % 2 ? s.out : s.out.clone().negate())}>
-              <coneGeometry args={[0.16 + s.t * 0.06, 0.38 + s.t * 0.5, 4]} />
-              <Toon color={i % 2 ? '#7FE3FF' : '#CFF6FF'} map={grad} />
-              <Ink />
+            <mesh
+              key={i}
+              position={[s.p.x, s.p.y, s.p.z]}
+              quaternion={aim(i % 2 ? s.out : s.out.clone().negate())}
+              scale={[0.13 + s.t * 0.05, 0.3 + s.t * 0.42, 0.13 + s.t * 0.05]}
+            >
+              <octahedronGeometry args={[1, 0]} />
+              <Toon color={i % 2 ? '#8FE7FF' : '#DCF8FF'} map={grad} />
+              <Ink thin />
             </mesh>
           ))}
+          <mesh position={[tip.p.x, tip.p.y, tip.p.z]} quaternion={tipQuat} scale={[0.17, 0.17, 0.62]}>
+            <octahedronGeometry args={[1, 0]} />
+            <Toon color="#8FE7FF" map={grad} />
+            <Ink thin />
+          </mesh>
         </group>
       )}
 
       {/* leaf: a vine with leaves sprouting the whole way, biggest at the tip */}
       {kind === 'leaf' && (
         <group>
-          <mesh>
-            <tubeGeometry args={[curve, 32, 0.13, 10, false]} />
-            <Toon color="#5FA83F" map={grad} tex={vineSkin} />
-            <Ink />
-          </mesh>
+          <CappedTube curve={curve} r={0.13} tip={0.75}>
+            <meshToonMaterial color="#5FA83F" gradientMap={grad} map={vineSkin} />
+          </CappedTube>
           {stations.map((s, i) => (
             <mesh
               key={i}
@@ -577,6 +699,10 @@ function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTex
               <Ink thin />
             </mesh>
           ))}
+          <mesh geometry={leaf} position={[tip.p.x, tip.p.y + 0.1, tip.p.z]} rotation={[0.2, 0.3, -0.2]} scale={1.15}>
+            <Toon color="#7ED957" map={grad} />
+            <Ink thin />
+          </mesh>
         </group>
       )}
     </group>
@@ -616,7 +742,8 @@ export default function Dragon3D({ parts, colors }: { parts: PartMap; colors: Co
       {fire && body && (
         <Part3D id="mouth">
           <OpenMouth grad={grad} pos={jaw} r={spec.snout ? spec.snout.r * 0.8 : 0.27} />
-          <group position={jet}>
+          {/* the jet leans up and out, so the flame reads as a flame from the front */}
+          <group position={jet} rotation={[-0.45, 0, 0]}>
             <Flame grad={grad} len={0.9} />
           </group>
         </Part3D>
