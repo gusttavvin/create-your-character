@@ -56,19 +56,39 @@ function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
 function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataTexture; w: number; h: number; d: number }) {
   const tufts = useMemo(() => {
     const out: { pos: [number, number, number]; rot: [number, number, number]; len: number }[] = [];
+    const len = (i: number) => 0.2 + ((i * 7) % 5) * 0.035;
+
+    // round the silhouette, so the outline is furry from every side
     const ringsAt = [-d * 0.42, -d * 0.16, d * 0.16, d * 0.42];
     const n = 30;
     for (const z of ringsAt) {
       for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2;
+        const angle = (i / n) * Math.PI * 2;
         // a superellipse traces the rounded square the body actually is
-        const ca = Math.cos(a);
-        const sa = Math.sin(a);
+        const ca = Math.cos(angle);
+        const sa = Math.sin(angle);
         const x = Math.sign(ca) * Math.abs(ca) ** 0.55 * w;
         const y = Math.sign(sa) * Math.abs(sa) ** 0.55 * h;
-        // short, soft and crowded reads as fuzz; long spikes read as a hedgehog
-        const len = 0.2 + ((i * 7) % 5) * 0.035;
-        out.push({ pos: [x, y, z], rot: [0, 0, Math.atan2(y, x) - Math.PI / 2], len });
+        out.push({ pos: [x, y, z], rot: [0, 0, Math.atan2(y, x) - Math.PI / 2], len: len(i) });
+      }
+    }
+
+    // and over the faces as well, so the whole body is furry rather than just its edge.
+    // The patch where the face is drawn stays clear, or the fur would swallow it.
+    const cols = 6;
+    const rows = 6;
+    for (const side of [-1, 1]) {
+      for (let cx = 0; cx < cols; cx++) {
+        for (let cy = 0; cy < rows; cy++) {
+          const x = (-1 + (2 * (cx + 0.5)) / cols) * w * 0.86;
+          const y = (-1 + (2 * (cy + 0.5)) / rows) * h * 0.86;
+          if (side > 0 && Math.abs(x) < w * 0.62 && y > -h * 0.78 && y < h * 0.6) continue;
+          out.push({
+            pos: [x, y, (side * d) / 2],
+            rot: [(side * Math.PI) / 2, 0, 0],
+            len: len(cx * rows + cy),
+          });
+        }
       }
     }
     return out;
@@ -430,35 +450,39 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
             <meshToonMaterial color={color} gradientMap={grad} />
           </mesh>
         ))}
-        <Fingers n={4} len={0.26} thick={0.065} y={1.12} spread={1.5} color={color} grad={grad} tex={tex} />
+        <Fingers n={4} len={0.24} thick={0.08} y={1.1} spread={1.5} color={color} grad={grad} tex={tex} />
       </group>
     );
   }
   // claw: a soft arm with the four fingers the drawing has
   return (
     <group>
-      <Noodle pts={reach} r={0.14} tip={1.25} color={color} grad={grad} tex={tex} />
-      <Fingers n={4} len={0.32} thick={0.06} y={1.1} spread={1.7} color={color} grad={grad} tex={tex} />
+      <Noodle pts={reach} r={0.17} tip={1.15} color={color} grad={grad} tex={tex} />
+      <Fingers n={4} len={0.28} thick={0.085} y={1.08} spread={1.7} color={color} grad={grad} tex={tex} />
     </group>
   );
 }
+
+/** How far out from straight up an arm is held, in radians: nearly flat, as drawn. */
+const ARM_OUT = 1.38;
 
 function Arms({ kind, halfW, y, grad }: { kind: string | null; halfW: number; y: number; grad: THREE.DataTexture }) {
   const l = useRef<THREE.Group>(null);
   const r = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    const w = Math.sin(t * 2.2) * 0.1;
-    if (l.current) l.current.rotation.z = 0.72 + w;
-    if (r.current) r.current.rotation.z = -0.72 - w;
+    // the drawing holds its arms out sideways, so the model does too
+    const w = Math.sin(t * 2.2) * 0.08;
+    if (l.current) l.current.rotation.z = ARM_OUT + w;
+    if (r.current) r.current.rotation.z = -ARM_OUT - w;
   });
   if (!kind) return null;
   return (
     <group>
-      <group ref={r} position={[halfW - 0.1, y, 0]} rotation={[0, 0, -0.72]}>
+      <group ref={r} position={[halfW - 0.12, y, 0]} rotation={[0, 0, -ARM_OUT]}>
         <Arm kind={kind} grad={grad} />
       </group>
-      <group ref={l} position={[-halfW + 0.1, y, 0]} rotation={[0, 0, 0.72]} scale={[-1, 1, 1]}>
+      <group ref={l} position={[-halfW + 0.12, y, 0]} rotation={[0, 0, ARM_OUT]} scale={[-1, 1, 1]}>
         <Arm kind={kind} grad={grad} />
       </group>
     </group>

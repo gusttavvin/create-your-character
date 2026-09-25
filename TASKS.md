@@ -72,3 +72,29 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Jogo da memória** com imagens (ela usa um de animais marinhos no Wordwall, que
       limita a 3 recursos grátis). Sem limite, com as imagens dela.
 - [x] **Roleta de sorteio** com o nome dos alunos, para escolher quem responde.
+
+---
+
+# Segunda rodada (mensagens da Clara, 25/09/2026)
+
+## Memory game
+
+- [x] Poder **alterar as palavras**: copiar um pacote, trocar, acrescentar e excluir, e
+      criar pacotes novos (página "Words", com link no jogo e na aba Teacher).
+- [x] **Escolher a quantidade de pares** em vez de fácil/médio/difícil.
+- [x] **Primeira letra das palavras sempre maiúscula.**
+- [x] "wild animals" virou **"Zoo animals"**.
+- [x] "colours" virou **"Colors"**.
+
+## Roleta
+
+- [x] **Nenhum nome de cabeça para baixo** (os nomes ficam sempre na horizontal, girando
+      junto com a fatia).
+- [x] **Tirar o nome estava rápido demais**: agora o nome sai da roleta só no giro
+      seguinte, dando tempo de ler.
+
+## Monster
+
+- [x] 2D: o braço **atrás do corpo** e **na horizontal**, encaixando no corpinho.
+- [x] 3D: os braços também ficam na horizontal, como no desenho, com as mãos mais gordas.
+- [x] 3D: o **square** ficou peludo no corpo inteiro, não só na borda.

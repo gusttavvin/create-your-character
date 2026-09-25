@@ -8,6 +8,11 @@ const BODY_SIZE = 440;
 const BODY_CX = 300;
 const BODY_CY = 400;
 const ARM = 230;
+/**
+ * The kit draws an arm standing up, hand at the top. On the body it lies along the
+ * side instead, hand outwards, turning about the shoulder at (29%, 90%) of its own box.
+ */
+const ARM_TILT = 82;
 const LEG = 300;
 
 /** The art's own 512 px rows mapped onto the virtual canvas. */
@@ -19,9 +24,10 @@ function bodyBox(bodyId: string) {
 }
 
 /**
- * Stacking order, back to front: legs (1), body (2), arms (3), eyes (4), mouth (5).
- * The arms belong in front of the body, the way the kit draws them, and the mouth sits
- * above the eyes so a long tongue is never sliced in two by a pair of eye stalks.
+ * Stacking order, back to front: legs (1), arms (2), body (3), eyes (4), mouth (5).
+ * The arms tuck in behind the body, so the shoulder end disappears under it and only
+ * the arm shows, and the mouth sits above the eyes so a long tongue is never sliced in
+ * two by a pair of eye stalks.
  */
 function box(cx: number, cy: number, size: number, z: number): CSSProperties {
   return {
@@ -103,7 +109,7 @@ export default function Monster2D({ parts, animate = true, className }: Props) {
     top: `${((armAttachY - armBaseY) / VH) * 100}%`,
     width: `${(ARM / VW) * 100}%`,
     aspectRatio: '1 / 1',
-    zIndex: 3,
+    zIndex: 2,
   });
 
   return (
@@ -121,14 +127,18 @@ export default function Monster2D({ parts, animate = true, className }: Props) {
         {arms && (
           <>
             <Layer part="arms" key={`arm-r-${arms.id}`} style={armBox(rightAttachX - armBaseX)}>
-              <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
-                <img src={arms.img} alt={arms.label} draggable={false} style={fill} />
+              <div style={{ ...fill, transform: `rotate(${ARM_TILT}deg)`, transformOrigin: '29% 90%' }}>
+                <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
+                  <img src={arms.img} alt={arms.label} draggable={false} style={fill} />
+                </div>
               </div>
             </Layer>
             <Layer part="arms" key={`arm-l-${arms.id}`} style={armBox(leftAttachX - (ARM - armBaseX))} mirror>
               <div style={{ ...fill, transform: 'scaleX(-1)' }}>
-                <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
-                  <img src={arms.img} alt="" draggable={false} style={fill} />
+                <div style={{ ...fill, transform: `rotate(${ARM_TILT}deg)`, transformOrigin: '29% 90%' }}>
+                  <div className="arm-wiggle" style={{ ...fill, transformOrigin: '29% 90%' }}>
+                    <img src={arms.img} alt="" draggable={false} style={fill} />
+                  </div>
                 </div>
               </div>
             </Layer>
@@ -136,7 +146,7 @@ export default function Monster2D({ parts, animate = true, className }: Props) {
         )}
 
         {body && (
-          <Layer part="body" key={`body-${body.id}`} style={box(BODY_CX, BODY_CY, BODY_SIZE, 2)}>
+          <Layer part="body" key={`body-${body.id}`} style={box(BODY_CX, BODY_CY, BODY_SIZE, 3)}>
             <img src={body.img} alt={body.label} draggable={false} style={fill} />
           </Layer>
         )}
