@@ -61,9 +61,9 @@ export const DECKS: MemoryDeck[] = [
   },
   {
     id: 'wild',
-    label: 'Wild animals',
+    label: 'Zoo animals',
     emoji: '🦁',
-    learn: 'wild animals',
+    learn: 'zoo animals',
     items: [
       { emoji: '🦁', word: 'lion' },
       { emoji: '🐘', word: 'elephant' },
@@ -151,9 +151,9 @@ export const DECKS: MemoryDeck[] = [
   },
   {
     id: 'colours',
-    label: 'Colours',
+    label: 'Colors',
     emoji: '🎨',
-    learn: 'colours',
+    learn: 'colors',
     items: [
       { emoji: '🟥', word: 'red' },
       { emoji: '🟦', word: 'blue' },

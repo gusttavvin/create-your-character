@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DECKS, DECK_BY_ID, type MemoryItem } from '../games/memory/decks';
+import type { MemoryItem } from '../games/memory/decks';
+import { allPacks, type Pack } from '../games/memory/packs';
 import { speak } from '../lib/speech';
 import { playClick, playPop, playTada } from '../lib/sounds';
 import { burstConfetti } from '../lib/confetti';
 
-/** How many pairs each level deals. */
-const LEVELS = [
-  { id: 'easy', label: 'Easy', pairs: 6 },
-  { id: 'medium', label: 'Medium', pairs: 8 },
-  { id: 'hard', label: 'Hard', pairs: 10 },
-];
+/** The teacher picks how many pairs to look for. */
+const PAIR_CHOICES = [3, 4, 5, 6, 7, 8, 9, 10];
+const DEFAULT_PAIRS = 6;
+
+/** Words are stored in lower case and shown with a capital, the way a child writes them. */
+function caps(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
 
 type Mode = 'pictures' | 'words';
 
@@ -33,8 +36,8 @@ function shuffle<T>(items: T[]): T[] {
   return out;
 }
 
-function deal(deckId: string, pairs: number, mode: Mode): Card[] {
-  const deck = DECK_BY_ID[deckId] ?? DECKS[0];
+function deal(decks: Pack[], deckId: string, pairs: number, mode: Mode): Card[] {
+  const deck = decks.find((d) => d.id === deckId) ?? decks[0];
   const chosen = shuffle(deck.items).slice(0, pairs);
   const cards: Card[] = [];
   chosen.forEach((item, pair) => {
@@ -58,32 +61,45 @@ function deal(deckId: string, pairs: number, mode: Mode): Card[] {
  * child to read as well as remember.
  */
 export default function MemoryGame() {
-  const [deckId, setDeckId] = useState(DECKS[0].id);
-  const [level, setLevel] = useState(LEVELS[0]);
+  // the packs the game ships with, plus anything the teacher wrote in the words page
+  const [decks, setDecks] = useState<Pack[]>(allPacks);
+  const [deckId, setDeckId] = useState(decks[0].id);
+  const [pairs, setPairs] = useState(DEFAULT_PAIRS);
   const [mode, setMode] = useState<Mode>('pictures');
-  const [cards, setCards] = useState<Card[]>(() => deal(DECKS[0].id, LEVELS[0].pairs, 'pictures'));
+  const [cards, setCards] = useState<Card[]>(() => deal(allPacks(), allPacks()[0].id, DEFAULT_PAIRS, 'pictures'));
   const [up, setUp] = useState<string[]>([]);
   const [found, setFound] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
-  const deck = DECK_BY_ID[deckId] ?? DECKS[0];
+  const deck = decks.find((d) => d.id === deckId) ?? decks[0];
   const won = found.length > 0 && found.length === cards.length / 2;
 
   const start = useCallback(
-    (nextDeck = deckId, nextLevel = level, nextMode = mode) => {
+    (nextDeck = deckId, nextPairs = pairs, nextMode = mode) => {
       window.clearTimeout(timer.current);
-      setCards(deal(nextDeck, nextLevel.pairs, nextMode));
+      setCards(deal(decks, nextDeck, nextPairs, nextMode));
       setUp([]);
       setFound([]);
       setMoves(0);
       setBusy(false);
     },
-    [deckId, level, mode],
+    [decks, deckId, pairs, mode],
   );
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  // a pack saved in the words page shows up here without reloading the site
+  useEffect(() => {
+    const refresh = () => setDecks(allPacks());
+    window.addEventListener('funny-games:packs', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.removeEventListener('funny-games:packs', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
 
   useEffect(() => {
     if (!won) return;
@@ -128,21 +144,27 @@ export default function MemoryGame() {
             Find the pairs and say the word! <b>{deck.learn}</b>
           </p>
         </div>
-        <Link to="/" className="btn" onClick={() => playClick()}>
-          🏠 Games
-        </Link>
+        <div className="memory-head-tools">
+          <Link to="/memory/words" className="btn btn-ghost" onClick={() => playClick()}>
+            ✏️ Words
+          </Link>
+          <Link to="/" className="btn" onClick={() => playClick()}>
+            🏠 Games
+          </Link>
+        </div>
       </div>
 
       <div className="memory-bar">
         <div className="memory-group" role="group" aria-label="Picture pack">
-          {DECKS.map((d) => (
+          {decks.map((d) => (
             <button
               key={d.id}
               type="button"
               className={`pack${d.id === deckId ? ' is-on' : ''}`}
               onClick={() => {
                 setDeckId(d.id);
-                start(d.id, level, mode);
+                start(d.id, Math.min(pairs, d.items.length), mode);
+                setPairs((n) => Math.min(n, d.items.length));
               }}
             >
               <span aria-hidden>{d.emoji}</span> {d.label}
@@ -151,20 +173,23 @@ export default function MemoryGame() {
         </div>
 
         <div className="memory-group">
-          <div className="seg seg-small" role="group" aria-label="How many cards">
-            {LEVELS.map((l) => (
-              <button
-                key={l.id}
-                type="button"
-                className={l.id === level.id ? 'is-on' : ''}
-                onClick={() => {
-                  setLevel(l);
-                  start(deckId, l, mode);
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
+          <div className="memory-pairs">
+            <span className="memory-pairs-label">Pairs</span>
+            <div className="seg seg-small" role="group" aria-label="How many pairs to find">
+              {PAIR_CHOICES.filter((n) => n <= deck.items.length).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={n === pairs ? 'is-on' : ''}
+                  onClick={() => {
+                    setPairs(n);
+                    start(deckId, n, mode);
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="seg seg-small" role="group" aria-label="What to match">
@@ -173,7 +198,7 @@ export default function MemoryGame() {
               className={mode === 'pictures' ? 'is-on' : ''}
               onClick={() => {
                 setMode('pictures');
-                start(deckId, level, 'pictures');
+                start(deckId, pairs, 'pictures');
               }}
             >
               🖼️ Pictures
@@ -183,7 +208,7 @@ export default function MemoryGame() {
               className={mode === 'words' ? 'is-on' : ''}
               onClick={() => {
                 setMode('words');
-                start(deckId, level, 'words');
+                start(deckId, pairs, 'words');
               }}
             >
               🔤 Picture &amp; word
@@ -221,7 +246,7 @@ export default function MemoryGame() {
               type="button"
               className={`mcard${isUp ? ' is-up' : ''}${isFound ? ' is-found' : ''}`}
               onClick={() => flip(card)}
-              aria-label={isUp ? card.item.word : 'Hidden card'}
+              aria-label={isUp ? caps(card.item.word) : 'Hidden card'}
             >
               <span className="mcard-inner">
                 <span className="mcard-back" aria-hidden>
@@ -233,10 +258,10 @@ export default function MemoryGame() {
                       <span className="mcard-emoji" aria-hidden>
                         {card.item.emoji}
                       </span>
-                      {mode === 'pictures' && <span className="mcard-word">{card.item.word}</span>}
+                      {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
                     </>
                   ) : (
-                    <span className="mcard-only-word">{card.item.word}</span>
+                    <span className="mcard-only-word">{caps(card.item.word)}</span>
                   )}
                 </span>
               </span>

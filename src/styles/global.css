@@ -2444,3 +2444,133 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .rail-down {
   grid-area: down;
 }
+
+/* ------------------------------------------------- the memory words editor */
+
+.words-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.memory-head-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.memory-pairs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memory-pairs-label {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.words-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.words-h2 {
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+.words-name {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.words-name .field {
+  flex: 1 1 220px;
+}
+
+.words-name .field-emoji {
+  flex: 0 0 96px;
+}
+
+.words-list {
+  list-style: decimal;
+  padding-left: 26px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.words-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 48px;
+  gap: 8px;
+  align-items: center;
+}
+
+.words-emoji {
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.words-del {
+  padding: 4px 10px;
+}
+
+.words-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.words-packs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.words-pack {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
+.words-pack-name {
+  font-weight: 800;
+  color: var(--ink);
+  flex: 1 1 160px;
+}
+
+.words-pack-count {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 560px) {
+  .words-row {
+    grid-template-columns: 64px minmax(0, 1fr) 44px;
+  }
+}

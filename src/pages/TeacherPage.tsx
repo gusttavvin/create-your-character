@@ -194,6 +194,9 @@ function Dashboard() {
           <Link to="/gallery" className="btn btn-ghost">
             🖼 My characters
           </Link>
+          <Link to="/memory/words" className="btn btn-ghost">
+            ✏️ Memory words
+          </Link>
           <button type="button" className="btn btn-ghost" onClick={() => { playClick(); void signOut(); }}>
             Sign out
           </button>

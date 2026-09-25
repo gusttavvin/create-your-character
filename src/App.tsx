@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import GamesHome from './pages/GamesHome';
 import MemoryGame from './pages/MemoryGame';
+import MemoryWords from './pages/MemoryWords';
 import WheelGame from './pages/WheelGame';
 import CharacterPicker from './pages/CharacterPicker';
 import BuilderPage from './pages/BuilderPage';
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/" element={<GamesHome />} />
           <Route path="/create-your-character" element={<CharacterPicker />} />
           <Route path="/memory" element={<MemoryGame />} />
+          <Route path="/memory/words" element={<MemoryWords />} />
           <Route path="/wheel" element={<WheelGame />} />
           <Route path="/build/:kind" element={<BuilderPage />} />
           <Route path="/build/:kind/:id" element={<BuilderPage />} />

@@ -10,6 +10,9 @@ const SLICE_COLORS = ['#4FC3FF', '#FF8FC8', '#FFD93D', '#8BD43B', '#A77BFF', '#F
 
 const SAMPLE = ['Ana', 'Beatriz', 'Caio', 'Davi', 'Elisa', 'Felipe', 'Giovana', 'Heitor'];
 
+/** How long one spin lasts, in milliseconds. */
+const SPIN_MS = 4200;
+
 function readNames(): string[] {
   try {
     const raw = localStorage.getItem(STORE);
@@ -23,10 +26,15 @@ function readNames(): string[] {
   return SAMPLE;
 }
 
-/** Point on the wheel's rim, with 0° at the top and angles running clockwise. */
+/** Point on the wheel, with 0° at the top and angles running clockwise. */
 function rim(angle: number, r: number) {
   const a = ((angle - 90) * Math.PI) / 180;
   return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+}
+
+/** Fast at first, drifting to a stop. */
+function ease(t: number) {
+  return 1 - Math.pow(1 - t, 3.2);
 }
 
 /**
@@ -34,8 +42,12 @@ function rim(angle: number, r: number) {
  *
  * Clara spins one in class to choose who answers, because on some days nobody
  * volunteers. She kept it on another site where free accounts hold only three
- * activities; this one is hers, remembers her class between lessons and can drop each
- * name as it comes up, so everybody gets a turn.
+ * activities; this one is hers and remembers her class between lessons.
+ *
+ * The names stay upright while the wheel turns — they are placed at a point on the rim
+ * rather than rotated with their slice, so none of them ends up upside down — and a
+ * name that has had its turn only leaves the wheel on the next spin, so there is time
+ * to read it.
  */
 export default function WheelGame() {
   const [names, setNames] = useState<string[]>(readNames);
@@ -44,9 +56,11 @@ export default function WheelGame() {
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
   const [removeWinner, setRemoveWinner] = useState(false);
-  const timer = useRef<number | undefined>(undefined);
+  const frame = useRef<number | undefined>(undefined);
+  /** The name that leaves the wheel when the next spin starts. */
+  const spent = useRef<string | null>(null);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(() => () => cancelAnimationFrame(frame.current ?? 0), []);
 
   useEffect(() => {
     try {
@@ -64,6 +78,7 @@ export default function WheelGame() {
       .filter(Boolean);
     setNames(list);
     setWinner(null);
+    spent.current = null;
   };
 
   const slices = useMemo(() => {
@@ -71,14 +86,11 @@ export default function WheelGame() {
     const step = 360 / n;
     return names.map((name, i) => {
       const from = i * step;
-      const to = from + step;
       const [x1, y1] = rim(from, 48);
-      const [x2, y2] = rim(to, 48);
+      const [x2, y2] = rim(from + step, 48);
       const large = step > 180 ? 1 : 0;
       return {
         name,
-        from,
-        to,
         mid: from + step / 2,
         color: SLICE_COLORS[i % SLICE_COLORS.length],
         d: `M50,50 L${x1.toFixed(2)},${y1.toFixed(2)} A48,48 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`,
@@ -88,29 +100,52 @@ export default function WheelGame() {
 
   const spin = () => {
     if (spinning || names.length < 2) return;
+
+    // the winner of the last spin has been on screen all this time; it goes now
+    let list = names;
+    if (spent.current) {
+      list = names.filter((n) => n !== spent.current);
+      spent.current = null;
+      if (list.length !== names.length) {
+        setNames(list);
+        setText(list.join('\n'));
+      }
+      if (list.length < 2) {
+        setWinner(null);
+        return;
+      }
+    }
+
     playShuffle();
     setWinner(null);
     setSpinning(true);
-    // land on a random name: five whole turns plus wherever that name sits
-    const pick = Math.floor(Math.random() * names.length);
-    const step = 360 / names.length;
+
+    const pick = Math.floor(Math.random() * list.length);
+    const step = 360 / list.length;
     const middle = pick * step + step / 2;
     const jitter = (Math.random() - 0.5) * step * 0.6;
-    const target = angle + 360 * 5 + ((360 - ((angle + middle + jitter) % 360)) % 360);
-    setAngle(target);
-    timer.current = window.setTimeout(() => {
+    const from = angle;
+    const to = from + 360 * 5 + ((360 - ((from + middle + jitter) % 360)) % 360);
+
+    const started = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - started) / SPIN_MS);
+      setAngle(from + (to - from) * ease(t));
+      if (t < 1) {
+        frame.current = requestAnimationFrame(tick);
+        return;
+      }
       setSpinning(false);
-      setWinner(names[pick]);
+      setWinner(list[pick]);
+      if (removeWinner) spent.current = list[pick];
       playTada();
       burstConfetti(90);
-      speak(names[pick]);
-      if (removeWinner) {
-        const left = names.filter((_, i) => i !== pick);
-        setNames(left);
-        setText(left.join('\n'));
-      }
-    }, 4200);
+      speak(list[pick]);
+    };
+    frame.current = requestAnimationFrame(tick);
   };
+
+  const fontSize = Math.max(3.2, Math.min(5.6, 40 / Math.max(names.length, 4)));
 
   return (
     <div className="wheel-page">
@@ -131,31 +166,34 @@ export default function WheelGame() {
           <div className="wheel-pin" aria-hidden>
             ▼
           </div>
-          <svg
-            className="wheel-svg"
-            viewBox="0 0 100 100"
-            style={{ transform: `rotate(${angle}deg)`, transition: spinning ? 'transform 4.2s cubic-bezier(0.16, 0.9, 0.2, 1)' : 'none' }}
-            aria-hidden
-          >
+          <svg className="wheel-svg" viewBox="0 0 100 100" aria-hidden>
             <circle cx="50" cy="50" r="49" fill="#fff" stroke="#0B1B3B" strokeWidth="2" />
-            {slices.map((s) => (
-              <g key={s.name + s.from}>
-                <path d={s.d} fill={s.color} stroke="#0B1B3B" strokeWidth="0.8" />
+            <g transform={`rotate(${angle} 50 50)`}>
+              {slices.map((s) => (
+                <path key={s.name + s.mid} d={s.d} fill={s.color} stroke="#0B1B3B" strokeWidth="0.8" />
+              ))}
+            </g>
+            {/* the names ride round with their slice but never turn over */}
+            {slices.map((s) => {
+              const [x, y] = rim(s.mid + angle, 30);
+              return (
                 <text
-                  x="50"
-                  y="50"
-                  // a name on the lower half of the wheel would otherwise read upside down
-                  transform={`rotate(${s.mid} 50 50) translate(0 -30)${s.mid > 95 && s.mid < 265 ? ' rotate(180 50 50)' : ''}`}
+                  key={`t-${s.name}-${s.mid}`}
+                  x={x}
+                  y={y}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={Math.max(3, Math.min(6, 44 / Math.max(names.length, 4)))}
+                  fontSize={fontSize}
                   fontWeight="800"
                   fill="#0B1B3B"
+                  stroke="#fff"
+                  strokeWidth="0.9"
+                  paintOrder="stroke"
                 >
                   {s.name.length > 12 ? `${s.name.slice(0, 11)}…` : s.name}
                 </text>
-              </g>
-            ))}
+              );
+            })}
             <circle cx="50" cy="50" r="6" fill="#fff" stroke="#0B1B3B" strokeWidth="2" />
           </svg>
 
@@ -184,6 +222,7 @@ export default function WheelGame() {
             <input type="checkbox" checked={removeWinner} onChange={(e) => setRemoveWinner(e.target.checked)} />
             Take the name off the wheel after it wins
           </label>
+          {removeWinner && spent.current && <p className="wheel-hint">{spent.current} leaves the wheel on the next spin.</p>}
           <p className="wheel-hint">Your class is saved on this computer, so it is here again next lesson.</p>
         </div>
       </div>
