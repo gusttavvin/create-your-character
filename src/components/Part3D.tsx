@@ -26,8 +26,12 @@ function measure(group: THREE.Group, box: THREE.Box3) {
 }
 
 /**
- * Picking a piece up and dragging it across the plane facing the camera, so it follows
- * the finger from whatever angle the model is turned to. Shared by the pieces built from
+ * Picking a piece up and dragging it over the character: up, down and sideways on her,
+ * never towards or away from her. The camera turns round the model, and a drag across
+ * the screen from an angle used to push the piece into or out of her as well, which
+ * cannot be seen from the front: seen from the side, the dress hung in front of her.
+ * So the finger is followed on the upright plane through the piece that faces the
+ * character's front, and the piece stays the same depth on her. Shared by the pieces built from
  * shapes (Part3D) and by the modelled characters, whose pieces are groups in a GLB.
  *
  * Returns a pointer-down handler: give it the row the piece belongs to and the point, in
@@ -37,6 +41,7 @@ export function useDragPart() {
   const ctx = useContext(Layout3DContext);
   const camera = useThree((s) => s.camera);
   const viewport = useThree((s) => s.size);
+  const canvas = useThree((s) => s.gl.domElement);
   const controls = useThree((s) => s.controls) as { enabled?: boolean; autoRotate?: boolean } | null;
 
   return (e: ThreeEvent<PointerEvent>, id: string, anchor: THREE.Vector3) => {
@@ -53,7 +58,25 @@ export function useDragPart() {
 
     const startX = e.nativeEvent.clientX;
     const startY = e.nativeEvent.clientY;
-    const base = { dx: t.dx, dy: t.dy, dz: t.dz ?? 0 };
+    const base = { dx: t.dx, dy: t.dy };
+
+    // where the finger meets the plane the piece moves on
+    const rect = canvas.getBoundingClientRect();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -anchor.z);
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const hitAt = (x: number, y: number, out: THREE.Vector3) => {
+      ndc.set(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      return ray.ray.intersectPlane(plane, out);
+    };
+    // looked at nearly edge-on (from her side) that plane is a thin line and the
+    // finger's point on it runs off to infinity: there the move across the screen is
+    // taken as it is, less the part of it that goes into her
+    const facing = Math.abs(camera.getWorldDirection(new THREE.Vector3()).z) > 0.3;
+    const from = new THREE.Vector3();
+    const onPlane = facing && !!hitAt(startX, startY, from);
+    const to = new THREE.Vector3();
     const wasRotating = controls?.autoRotate;
     if (controls) {
       controls.enabled = false; // the model holds still while the piece is dragged
@@ -68,13 +91,9 @@ export function useDragPart() {
       // a tap only picks the piece up; it takes a real movement to shift it
       if (!moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
       moved = true;
-      world.set(0, 0, 0).addScaledVector(right, dx * perPx).addScaledVector(up, -dy * perPx);
-      ctx.onMove?.(
-        id,
-        base.dx + world.x * UNITS_PER_WORLD,
-        base.dy - world.y * UNITS_PER_WORLD,
-        base.dz + world.z * UNITS_PER_WORLD,
-      );
+      if (onPlane && hitAt(ev.clientX, ev.clientY, to)) world.subVectors(to, from);
+      else world.set(0, 0, 0).addScaledVector(right, dx * perPx).addScaledVector(up, -dy * perPx);
+      ctx.onMove?.(id, base.dx + world.x * UNITS_PER_WORLD, base.dy - world.y * UNITS_PER_WORLD, 0);
     };
     const stop = (ev: PointerEvent) => {
       // a quick flick can end before the browser sends a single move, so the
@@ -139,7 +158,7 @@ export default function Part3D({ id, children }: { id: string; children: ReactNo
     o.position.set(
       centre.current.x - spun.current.x + t.dx / UNITS_PER_WORLD,
       centre.current.y - spun.current.y - t.dy / UNITS_PER_WORLD, // the sheet counts y downwards
-      centre.current.z - spun.current.z + (t.dz ?? 0) / UNITS_PER_WORLD,
+      centre.current.z - spun.current.z, // pieces stay on her; an old saved depth is ignored
     );
   });
 

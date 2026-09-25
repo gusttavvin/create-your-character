@@ -13,7 +13,10 @@ export interface PartTransform {
   /** Offset in the character's virtual canvas units. Positive dy is downwards, as on the sheet. */
   dx: number;
   dy: number;
-  /** Depth, only meaningful in 3D: towards the viewer is positive. */
+  /**
+   * Depth, towards the viewer. No longer set or drawn: pieces pushed in depth came off
+   * the body when the model was turned. Kept so older saved characters still load.
+   */
   dz?: number;
   /** Turn, in degrees, clockwise on the picture. Mirrored halves turn the other way. */
   r?: number;

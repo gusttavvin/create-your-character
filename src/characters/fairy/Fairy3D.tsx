@@ -173,7 +173,7 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
       const move: [number, number, number] = [
         t.dx / UNITS_PER_WORLD / MODEL_SCALE,
         -t.dy / UNITS_PER_WORLD / MODEL_SCALE,
-        (t.dz ?? 0) / UNITS_PER_WORLD / MODEL_SCALE,
+        0, // never in front of her or behind her: the dress stays on her body
       ];
       const turn: [number, number, number] = [0, 0, ((t.r ?? 0) * Math.PI) / -180];
       const base = look.scale ?? 1;
