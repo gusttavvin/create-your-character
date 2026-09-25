@@ -116,3 +116,14 @@ depois desenho 2D, depois 3D, depois jogos novos.
       da capa, com o azul/vermelho clássico como cor inicial.
 - [x] **Mão do monstro** no estilo da referência que a Clara mandou: palma redondinha
       com quatro dedos curtos e gordos, bem separados, no lugar dos quatro palitos.
+
+## Fada em 3D de verdade
+
+- [x] **Modelo GLB da fada** (feito no Astra6/ChatGPT) integrado no lugar da fada
+      procedural: `public/models/fadinha.glb` + `src/components/Fadinha.tsx`. As linhas
+      da folha comandam as peças do modelo (cor, apagar, mover, girar, tamanho).
+- [ ] **Peças alternativas do modelo**: o GLB traz um vestido, um cabelo e um par de asas.
+      Para as quatro opções de cada linha funcionarem de verdade, pedir ao mesmo gerador
+      cada peça como GLB separado, encaixando nos mesmos pivôs (o LEIA-ME do pacote
+      explica: esconder o grupo original e usar o pivô como ponto de encaixe).
+- [ ] Se a Clara aprovar, fazer o mesmo com princesa, monstro, dragão e super-herói.
