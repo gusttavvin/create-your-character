@@ -27,6 +27,26 @@ export const GAMES: Game[] = [
     color: '#FFD93D',
     ready: true,
   },
+  {
+    id: 'memory',
+    title: 'Memory Game',
+    blurb: 'Turn the cards over, find the pairs and hear the English word for each one.',
+    learn: 'animals · fruit · school things · colours',
+    emoji: '🧠',
+    path: '/memory',
+    color: '#4FC3FF',
+    ready: true,
+  },
+  {
+    id: 'wheel',
+    title: 'Spin the Wheel',
+    blurb: 'Put the class on the wheel and let it choose who answers next.',
+    learn: 'taking turns · speaking',
+    emoji: '🎡',
+    path: '/wheel',
+    color: '#FF8FC8',
+    ready: true,
+  },
 ];
 
 export const READY_GAMES = GAMES.filter((g) => g.ready);

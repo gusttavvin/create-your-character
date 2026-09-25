@@ -11,7 +11,6 @@ import { Smile } from './parts';
 import {
   leafShape,
   pickPart,
-  polyShape,
   starShape,
   useGradientMap,
   usePatternTexture,
@@ -412,18 +411,15 @@ function dragonflyShape() {
   return s;
 }
 
+/** A swept wing that tapers to a point, for the star fairy to hang her stars on. */
 function starWingShape() {
-  return polyShape([
-    [0, -0.24],
-    [0.36, 0.7],
-    [0.62, 0.18],
-    [0.98, 1.12],
-    [1.12, 0.32],
-    [1.6, 0.58],
-    [1.36, -0.06],
-    [1.62, -0.32],
-    [0, -0.46],
-  ]);
+  const s = new THREE.Shape();
+  s.moveTo(0, -0.1);
+  s.bezierCurveTo(0.2, 0.95, 1.1, 1.15, 1.55, 0.62);
+  s.bezierCurveTo(1.25, 0.34, 1.2, 0.1, 1.45, -0.2);
+  s.bezierCurveTo(1.0, -0.6, 0.35, -0.55, 0, -0.1);
+  s.closePath();
+  return s;
 }
 
 /** One wing, flapping on its own hinge at the back. */
@@ -438,7 +434,8 @@ function Wing({ kind, color, grad, tex }: { kind: string; color: string; grad: T
     }
     if (kind === 'leaf') {
       const g = new THREE.ExtrudeGeometry(leafShape(1.35), opt);
-      g.rotateZ(-Math.PI / 2.4);
+      g.rotateZ(-Math.PI / 3.4);
+      g.translate(0.55, 0.15, 0);
       return [g];
     }
     if (kind === 'star') {
@@ -461,6 +458,7 @@ function Wing({ kind, color, grad, tex }: { kind: string; color: string; grad: T
     hinge.current.rotation.z = Math.sin(t * fast * 0.5) * 0.08;
   });
 
+  const studs = useMemo(() => new THREE.ExtrudeGeometry(starShape(1, 0.45), { depth: 0.06, bevelEnabled: false }), []);
   const light = shade(color, 0.3);
   const vein = shade(color, -0.32);
 
@@ -472,6 +470,18 @@ function Wing({ kind, color, grad, tex }: { kind: string; color: string; grad: T
           <Ink thin />
         </mesh>
       ))}
+
+      {kind === 'star' &&
+        ([
+          [0.5, 0.26, 0.2],
+          [0.92, 0.52, 0.15],
+          [1.15, 0.08, 0.12],
+          [0.72, -0.2, 0.1],
+        ] as const).map(([x, y, r], i) => (
+          <mesh key={i} geometry={studs} position={[x, y, 0.06]} scale={r} rotation={[0, 0, i * 0.7]}>
+            <meshToonMaterial color={shade(color, 0.55)} gradientMap={grad} />
+          </mesh>
+        ))}
 
       {kind === 'butterfly' && (
         <>

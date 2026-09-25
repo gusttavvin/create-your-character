@@ -63,11 +63,11 @@ depois desenho 2D, depois 3D, depois jogos novos.
 ## 6. Fairy
 
 - [x] 3D: **os braços estão horríveis** (mesmo problema do superhero).
-- [ ] 3D: **as asas estão muito estranhas e cortadas** (bubble, star, leaf).
+- [x] 3D: **as asas** star e leaf refeitas (a star virou asa com estrelinhas).
 - [ ] 3D: **cabelo ruim**.
 
 ## 7. Jogos novos
 
-- [ ] **Jogo da memória** com imagens (ela usa um de animais marinhos no Wordwall, que
+- [x] **Jogo da memória** com imagens (ela usa um de animais marinhos no Wordwall, que
       limita a 3 recursos grátis). Sem limite, com as imagens dela.
-- [ ] **Roleta de sorteio** com o nome dos alunos, para escolher quem responde.
+- [x] **Roleta de sorteio** com o nome dos alunos, para escolher quem responde.
