@@ -340,37 +340,43 @@ function Noodle({
   );
 }
 
-/** Fingers fanned out of a hand, as many as the drawing has. */
-function Fingers({
-  n,
-  len,
-  thick,
+/**
+ * A paw: a round palm with four short, fat fingers fanned over the top of it.
+ *
+ * The first hands were four thin sticks on the end of a tube. Clara sent a picture of a
+ * monster whose hand is a little rounded mitten and asked for that instead: fingers
+ * about as long as they are wide, well apart, every tip round.
+ */
+function Paw({
   y,
-  spread,
+  size = 1,
   color,
   grad,
   tex,
 }: {
-  n: number;
-  len: number;
-  thick: number;
   y: number;
-  spread: number;
+  size?: number;
   color: string;
   grad: THREE.DataTexture;
   tex?: THREE.Texture | null;
 }) {
   return (
-    <group>
-      {Array.from({ length: n }, (_, i) => {
-        const a = (i / (n - 1) - 0.5) * spread;
+    <group position={[0, y, 0]} scale={size}>
+      <mesh scale={[1, 0.94, 0.86]}>
+        <sphereGeometry args={[0.2, 26, 26]} />
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink thin />
+      </mesh>
+      {[-1.5, -0.5, 0.5, 1.5].map((k) => {
+        const a = k * 0.5;
         return (
           <mesh
-            key={i}
-            position={[Math.sin(a) * (len * 0.55), y + Math.cos(a) * (len * 0.5), 0]}
+            key={k}
+            position={[Math.sin(a) * 0.21, 0.15 + Math.cos(a) * 0.08, 0.01]}
             rotation={[0, 0, -a]}
+            scale={[1, 1, 0.9]}
           >
-            <capsuleGeometry args={[thick, len, 6, 12]} />
+            <capsuleGeometry args={[0.06, 0.11, 6, 14]} />
             <Toon color={color} map={grad} tex={tex} />
             <Ink thin />
           </mesh>
@@ -450,7 +456,7 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
             <meshToonMaterial color={color} gradientMap={grad} />
           </mesh>
         ))}
-        <Fingers n={4} len={0.24} thick={0.08} y={1.1} spread={1.5} color={color} grad={grad} tex={tex} />
+        <Paw y={1.08} size={0.95} color={color} grad={grad} tex={tex} />
       </group>
     );
   }
@@ -458,7 +464,7 @@ function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
   return (
     <group>
       <Noodle pts={reach} r={0.17} tip={1.15} color={color} grad={grad} tex={tex} />
-      <Fingers n={4} len={0.28} thick={0.085} y={1.08} spread={1.7} color={color} grad={grad} tex={tex} />
+      <Paw y={1.06} color={color} grad={grad} tex={tex} />
     </group>
   );
 }

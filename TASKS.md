@@ -114,3 +114,5 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Super-herói refeito** com as ilustrações de referência: cabeça maior, pose de
       herói (punhos na cintura, pés afastados), cinto com fivela, e luvas e botas na cor
       da capa, com o azul/vermelho clássico como cor inicial.
+- [x] **Mão do monstro** no estilo da referência que a Clara mandou: palma redondinha
+      com quatro dedos curtos e gordos, bem separados, no lugar dos quatro palitos.
