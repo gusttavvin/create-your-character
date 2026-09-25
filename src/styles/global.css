@@ -2021,15 +2021,17 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   margin-top: 8px;
 }
 
-/* the size buttons that ride along the right edge of the picture */
+/* the size buttons, in their own strip beside the sheet so they never cover the drawing */
 .stage-wrap {
   position: relative;
+  /* the strip is always there, so the sheet does not jump when a piece is picked */
+  padding-right: 92px;
 }
 
 .rail {
   --row: var(--sky);
   position: absolute;
-  right: 10px;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 3;
@@ -2044,19 +2046,21 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   box-shadow: var(--shadow);
 }
 
+/* the name floats over the top of the strip, so a long word never widens it */
 .rail-name {
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
   font-family: var(--font-display);
   text-transform: uppercase;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   letter-spacing: 0.04em;
   color: var(--ink);
   background: color-mix(in srgb, var(--row) 45%, #fff);
   border: 2px solid var(--ink);
   border-radius: 999px;
   padding: 1px 8px;
-  max-width: 92px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -2100,14 +2104,23 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 }
 
 @media (max-width: 520px) {
+  .stage-wrap {
+    padding-right: 84px;
+  }
+
   .rail {
-    right: 4px;
-    padding: 6px 5px;
+    padding: 6px 4px;
   }
 
   .rail-btn {
     width: 36px;
     height: 36px;
+  }
+
+  .rail-btn-small {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 }
 
@@ -2117,9 +2130,9 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 }
 
 .rail-btn-small {
-  width: 32px;
-  height: 32px;
-  font-size: 1rem;
+  width: 30px;
+  height: 30px;
+  font-size: 0.95rem;
 }
 
 /* ------------------------------------------------------------ memory game */
@@ -2408,9 +2421,11 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   }
 }
 
+/* a compact cross: the arrows share two columns so the strip stays narrow */
 .rail-pad {
   display: grid;
-  grid-template-areas: '. up .' 'left . right' '. down .';
+  grid-template-areas: 'up up' 'left right' 'down down';
+  justify-items: center;
   gap: 3px;
 }
 
