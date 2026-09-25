@@ -108,3 +108,6 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Cabelo da princesa ainda ruim**: era uma casca revolvida que virava duas tábuas
       lisas ao lado do rosto. Agora são mechas redondas — atrás, dos lados e duas por
       cima dos ombros — e o mesmo vale para braids, bun e curly.
+- [x] **Corpinhos no estilo da fada de referência** (foto que a Clara mandou): cabeça
+      maior sobre um corpo menor, tronco arredondado e pernas mais curtas, na fada e na
+      princesa.

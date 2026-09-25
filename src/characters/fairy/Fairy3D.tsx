@@ -31,7 +31,12 @@ import Part3D from '../../components/Part3D';
  */
 
 const HEAD_Y = 1.15;
-const HEAD_R = 0.62;
+/**
+ * A big head on a small body: the drawing Clara sent is about four heads tall, with the
+ * head a good third of the whole, which is what makes these characters read as cute
+ * rather than as dolls.
+ */
+const HEAD_R = 0.66;
 /** Right shoulder joint; the left is this reflected. */
 const SHOULDER: [number, number, number] = [0.3, 0.46, 0];
 /** Right hand, where the wand sits. */
@@ -135,23 +140,23 @@ function Arm({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
 function Leg({ skin, shoe, grad }: { skin: string; shoe: string; grad: THREE.DataTexture }) {
   return (
     <group position={HIP}>
-      <mesh position={[0, -0.38, 0]}>
-        <capsuleGeometry args={[0.145, 0.62, 4, 14]} />
+      <mesh position={[0, -0.33, 0]}>
+        <capsuleGeometry args={[0.145, 0.52, 4, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
-      <mesh position={[0, -0.78, 0]}>
+      <mesh position={[0, -0.66, 0]}>
         <sphereGeometry args={[0.14, 16, 16]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
-      <mesh position={[0, -1.15, 0]}>
-        <capsuleGeometry args={[0.132, 0.6, 4, 14]} />
+      <mesh position={[0, -1.0, 0]}>
+        <capsuleGeometry args={[0.132, 0.52, 4, 14]} />
         <Toon color={skin} map={grad} />
         <Ink thin />
       </mesh>
       {/* slipper */}
-      <group position={[0.01, -1.72, 0.06]}>
+      <group position={[0.01, -1.44, 0.06]}>
         <mesh scale={[1, 0.55, 1.7]}>
           <sphereGeometry args={[0.15, 22, 22]} />
           <Toon color={shoe} map={grad} />
@@ -357,12 +362,13 @@ function Body({ skin, shoe, grad }: { skin: string; shoe: string; grad: THREE.Da
   const torso = useMemo(
     () =>
       lathe([
-        [0.0, 0.0],
-        [0.2, 0.02],
-        [0.22, 0.24],
-        [0.24, 0.44],
-        [0.2, 0.58],
-        [0.0, 0.6],
+        [0.0, -0.04],
+        [0.22, 0.0],
+        [0.25, 0.16],
+        [0.23, 0.3],
+        [0.27, 0.46],
+        [0.22, 0.58],
+        [0.0, 0.62],
       ]),
     [],
   );
@@ -897,8 +903,8 @@ export default function Fairy3D({ parts, colors }: { parts: PartMap; colors: Col
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal order={3} tex={smileTex} y={-0.26} z={HEAD_R} size={0.55} />
+        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={1.02} />
+        <FaceDecal order={3} tex={smileTex} y={-0.28} z={HEAD_R} size={0.59} />
       </mesh>
 
       {/* pointed fairy ears */}

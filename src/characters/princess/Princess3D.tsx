@@ -23,7 +23,8 @@ import Part3D from '../../components/Part3D';
  *  -1.84  her shoes
  */
 const HEAD_Y = 1.15;
-const HEAD_R = 0.68;
+/** A big head on a small body, like the picture Clara sent: cute, not doll-like. */
+const HEAD_R = 0.74;
 const CHIN_Y = HEAD_Y - HEAD_R;
 const SHOULDER_Y = 0.22;
 const WAIST_Y = -0.27;
@@ -733,9 +734,9 @@ export default function Princess3D({ parts, colors }: { parts: PartMap; colors: 
         <sphereGeometry args={[HEAD_R, 48, 48]} />
         <Toon color={eff.skin} map={grad} />
         <Ink />
-        <FaceDecal order={1} tex={blushTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={0.95} />
-        <FaceDecal order={3} part="mouth" tex={mouthTex} y={-0.26} z={HEAD_R} size={0.55} />
+        <FaceDecal order={1} tex={blushTex} y={0.02} z={HEAD_R} size={1.06} />
+        <FaceDecal order={2} part="eyes" tex={eyesTex} y={0.02} z={HEAD_R} size={1.06} />
+        <FaceDecal order={3} part="mouth" tex={mouthTex} y={-0.29} z={HEAD_R} size={0.61} />
       </mesh>
 
       {/* ears — one shape and its mirror */}
