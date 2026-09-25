@@ -22,14 +22,14 @@ depois desenho 2D, depois 3D, depois jogos novos.
 
 - [x] 2D: a **Big Tongue corta a língua** na borda do desenho.
 - [x] 2D: **os braços ficam atrás do corpo** e mal posicionados — têm que vir para a frente.
-- [ ] 3D: **corpo round** tem que ser um oval com as voltinhas só na borda, não uma bola
+- [x] 3D: **corpo round** tem que ser um oval com as voltinhas só na borda, não uma bola
       cheia de calombos por todo lado.
-- [ ] 3D: **square e hourglass não estão fofinhos** (o egg ficou bom, serve de referência).
-- [ ] 3D: **uma das pernas está cortada**, sem acabamento.
-- [ ] 3D: **braços parecem blocos colados**, posição ruim; **tentacle cortado** e **pincher
+- [x] 3D: **square e hourglass não estão fofinhos** (o egg ficou bom, serve de referência).
+- [x] 3D: **uma das pernas está cortada**, sem acabamento.
+- [x] 3D: **braços parecem blocos colados**, posição ruim; **tentacle cortado** e **pincher
       errado**; claw dá para melhorar.
-- [ ] 3D: **número de dedos errado** (está com três, tem que bater com o desenho 2D).
-- [ ] 3D: **faltam os cílios** nos olhos `one` e `multiple`.
+- [x] 3D: **número de dedos errado** (está com três, tem que bater com o desenho 2D).
+- [x] 3D: **faltam os cílios** nos olhos `one` e `multiple`.
 
 ## 3. Dragon
 

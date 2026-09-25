@@ -188,19 +188,30 @@ export function blobGeometry(opts: {
   spread?: number;
   /** Bumps below this height (-1 bottom, 1 top) are dropped. */
   minY?: number;
+  /** Put every bump on the silhouette ring instead of all over the ball. */
+  rim?: boolean;
   seed?: number;
 } = {}) {
-  const { radius = 1, segments = 96, bumps = 14, amount = 0.13, spread = 0.3, minY = -0.45, seed = 1.7 } = opts;
+  const { radius = 1, segments = 96, bumps = 14, amount = 0.13, spread = 0.3, minY = -0.45, rim = false, seed = 1.7 } = opts;
 
   const centres: THREE.Vector3[] = [];
-  const candidates = Math.ceil(bumps * 1.7);
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < candidates && centres.length < bumps; i++) {
-    const y = 1 - (2 * (i + 0.5)) / candidates;
-    if (y < minY) continue;
-    const ring = Math.sqrt(Math.max(0, 1 - y * y));
-    const a = golden * i + seed;
-    centres.push(new THREE.Vector3(Math.cos(a) * ring, y, Math.sin(a) * ring));
+  if (rim) {
+    // the drawing scallops only the outline, so the bumps ride the silhouette the
+    // viewer sees and the face in front of them stays smooth enough to draw on
+    for (let i = 0; i < bumps; i++) {
+      const a = (i / bumps) * Math.PI * 2 + seed;
+      centres.push(new THREE.Vector3(Math.cos(a), Math.sin(a), 0));
+    }
+  } else {
+    const candidates = Math.ceil(bumps * 1.7);
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < candidates && centres.length < bumps; i++) {
+      const y = 1 - (2 * (i + 0.5)) / candidates;
+      if (y < minY) continue;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const a = golden * i + seed;
+      centres.push(new THREE.Vector3(Math.cos(a) * ring, y, Math.sin(a) * ring));
+    }
   }
 
   const geo = new THREE.SphereGeometry(radius, segments, Math.round(segments * 0.7));
@@ -220,4 +231,19 @@ export function blobGeometry(opts: {
   pos.needsUpdate = true;
   geo.computeVertexNormals();
   return geo;
+}
+
+/**
+ * A body turned on a lathe from a profile drawn in the picture plane.
+ *
+ * The peanut-shaped monster used to be three balls stuck together, which read as a
+ * snowman rather than the one soft body the kit draws. One revolved surface keeps the
+ * waist and the two bulges without any seams.
+ *
+ * Points are [radius, height]; the first and last must sit on the axis so the shape closes.
+ */
+export function latheBody(points: [number, number][], radial = 48, steps = 80) {
+  const curve = new THREE.SplineCurve(points.map(([x, y]) => new THREE.Vector2(x, y)));
+  const profile = curve.getPoints(steps).map((p) => new THREE.Vector2(Math.max(0, p.x), p.y));
+  return new THREE.LatheGeometry(profile, radial);
 }

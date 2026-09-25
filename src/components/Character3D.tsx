@@ -1,7 +1,7 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
-import type { Group } from 'three';
+import { Box3, Vector3, type Group, type PerspectiveCamera } from 'three';
 import type { CharacterKind, ColorMap, LayoutMap, PartMap } from '../characters/types';
 import { Layout3DContext } from './layout3d';
 import Monster3D from '../characters/monster/Monster3D';
@@ -31,6 +31,54 @@ function DevExpose() {
   return null;
 }
 
+/**
+ * Keeps the whole character inside the picture.
+ *
+ * Characters are built at whatever size their shapes need, so wide ones lost their arms
+ * off the side of the canvas and the fairy's wings were sliced in half. This measures the
+ * model whenever its pieces change and scales it to fit the frame with a margin, so
+ * nothing is cut off and every character fills the sheet about the same amount.
+ */
+function Fit({ sig, floor, children }: { sig: string; floor?: React.RefObject<Group | null>; children: ReactNode }) {
+  const ref = useRef<Group>(null);
+  const camera = useThree((s) => s.camera) as PerspectiveCamera;
+  const size = useThree((s) => s.size);
+
+  useLayoutEffect(() => {
+    let stop = false;
+    const fit = () => {
+      const group = ref.current;
+      if (stop || !group) return;
+      group.scale.setScalar(1);
+      group.position.set(0, 0, 0);
+      group.updateWorldMatrix(true, true);
+      const box = new Box3().setFromObject(group);
+      if (box.isEmpty()) return;
+      const span = box.getSize(new Vector3());
+      const mid = box.getCenter(new Vector3());
+      const dist = camera.position.length();
+      const halfH = Math.tan(((camera.fov ?? 38) * Math.PI) / 360) * dist * 0.86;
+      const halfW = halfH * (size.width / Math.max(1, size.height));
+      const s = Math.min((halfW * 2) / Math.max(0.001, span.x), (halfH * 2) / Math.max(0.001, span.y), 1.2);
+      group.scale.setScalar(s);
+      group.position.set(-mid.x * s, -mid.y * s, 0);
+      // the shadow belongs under whatever the character now stands on
+      if (floor?.current) floor.current.position.y = (-span.y * s) / 2 - 0.02;
+    };
+    fit();
+    // geometry can still be arriving on the first frame, so measure again once it settles
+    const again = requestAnimationFrame(() => requestAnimationFrame(fit));
+    const later = setTimeout(fit, 400);
+    return () => {
+      stop = true;
+      cancelAnimationFrame(again);
+      clearTimeout(later);
+    };
+  }, [sig, floor, camera, size.width, size.height]);
+
+  return <group ref={ref}>{children}</group>;
+}
+
 function Idle({ children }: { children: React.ReactNode }) {
   const ref = useRef<Group>(null);
   useFrame(({ clock }) => {
@@ -43,6 +91,9 @@ function Idle({ children }: { children: React.ReactNode }) {
 }
 
 export default function Character3D({ kind, parts, colors, layout, editable, selected, onSelect, onMove }: Props) {
+  const floor = useRef<Group>(null);
+  // the model is re-measured when the pieces change, not while one is being dragged
+  const sig = useMemo(() => kind + '|' + Object.entries(parts).sort().join(','), [kind, parts]);
   const ctx = useMemo(
     () => ({ layout: layout ?? {}, selected: selected ?? null, editable: !!editable, onSelect, onMove }),
     [layout, selected, editable, onSelect, onMove],
@@ -63,7 +114,8 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
       <directionalLight position={[-4, 2, -3]} intensity={0.5} />
       <Suspense fallback={null}>
         <Layout3DContext.Provider value={ctx}>
-          <Idle>
+          <Fit sig={sig} floor={floor}>
+            <Idle>
             {kind === 'dragon' ? (
               <Dragon3D parts={parts} colors={colors} />
             ) : kind === 'princess' ? (
@@ -75,9 +127,12 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
             ) : (
               <Monster3D parts={parts} />
             )}
-          </Idle>
+            </Idle>
+          </Fit>
         </Layout3DContext.Provider>
-        <ContactShadows position={[0, -1.85, 0]} opacity={0.35} scale={6} blur={2.2} far={3} />
+        <group ref={floor} position={[0, -1.85, 0]}>
+          <ContactShadows opacity={0.35} scale={6} blur={2.2} far={3} />
+        </group>
       </Suspense>
       <OrbitControls
         enablePan={false}
