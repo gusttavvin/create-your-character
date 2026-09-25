@@ -55,14 +55,14 @@ depois desenho 2D, depois 3D, depois jogos novos.
 ## 5. Superhero
 
 - [ ] **A cara dele está ruim.**
-- [ ] 3D: **os braços estão horríveis** (mesmo problema da fada).
-- [ ] 3D: **o olho aparece por cima dos óculos** — a máscara tem que ficar na frente.
+- [x] 3D: **os braços estão horríveis** (mesmo problema da fada).
+- [x] 3D: **o olho aparece por cima dos óculos** — a máscara tem que ficar na frente.
 - [ ] As opções de cada linha são muito parecidas (classic x armour) — a Clara ainda vai
       decidir o que quer, então isto fica esperando.
 
 ## 6. Fairy
 
-- [ ] 3D: **os braços estão horríveis** (mesmo problema do superhero).
+- [x] 3D: **os braços estão horríveis** (mesmo problema do superhero).
 - [ ] 3D: **as asas estão muito estranhas e cortadas** (bubble, star, leaf).
 - [ ] 3D: **cabelo ruim**.
 

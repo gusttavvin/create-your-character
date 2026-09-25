@@ -15,6 +15,10 @@ interface Props {
  * Must be rendered as a child of a <mesh>. The material is flagged for a shader
  * rebuild after mount because the program is otherwise compiled before the map
  * is attached and the decal renders invisible.
+ *
+ * The face is depth-tested like everything else, so a pair of goggles or a visor covers
+ * the eyes instead of the eyes showing straight through them; the polygon offset keeps
+ * it clear of the surface it is printed on.
  */
 export default function FaceDecal({ tex, x = 0, y, z, size }: Props) {
   const ref = useRef<THREE.Mesh>(null);
@@ -53,7 +57,6 @@ export default function FaceDecal({ tex, x = 0, y, z, size }: Props) {
             polygonOffset
             polygonOffsetFactor={-4}
             depthWrite={false}
-            depthTest={false}
             toneMapped={false}
           />
         </Decal>

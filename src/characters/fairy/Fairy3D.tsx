@@ -19,6 +19,7 @@ import {
 } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Limb from '../../components/Limb';
 import Part3D from '../../components/Part3D';
 
 /**
@@ -111,30 +112,22 @@ const BODICE: [number, number][] = [
   [0.0, 0.62],
 ];
 
-/** One arm, shoulder to hand. */
+/** One arm, shoulder to hand: a single bent limb, not a chain of beads. */
 function Arm({ skin, grad }: { skin: string; grad: THREE.DataTexture }) {
   return (
     <group position={SHOULDER}>
-      <mesh position={[0.12, -0.2, 0.02]} rotation={[0, 0, -0.38]}>
-        <capsuleGeometry args={[0.105, 0.34, 4, 12]} />
+      <Limb
+        pts={[
+          [0.05, -0.05, 0],
+          [0.17, -0.3, 0.03],
+          [0.25, -0.52, 0.06],
+          [0.3, -0.74, 0.09],
+        ]}
+        r={0.105}
+        tip={0.13}
+      >
         <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0.22, -0.38, 0.04]}>
-        <sphereGeometry args={[0.1, 14, 14]} />
-        <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0.28, -0.58, 0.07]} rotation={[0, 0, -0.18]}>
-        <capsuleGeometry args={[0.098, 0.3, 4, 12]} />
-        <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0.32, -0.78, 0.1]}>
-        <sphereGeometry args={[0.125, 16, 16]} />
-        <Toon color={skin} map={grad} />
-        <Ink thin />
-      </mesh>
+      </Limb>
     </group>
   );
 }

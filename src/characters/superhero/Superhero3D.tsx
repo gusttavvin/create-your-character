@@ -18,6 +18,7 @@ import {
 } from '../../lib/three';
 import type { PatternKind } from '../../lib/three';
 import { shade } from '../../lib/color';
+import Limb from '../../components/Limb';
 import Part3D from '../../components/Part3D';
 
 /**
@@ -119,28 +120,24 @@ const PLATE: [number, number][] = [
   [0.0, 0.6],
 ];
 
-/** One arm, from the shoulder joint down to the fist. */
+/** One arm, shoulder to fist: a single bent limb, not a chain of beads. */
 function Arm({ suit, glove, grad, tex }: { suit: string; glove: string; grad: THREE.DataTexture; tex: THREE.Texture | null }) {
   return (
     <group position={SHOULDER}>
-      <mesh position={[0.12, -0.26, 0.01]} rotation={[0, 0, -0.32]}>
-        <capsuleGeometry args={[0.125, 0.4, 6, 16]} />
+      <Limb
+        pts={[
+          [0.06, -0.06, 0],
+          [0.2, -0.36, 0.02],
+          [0.29, -0.62, 0.04],
+          [0.33, -0.84, 0.06],
+        ]}
+        r={0.125}
+      >
         <Toon color={suit} map={grad} tex={tex} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0.24, -0.5, 0.02]}>
-        <sphereGeometry args={[0.125, 18, 18]} />
-        <Toon color={suit} map={grad} tex={tex} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[0.3, -0.72, 0.05]} rotation={[0, 0, -0.14]}>
-        <capsuleGeometry args={[0.115, 0.36, 6, 16]} />
-        <Toon color={suit} map={grad} tex={tex} />
-        <Ink thin />
-      </mesh>
-      {/* glove */}
-      <mesh position={[0.34, -0.92, 0.03]} scale={[1, 1, 1.1]}>
-        <sphereGeometry args={[0.145, 20, 20]} />
+      </Limb>
+      {/* the glove closes the arm off at the fist */}
+      <mesh position={[0.35, -0.95, 0.06]} scale={[1, 1.05, 1.1]}>
+        <sphereGeometry args={[0.15, 20, 20]} />
         <Toon color={glove} map={grad} />
         <Ink thin />
       </mesh>
