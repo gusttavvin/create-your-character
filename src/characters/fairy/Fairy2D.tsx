@@ -8,7 +8,7 @@ const VH = 720;
 
 /** Head box: 300 virtual units centred at (300, 250). Face circle r=170 in 512 space. */
 const HEAD = { cx: 300, cy: 250, size: 300 };
-/** Body box: 460 virtual units centred at (300, 480). Hands are at (108,298) / (404,298) in 512 space. */
+/** Body box: 460 virtual units centred at (300, 480). Hands hang at (150,258) / (362,258) in 512 space. */
 const BODY = { cx: 300, cy: 480, size: 460 };
 /** Wings box: wide and high, so the pair spreads out behind her. */
 const WINGS = { cx: 300, cy: 400, size: 540 };
@@ -26,8 +26,8 @@ function box(cx: number, cy: number, size: number, z: number): CSSProperties {
 
 /** Right hand in virtual units (body box → virtual). */
 const bScale = BODY.size / 512;
-const HAND_X = BODY.cx - BODY.size / 2 + 404 * bScale;
-const HAND_Y = BODY.cy - BODY.size / 2 + 298 * bScale;
+const HAND_X = BODY.cx - BODY.size / 2 + 362 * bScale;
+const HAND_Y = BODY.cy - BODY.size / 2 + 258 * bScale;
 const HEAD_TOP = HEAD.cy - (170 / 512) * HEAD.size;
 
 /** Where each part belongs, so a dragged piece can be dropped on the right spot. */
@@ -85,7 +85,8 @@ export default function Fairy2D({ parts, colors, animate = true, className }: Pr
   const HairBack = layers?.Back;
   const HairFront = layers?.Front;
 
-  const WAND = 230;
+  // a little smaller than the other kits, so the star sits by her shoulder, not over her face
+  const WAND = 190;
   // the wand's grip point is at (256, 440) in its 512 box
   const wandCX = HAND_X;
   const wandCY = HAND_Y - ((440 - 256) / 512) * WAND;

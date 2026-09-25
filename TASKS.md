@@ -122,6 +122,10 @@ depois desenho 2D, depois 3D, depois jogos novos.
 - [x] **Modelo GLB da fada** (feito no Astra6/ChatGPT) integrado no lugar da fada
       procedural: `public/models/fadinha.glb` + `src/components/Fadinha.tsx`. As linhas
       da folha comandam as peças do modelo (cor, apagar, mover, girar, tamanho).
+- [x] **Fada em 2D no padrão do modelo**: rosto redondo com olhos verdes grandes e
+      cílios, franja repartida com mechas na frente das orelhas, coques com florzinhas
+      lilás, corpete tomara-que-caia com cinto e fivela, saia de pétalas pontudas,
+      braços e pernas finos, sapatilhas rosa e asas lilás transparentes com veios.
 - [ ] **Peças alternativas do modelo**: o GLB traz um vestido, um cabelo e um par de asas.
       Para as quatro opções de cada linha funcionarem de verdade, pedir ao mesmo gerador
       cada peça como GLB separado, encaixando nos mesmos pivôs (o LEIA-ME do pacote

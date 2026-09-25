@@ -1,17 +1,22 @@
 /**
- * Vector parts for the fairy. Same chunky cartoon style as the dragon / princess
- * kits: thick ink outlines, flat fills, soft white highlights.
+ * Vector parts for the fairy, drawn to match the modelled fairy in 3D
+ * (`public/models/fadinha.glb`): a big round head with huge green eyes, golden hair
+ * with a swept fringe and two buns, a green sweetheart top with a dark belt, a skirt of
+ * pointed petals, slim arms and legs, pink ballet flats and see-through lilac wings.
+ *
+ * The line is thinner than the other kits and the fills are shaded, so the drawing reads
+ * as the same doll as the model rather than a flat sticker of her.
  *
  * Every part lives in a 512x512 box. Head-related parts (head, hair, eyes, crown)
  * share the head's coordinate system: the face is a circle r=170 at (256,256).
- * Body parts (dress) share the princess' body system, so the hands sit at
- * (108,298) and (404,298), and a held item is drawn with its grip at (256,440).
+ * Body parts (dress) share one body system: the hands hang at (150,258) and (362,258),
+ * and a held item is drawn with its grip at (256,440).
  */
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { PartSvgProps } from '../types';
 import { INK, shade } from '../../lib/color';
 
-const SW = 14;
+const SW = 10;
 const O = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
 
 export const FAIRY_DEFAULTS = {
@@ -20,6 +25,11 @@ export const FAIRY_DEFAULTS = {
   wings: { butterfly: '#E7C9FF', dragonfly: '#CFE9FF', leaf: '#7ED957', star: '#FFD93D' } as Record<string, string>,
   hair: { long: '#FFC93C', buns: '#F8C63C', curly: '#D2461F', braid: '#8B4513' } as Record<string, string>,
 };
+
+/** Her ballet flats, the pink of the model's. */
+const FLATS = '#E2408A';
+/** Her brows and lashes are brown, not ink, as on the model. */
+const BROW = '#7A4A2A';
 
 function Svg({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -41,6 +51,28 @@ function Mirror({ children }: { children: ReactNode }) {
       {children}
       <g transform="matrix(-1 0 0 1 512 0)">{children}</g>
     </g>
+  );
+}
+
+/**
+ * Ids for this drawing's gradients. The same part is on the page many times (the sheet
+ * and every card in the palette), so each copy needs ids of its own.
+ */
+function useIds<const K extends string>(...names: K[]): Record<K, string> {
+  const base = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  return Object.fromEntries(names.map((n) => [n, `fairy${base}${n}`])) as Record<K, string>;
+}
+
+const url = (id: string) => `url(#${id})`;
+
+/** A soft top-to-bottom shading, light where the light falls on her. */
+function Down({ id, color, y1, y2, lift = 0.28, drop = -0.1 }: { id: string; color: string; y1: number; y2: number; lift?: number; drop?: number }) {
+  return (
+    <linearGradient id={id} x1="0" y1={y1} x2="0" y2={y2} gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor={shade(color, lift)} />
+      <stop offset="0.55" stopColor={color} />
+      <stop offset="1" stopColor={shade(color, drop)} />
+    </linearGradient>
   );
 }
 
@@ -71,130 +103,254 @@ function Sparkles({ pts, color = '#FFF3C4' }: { pts: [number, number, number][];
   );
 }
 
-function Flower({ x, y, petal, r = 20, heart = '#FFD93D' }: { x: number; y: number; petal: string; r?: number; heart?: string }) {
-  const pts = [0, 72, 144, 216, 288].map((a) => [x + r * 1.05 * Math.cos((a * Math.PI) / 180), y + r * 1.05 * Math.sin((a * Math.PI) / 180)]);
+function Flower({ x, y, petal, r = 20, heart = '#FFD93D', line = 8 }: { x: number; y: number; petal: string; r?: number; heart?: string; line?: number }) {
+  const pts = [0, 72, 144, 216, 288].map((a) => [x + r * 1.05 * Math.cos(((a - 90) * Math.PI) / 180), y + r * 1.05 * Math.sin(((a - 90) * Math.PI) / 180)]);
   return (
     <g>
       {pts.map(([px, py], i) => (
-        <circle key={i} cx={px} cy={py} r={r * 0.85} fill={petal} {...O} strokeWidth={8} />
+        <circle key={i} cx={px} cy={py} r={r * 0.85} fill={petal} {...O} strokeWidth={line} />
       ))}
-      <circle cx={x} cy={y} r={r * 0.7} fill={heart} {...O} strokeWidth={8} />
+      <circle cx={x} cy={y} r={r * 0.62} fill={heart} {...O} strokeWidth={line} />
     </g>
   );
+}
+
+/**
+ * A pointed leaf from `b` to `t`, `hw` wide at its fullest: the shape of one petal of
+ * her skirt, one leaf of the leaf dress and the panes of the leaf wings.
+ */
+function leaf(b: [number, number], t: [number, number], hw: number) {
+  const [bx, by] = b;
+  const [tx, ty] = t;
+  const dx = tx - bx;
+  const dy = ty - by;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = (-dy / len) * hw * 2;
+  const ny = (dx / len) * hw * 2;
+  const mx = bx + dx * 0.5;
+  const my = by + dy * 0.5;
+  const f = (n: number) => n.toFixed(1);
+  return `M${bx},${by} Q${f(mx + nx)},${f(my + ny)} ${tx},${ty} Q${f(mx - nx)},${f(my - ny)} ${bx},${by} Z`;
 }
 
 /* ------------------------------------------------------------------ HEAD */
 
 export function Head({ colors, className }: PartSvgProps) {
   const skin = colors.skin || FAIRY_DEFAULTS.skin;
+  const id = useIds('face', 'blush');
   return (
     <Svg className={className}>
-      {/* pointed fairy ears — one drawn, the other is its true mirror */}
+      <defs>
+        <radialGradient id={id.face} cx="42%" cy="34%" r="72%">
+          <stop offset="0" stopColor={shade(skin, 0.4)} />
+          <stop offset="0.6" stopColor={skin} />
+          <stop offset="1" stopColor={shade(skin, -0.1)} />
+        </radialGradient>
+        <radialGradient id={id.blush}>
+          <stop offset="0" stopColor="#FF8FA3" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#FF8FA3" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* little pointed fairy ears — one drawn, the other is its true mirror */}
       <Mirror>
         <g>
-          <path d="M396,212 C442,192 472,162 486,138 C488,214 466,282 412,312 Z" fill={skin} {...O} />
-          <path d="M424,236 C444,224 458,208 466,194" fill="none" stroke={shade(skin, -0.28)} strokeWidth="8" strokeLinecap="round" />
+          <path d="M404,236 C438,222 466,196 484,164 C490,228 470,284 418,306 Z" fill={skin} {...O} />
+          <path d="M428,250 C446,238 460,220 470,200" fill="none" stroke={shade(skin, -0.25)} strokeWidth="7" strokeLinecap="round" />
         </g>
       </Mirror>
-      <circle cx="256" cy="256" r="170" fill={skin} {...O} />
-      <ellipse cx="150" cy="336" rx="30" ry="17" fill="#FF9AA2" opacity="0.75" />
-      <ellipse cx="362" cy="336" rx="30" ry="17" fill="#FF9AA2" opacity="0.75" />
+      <circle cx="256" cy="256" r="170" fill={url(id.face)} {...O} />
+      <Mirror>
+        <g>
+          <ellipse cx="366" cy="338" rx="42" ry="26" fill={url(id.blush)} />
+          {/* a thin brown brow, as on the model */}
+          <path d="M296,196 Q338,176 382,190" fill="none" stroke={BROW} strokeWidth="9" strokeLinecap="round" />
+        </g>
+      </Mirror>
+      {/* a button nose */}
+      <path d="M248,326 Q256,334 264,326" fill="none" stroke={shade(skin, -0.35)} strokeWidth="7" strokeLinecap="round" />
       {/* the fairy always smiles; she has no mouth category of her own */}
-      <path d="M214,322 Q256,362 298,322" fill="none" stroke={INK} strokeWidth="16" strokeLinecap="round" />
+      <path d="M224,352 Q256,390 288,352 Q256,364 224,352 Z" fill="#E0566E" stroke={INK} strokeWidth="8" strokeLinejoin="round" />
     </Svg>
+  );
+}
+
+/* ----------------------------------------------------------------- BODY */
+/* One body under every dress: slim arms and legs, and the bare shoulders the
+   sweetheart top leaves. Only the top, the belt and the skirt change with the dress. */
+
+/** Her slim legs and ballet flats, under the skirt. */
+function Legs({ skin }: { skin: string }) {
+  const d = 'M238,296 L236,428 M274,296 L276,428';
+  return (
+    <g>
+      <path d={d} fill="none" stroke={INK} strokeWidth="34" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={skin} strokeWidth="22" strokeLinecap="round" />
+      <Mirror>
+        <g>
+          <path d="M254,438 C254,422 300,420 306,436 C310,452 294,460 280,460 C264,460 252,452 254,438 Z" fill={FLATS} {...O} strokeWidth={9} />
+          <ellipse cx="279" cy="432" rx="13" ry="5" fill={shade(FLATS, -0.4)} />
+          <circle cx="294" cy="446" r="4.5" fill="#fff" opacity="0.8" />
+        </g>
+      </Mirror>
+    </g>
+  );
+}
+
+/** Arms hanging easy at her sides, a small hand at the end of each. */
+function Arms({ skin }: { skin: string }) {
+  const d = 'M298,138 C328,164 350,208 360,244';
+  return (
+    <Mirror>
+      <g>
+        <path d={d} fill="none" stroke={INK} strokeWidth="34" strokeLinecap="round" />
+        <path d={d} fill="none" stroke={skin} strokeWidth="22" strokeLinecap="round" />
+        <circle cx="362" cy="258" r="17" fill={skin} {...O} strokeWidth={9} />
+      </g>
+    </Mirror>
+  );
+}
+
+/** Neck and shoulders; the head sits over the top of them. */
+function Torso({ skin }: { skin: string }) {
+  return (
+    <path
+      d="M234,86 L278,86 L280,116 C302,118 316,128 318,146 L312,208 L200,208 L194,146 C196,128 210,118 232,116 Z"
+      fill={skin}
+      {...O}
+    />
+  );
+}
+
+/** The sweetheart top: two soft curves at the neckline, fitted to the waist. */
+function Bodice({ color, fill }: { color: string; fill: string }) {
+  return (
+    <g>
+      <path
+        d="M198,152 C204,136 222,132 236,140 C246,146 252,152 256,160 C260,152 266,146 276,140 C290,132 308,136 314,152 L310,206 L202,206 Z"
+        fill={fill}
+        {...O}
+      />
+      <path d="M212,156 C218,148 228,146 236,150" fill="none" stroke={shade(color, 0.5)} strokeWidth="7" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** The belt at her waist, with its round buckle. */
+function Belt({ color, buckle = '#FFD166' }: { color: string; buckle?: string }) {
+  return (
+    <g>
+      <path d="M200,198 L312,198 L314,220 L198,220 Z" fill={color} {...O} strokeWidth={9} />
+      <circle cx="256" cy="209" r="13" fill={buckle} {...O} strokeWidth={7} />
+      <circle cx="252" cy="205" r="4" fill="#fff" opacity="0.8" />
+    </g>
+  );
+}
+
+/** Everything under the dress, in the order it stacks: legs, then the skirt, then arms and top. */
+function Figure({ skin, skirt, top }: { skin: string; skirt: ReactNode; top: ReactNode }) {
+  return (
+    <>
+      <Legs skin={skin} />
+      {skirt}
+      <Arms skin={skin} />
+      <Torso skin={skin} />
+      {top}
+    </>
   );
 }
 
 /* ----------------------------------------------------------------- DRESS */
 
-function Neck({ skin }: { skin: string }) {
-  return <rect x="228" y="30" width="56" height="60" fill={skin} {...O} strokeWidth={10} />;
-}
-
-function Arms({ skin }: { skin: string }) {
-  const l = 'M164,104 C118,160 100,222 108,290';
-  const r = 'M348,104 C394,160 412,222 404,290';
-  return (
-    <g>
-      <path d={`${l} ${r}`} fill="none" stroke={INK} strokeWidth="46" strokeLinecap="round" />
-      <path d={`${l} ${r}`} fill="none" stroke={skin} strokeWidth="26" strokeLinecap="round" />
-      <circle cx="108" cy="298" r="26" fill={skin} {...O} strokeWidth={12} />
-      <circle cx="404" cy="298" r="26" fill={skin} {...O} strokeWidth={12} />
-    </g>
-  );
-}
-
-function Bodice({ color }: { color: string }) {
-  return <path d="M182,66 C182,120 184,166 168,192 L344,192 C328,166 330,120 330,66 Z" fill={shade(color, -0.12)} {...O} />;
-}
-
-function PuffSleeves({ color, r = 34 }: { color: string; r?: number }) {
-  return (
-    <Mirror>
-      <circle cx="340" cy="94" r={r} fill={color} {...O} />
-    </Mirror>
-  );
-}
-
-/** Little slippers peeking out under the hem — one shoe, mirrored. */
-function Slippers({ color, skin, y = 442 }: { color: string; skin: string; y?: number }) {
-  return (
-    <Mirror>
-      <g>
-        <path d={`M306,${y} L306,${y + 28}`} fill="none" stroke={INK} strokeWidth="34" strokeLinecap="round" />
-        <path d={`M306,${y} L306,${y + 28}`} fill="none" stroke={skin} strokeWidth="20" strokeLinecap="round" />
-        <ellipse cx="308" cy={y + 36} rx="38" ry="20" fill={color} {...O} strokeWidth={11} />
-        <circle cx="330" cy={y + 28} r="8" fill="#fff" opacity="0.8" />
-      </g>
-    </Mirror>
-  );
-}
+/** The petal skirt of the model: a back row of dark petals, a front row of light ones. */
+const BACK_PETALS: [number, number, number, number][] = [
+  [214, 204, 146, 298], [234, 204, 194, 326], [256, 204, 256, 336], [278, 204, 318, 326], [298, 204, 366, 298],
+];
+const FRONT_PETALS: [number, number, number, number][] = [
+  [222, 206, 170, 316], [244, 206, 226, 332], [268, 206, 286, 332], [290, 206, 342, 316],
+];
 
 export function DressPetal({ colors, className }: PartSvgProps) {
   const c = colors.dress || FAIRY_DEFAULTS.dress.petal;
   const skin = colors.skin || FAIRY_DEFAULTS.skin;
+  const id = useIds('top', 'front', 'back');
+  const vein = shade(c, -0.28);
   return (
     <Svg className={className}>
-      <Slippers color={shade(c, -0.28)} skin={skin} />
-      <Neck skin={skin} />
-      <Arms skin={skin} />
-      <path d="M176,192 C168,286 116,368 104,444 L408,444 C396,368 344,286 336,192 Z" fill={shade(c, -0.14)} {...O} />
-      <Mirror>
-        <ellipse cx="338" cy="348" rx="88" ry="110" transform="rotate(14 338 348)" fill={c} {...O} />
-      </Mirror>
-      <ellipse cx="256" cy="342" rx="92" ry="114" fill={shade(c, 0.16)} {...O} />
-      <ellipse cx="228" cy="292" rx="20" ry="34" fill="#fff" opacity="0.45" transform="rotate(-18 228 292)" />
-      <Bodice color={c} />
-      <PuffSleeves color={c} />
-      <Flower x={256} y={150} petal="#FFF3C4" r={17} heart="#FF8A2A" />
+      <defs>
+        <Down id={id.top} color={c} y1={134} y2={208} />
+        <Down id={id.front} color={c} y1={206} y2={334} lift={0.3} drop={-0.06} />
+        <Down id={id.back} color={shade(c, -0.2)} y1={206} y2={334} lift={0.12} />
+      </defs>
+      <Figure
+        skin={skin}
+        skirt={
+          <g>
+            {BACK_PETALS.map(([bx, by, tx, ty], i) => (
+              <path key={i} d={leaf([bx, by], [tx, ty], 36)} fill={url(id.back)} {...O} />
+            ))}
+            {FRONT_PETALS.map(([bx, by, tx, ty], i) => (
+              <g key={i}>
+                <path d={leaf([bx, by], [tx, ty], 34)} fill={url(id.front)} {...O} />
+                <path d={`M${bx},${by + 20} L${bx + (tx - bx) * 0.72},${by + (ty - by) * 0.72}`} fill="none" stroke={vein} strokeWidth="5" strokeLinecap="round" opacity="0.7" />
+              </g>
+            ))}
+          </g>
+        }
+        top={
+          <>
+            <Bodice color={c} fill={url(id.top)} />
+            <Belt color={shade(c, -0.5)} />
+          </>
+        }
+      />
     </Svg>
   );
 }
 
+/** Long leaves, the middle ones longest, hanging from a vine belt. */
+const LEAVES: [number, number, number, number, number][] = [
+  [216, 204, 150, 318, 30], [236, 204, 196, 346, 30], [256, 204, 256, 356, 30], [276, 204, 316, 346, 30], [296, 204, 362, 318, 30],
+];
+
 export function DressLeaf({ colors, className }: PartSvgProps) {
   const c = colors.dress || FAIRY_DEFAULTS.dress.leaf;
   const skin = colors.skin || FAIRY_DEFAULTS.skin;
-  const vein = shade(c, -0.26);
+  const id = useIds('top', 'a', 'b');
+  const vein = shade(c, -0.32);
   return (
     <Svg className={className}>
-      <Slippers color={shade(c, -0.3)} skin={skin} y={430} />
-      <Neck skin={skin} />
-      <Arms skin={skin} />
-      <path
-        d="M178,192 C166,290 116,372 100,448 L148,412 L186,456 L224,410 L256,452 L288,410 L326,456 L364,412 L412,448 C396,372 346,290 334,192 Z"
-        fill={c}
-        {...O}
+      <defs>
+        <Down id={id.top} color={c} y1={134} y2={208} />
+        <Down id={id.a} color={c} y1={206} y2={356} lift={0.3} />
+        <Down id={id.b} color={shade(c, 0.22)} y1={206} y2={356} lift={0.3} />
+      </defs>
+      <Figure
+        skin={skin}
+        skirt={
+          <g>
+            {/* the outer leaves behind, the middle ones in front */}
+            {[0, 4, 1, 3, 2].map((i) => {
+              const [bx, by, tx, ty, hw] = LEAVES[i];
+              const mx = (bx + tx) / 2;
+              const my = (by + ty) / 2;
+              return (
+                <g key={i}>
+                  <path d={leaf([bx, by], [tx, ty], hw)} fill={url(i % 2 ? id.b : id.a)} {...O} />
+                  <path d={`M${bx},${by + 18} L${bx + (tx - bx) * 0.8},${by + (ty - by) * 0.8}`} fill="none" stroke={vein} strokeWidth="5" strokeLinecap="round" />
+                  <path d={`M${mx},${my} l-14,-16 M${mx},${my} l14,-16`} fill="none" stroke={vein} strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+                </g>
+              );
+            })}
+          </g>
+        }
+        top={
+          <>
+            <Bodice color={c} fill={url(id.top)} />
+            <Belt color={shade(c, -0.45)} buckle={shade(c, 0.35)} />
+            <path d="M256,209 C236,190 218,190 208,196 C222,214 240,216 256,209 Z" fill={shade(c, 0.3)} {...O} strokeWidth={7} />
+          </>
+        }
       />
-      <g fill="none" stroke={vein} strokeWidth="9" strokeLinecap="round">
-        <path d="M256,206 L256,428" />
-        <path d="M256,290 L186,376 M256,290 L326,376 M256,354 L204,420 M256,354 L308,420" />
-      </g>
-      <Bodice color={c} />
-      <PuffSleeves color={c} r={32} />
-      <Mirror>
-        <path d="M292,148 C330,120 366,124 382,132 C356,166 318,174 292,160 Z" fill={shade(c, 0.28)} {...O} strokeWidth={9} />
-      </Mirror>
-      <ellipse cx="232" cy="300" rx="18" ry="30" fill="#fff" opacity="0.35" transform="rotate(-20 232 300)" />
     </Svg>
   );
 }
@@ -202,23 +358,42 @@ export function DressLeaf({ colors, className }: PartSvgProps) {
 export function DressStar({ colors, className }: PartSvgProps) {
   const c = colors.dress || FAIRY_DEFAULTS.dress.star;
   const skin = colors.skin || FAIRY_DEFAULTS.skin;
+  const id = useIds('top', 'skirt');
+  // a bell of a skirt with a scalloped hem, six rounded bumps across
+  let hem = '';
+  for (let i = 0; i < 6; i++) {
+    const x0 = 136 + i * 40;
+    hem += ` Q${x0 + 20},${344} ${x0 + 40},${318}`;
+  }
   return (
     <Svg className={className}>
-      <Slippers color="#FFD93D" skin={skin} />
-      <Neck skin={skin} />
-      <Arms skin={skin} />
-      <path d="M172,192 C152,286 100,368 84,444 L428,444 C412,368 360,286 340,192 Z" fill={c} {...O} />
-      <path d="M84,444 Q114,414 144,444 Q174,414 204,444 Q234,414 264,444 Q294,414 324,444 Q354,414 384,444 Q408,418 428,444" fill="none" stroke={shade(c, 0.45)} strokeWidth="12" strokeLinecap="round" />
-      <g fill="#FFD93D" stroke={INK} strokeWidth="7" strokeLinejoin="round">
-        <polygon points={star(256, 320, 26, 12)} />
-        <polygon points={star(172, 392, 22, 10)} />
-        <polygon points={star(340, 392, 22, 10)} />
-        <polygon points={star(214, 252, 14, 6)} />
-        <polygon points={star(298, 252, 14, 6)} />
-      </g>
-      <Bodice color={c} />
-      <PuffSleeves color={c} r={38} />
-      <polygon points={star(256, 148, 20, 9)} fill="#FFD93D" stroke={INK} strokeWidth="7" strokeLinejoin="round" />
+      <defs>
+        <Down id={id.top} color={c} y1={134} y2={208} />
+        <Down id={id.skirt} color={c} y1={206} y2={340} lift={0.32} />
+      </defs>
+      <Figure
+        skin={skin}
+        skirt={
+          <g>
+            <path d={`M206,206 C188,244 152,282 136,318${hem} C360,282 324,244 306,206 Z`} fill={url(id.skirt)} {...O} />
+            <path d="M150,312 Q256,290 362,312" fill="none" stroke={shade(c, 0.5)} strokeWidth="7" strokeLinecap="round" opacity="0.8" />
+            <g fill="#FFD93D" stroke={INK} strokeWidth="6" strokeLinejoin="round">
+              <polygon points={star(256, 280, 20, 9)} />
+              <polygon points={star(190, 300, 15, 7)} />
+              <polygon points={star(322, 300, 15, 7)} />
+              <polygon points={star(222, 244, 11, 5)} />
+              <polygon points={star(290, 244, 11, 5)} />
+            </g>
+          </g>
+        }
+        top={
+          <>
+            <Bodice color={c} fill={url(id.top)} />
+            <Belt color="#FFD93D" buckle="#FFF3C4" />
+            <polygon points={star(256, 209, 15, 7)} fill="#FFD93D" stroke={INK} strokeWidth="6" strokeLinejoin="round" />
+          </>
+        }
+      />
     </Svg>
   );
 }
@@ -226,145 +401,246 @@ export function DressStar({ colors, className }: PartSvgProps) {
 export function DressBubble({ colors, className }: PartSvgProps) {
   const c = colors.dress || FAIRY_DEFAULTS.dress.bubble;
   const skin = colors.skin || FAIRY_DEFAULTS.skin;
+  const id = useIds('top', 'skirt');
+  const light = shade(c, 0.4);
   return (
     <Svg className={className}>
-      <Slippers color={shade(c, -0.28)} skin={skin} y={436} />
-      <Neck skin={skin} />
-      <Arms skin={skin} />
-      <path d="M180,192 C120,240 92,330 128,402 C170,468 342,468 384,402 C420,330 392,240 332,192 Z" fill={c} {...O} />
-      <Mirror>
-        <g>
-          <circle cx="330" cy="336" r="40" fill={shade(c, 0.32)} {...O} strokeWidth={9} />
-          <circle cx="318" cy="322" r="11" fill="#fff" opacity="0.9" />
-          <circle cx="374" cy="252" r="22" fill={shade(c, 0.32)} {...O} strokeWidth={8} />
-        </g>
-      </Mirror>
-      <circle cx="256" cy="400" r="30" fill={shade(c, 0.32)} {...O} strokeWidth={9} />
-      <circle cx="246" cy="388" r="9" fill="#fff" opacity="0.9" />
-      <Bodice color={c} />
-      <PuffSleeves color={c} r={36} />
-      <Sparkles pts={[[256, 150, 18]]} color="#FFF3C4" />
+      <defs>
+        <Down id={id.top} color={c} y1={134} y2={208} />
+        <radialGradient id={id.skirt} cx="40%" cy="30%" r="75%">
+          <stop offset="0" stopColor={shade(c, 0.45)} />
+          <stop offset="0.6" stopColor={c} />
+          <stop offset="1" stopColor={shade(c, -0.14)} />
+        </radialGradient>
+      </defs>
+      <Figure
+        skin={skin}
+        skirt={
+          <g>
+            <path d="M206,204 C150,222 128,284 152,314 C184,346 328,346 360,314 C384,284 362,222 306,204 Z" fill={url(id.skirt)} {...O} />
+            <path d="M166,318 Q256,342 346,318" fill="none" stroke={shade(c, -0.25)} strokeWidth="6" strokeLinecap="round" />
+            <Mirror>
+              <g>
+                <circle cx="318" cy="276" r="22" fill={light} {...O} strokeWidth={7} opacity="0.9" />
+                <circle cx="311" cy="268" r="6" fill="#fff" />
+                <circle cx="340" cy="236" r="12" fill={light} {...O} strokeWidth={6} opacity="0.9" />
+              </g>
+            </Mirror>
+            <circle cx="256" cy="298" r="18" fill={light} {...O} strokeWidth={7} opacity="0.9" />
+            <circle cx="250" cy="291" r="5" fill="#fff" />
+          </g>
+        }
+        top={
+          <>
+            <Bodice color={c} fill={url(id.top)} />
+            <Belt color={shade(c, -0.35)} buckle={light} />
+          </>
+        }
+      />
     </Svg>
   );
 }
 
 /* ----------------------------------------------------------------- WINGS */
-/* Wings are drawn as one right-hand wing and reflected, so the pair is a true mirror. */
+/* Wings are drawn as one right-hand wing and reflected, so the pair is a true mirror.
+   Like the model's, they are panes you can see through, pale at the root and deeper at
+   the edge, with fine veins and a pearly shine along the top. */
+
+function WingDefs({ id, c }: { id: string; c: string }) {
+  return (
+    <radialGradient id={id} cx="268" cy="252" r="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor={shade(c, 0.7)} />
+      <stop offset="0.55" stopColor={shade(c, 0.2)} />
+      <stop offset="1" stopColor={shade(c, -0.12)} />
+    </radialGradient>
+  );
+}
+
+function Pane({ d, fill, c }: { d: string; fill: string; c: string }) {
+  return <path d={d} fill={fill} fillOpacity="0.78" stroke={shade(c, -0.5)} strokeWidth="7" strokeLinejoin="round" />;
+}
+
+function Veins({ d, c, w = 4 }: { d: string; c: string; w?: number }) {
+  return <path d={d} fill="none" stroke={shade(c, -0.32)} strokeWidth={w} strokeLinecap="round" opacity="0.75" />;
+}
+
+function Shine({ d }: { d: string }) {
+  return <path d={d} fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" opacity="0.7" />;
+}
+
+function WingSparkles({ pts }: { pts: [number, number, number][] }) {
+  return (
+    <>
+      <Sparkles pts={pts} />
+      <g transform="matrix(-1 0 0 1 512 0)">
+        <Sparkles pts={pts} />
+      </g>
+    </>
+  );
+}
 
 export function WingsButterfly({ colors, className }: PartSvgProps) {
   const c = colors.wings || FAIRY_DEFAULTS.wings.butterfly;
-  const c2 = shade(c, 0.34);
+  const id = useIds('pane');
   return (
     <Svg className={className}>
+      <defs>
+        <WingDefs id={id.pane} c={c} />
+      </defs>
       <Mirror>
         <g>
-          <path d="M268,262 C300,116 446,84 486,164 C518,240 408,296 268,300 Z" fill={c} {...O} />
-          <path d="M268,300 C386,294 468,318 458,378 C448,438 342,418 268,358 Z" fill={c2} {...O} />
-          <circle cx="404" cy="196" r="24" fill={c2} {...O} strokeWidth={8} />
-          <circle cx="374" cy="356" r="15" fill={c} {...O} strokeWidth={8} />
-          <path d="M300,268 C352,208 418,182 466,178" fill="none" stroke={shade(c, -0.3)} strokeWidth="8" strokeLinecap="round" />
+          {/* the long upper pane, reaching up and out */}
+          <Pane c={c} fill={url(id.pane)} d="M266,250 C282,192 332,126 402,98 C452,78 492,94 486,134 C478,186 420,236 330,258 C306,264 284,264 266,258 Z" />
+          <Veins c={c} d="M272,252 C330,212 400,154 462,112 M318,232 C356,216 404,196 452,168 M296,240 C318,190 348,148 388,112" />
+          <Shine d="M300,196 C336,146 386,114 440,102" />
+          {/* and the short lower one, towards her skirt */}
+          <Pane c={c} fill={url(id.pane)} d="M268,262 C314,266 374,290 400,330 C422,366 406,398 372,392 C330,384 290,332 268,278 Z" />
+          <Veins c={c} d="M274,270 C318,302 354,342 380,380 M300,286 C332,298 364,318 390,346" />
         </g>
       </Mirror>
-      <Sparkles pts={[[486, 96, 20], [430, 428, 16], [500, 300, 13]]} />
-      <g transform="matrix(-1 0 0 1 512 0)">
-        <Sparkles pts={[[486, 96, 20], [430, 428, 16], [500, 300, 13]]} />
-      </g>
+      <WingSparkles pts={[[470, 420, 12]]} />
     </Svg>
   );
 }
 
 export function WingsDragonfly({ colors, className }: PartSvgProps) {
   const c = colors.wings || FAIRY_DEFAULTS.wings.dragonfly;
+  const id = useIds('pane');
   return (
     <Svg className={className}>
+      <defs>
+        <WingDefs id={id.pane} c={c} />
+      </defs>
       <Mirror>
         <g>
-          <g transform="rotate(-20 384 208)">
-            <ellipse cx="384" cy="208" rx="134" ry="48" fill={c} {...O} />
-            <path d="M266,208 L500,208 M290,182 L470,190 M290,234 L470,226" fill="none" stroke={shade(c, -0.32)} strokeWidth="7" strokeLinecap="round" />
+          <g transform="rotate(-22 384 206)">
+            <Pane c={c} fill={url(id.pane)} d="M262,206 C300,170 440,160 508,196 C520,210 512,226 494,230 C430,248 300,240 262,206 Z" />
+            <Veins c={c} d="M270,206 L500,206 M300,190 L480,194 M300,224 L470,220 M340,184 L352,232 M400,184 L410,236 M456,190 L462,228" />
+            <Shine d="M300,186 C360,174 430,172 480,186" />
           </g>
-          <g transform="rotate(14 372 328)">
-            <ellipse cx="372" cy="328" rx="116" ry="40" fill={shade(c, 0.26)} {...O} />
-            <path d="M268,328 L478,328 M290,308 L456,312 M290,348 L456,344" fill="none" stroke={shade(c, -0.24)} strokeWidth="7" strokeLinecap="round" />
+          <g transform="rotate(16 372 330)">
+            <Pane c={c} fill={url(id.pane)} d="M264,330 C300,300 420,294 478,322 C492,332 488,348 472,352 C410,366 300,360 264,330 Z" />
+            <Veins c={c} d="M272,330 L472,332 M330,312 L338,356 M390,310 L398,360 M440,314 L446,354" />
           </g>
         </g>
       </Mirror>
-      <Sparkles pts={[[496, 120, 18], [478, 404, 14]]} />
-      <g transform="matrix(-1 0 0 1 512 0)">
-        <Sparkles pts={[[496, 120, 18], [478, 404, 14]]} />
-      </g>
+      <WingSparkles pts={[[496, 110, 15], [470, 410, 12]]} />
     </Svg>
   );
 }
 
 export function WingsLeaf({ colors, className }: PartSvgProps) {
   const c = colors.wings || FAIRY_DEFAULTS.wings.leaf;
+  const id = useIds('pane');
   return (
     <Svg className={className}>
+      <defs>
+        <WingDefs id={id.pane} c={c} />
+      </defs>
       <Mirror>
         <g>
-          <path d="M272,332 C276,214 344,110 468,72 C482,196 416,314 272,346 Z" fill={c} {...O} />
-          <path d="M282,340 C346,272 410,196 456,92" fill="none" stroke={shade(c, -0.32)} strokeWidth="11" strokeLinecap="round" />
-          <path d="M320,268 L316,180 M366,208 L372,126 M300,304 L280,236 M404,158 L420,104" fill="none" stroke={shade(c, -0.24)} strokeWidth="8" strokeLinecap="round" />
-          <path d="M340,246 C384,244 418,222 440,190" fill="none" stroke={shade(c, 0.4)} strokeWidth="9" strokeLinecap="round" />
+          <Pane c={c} fill={url(id.pane)} d={leaf([268, 250], [476, 70], 62)} />
+          <Veins c={c} w={6} d="M276,242 L466,80 M330,196 L316,140 M380,154 L380,100 M324,200 L380,208 M380,154 L436,160" />
+          <Pane c={c} fill={url(id.pane)} d={leaf([268, 266], [410, 380], 38)} />
+          <Veins c={c} d="M276,272 L400,372 M330,318 L310,340 M350,334 L380,330" />
         </g>
       </Mirror>
-      <Sparkles pts={[[490, 180, 18], [420, 60, 14]]} />
-      <g transform="matrix(-1 0 0 1 512 0)">
-        <Sparkles pts={[[490, 180, 18], [420, 60, 14]]} />
-      </g>
+      <WingSparkles pts={[[496, 180, 15], [420, 52, 12]]} />
     </Svg>
   );
 }
 
 export function WingsStar({ colors, className }: PartSvgProps) {
   const c = colors.wings || FAIRY_DEFAULTS.wings.star;
+  const id = useIds('pane');
   return (
     <Svg className={className}>
+      <defs>
+        <WingDefs id={id.pane} c={c} />
+      </defs>
       <Mirror>
         <g>
-          <path d="M268,318 L316,176 L344,254 L400,112 L424,236 L500,186 L468,288 L502,330 L268,348 Z" fill={c} {...O} />
-          <path d="M292,312 L440,256 M292,326 L470,310" fill="none" stroke={shade(c, -0.3)} strokeWidth="8" strokeLinecap="round" />
-          <polygon points={star(378, 258, 24, 11)} fill={shade(c, 0.45)} stroke={INK} strokeWidth="7" strokeLinejoin="round" />
+          <Pane c={c} fill={url(id.pane)} d="M266,258 L316,150 L346,222 L404,100 L426,210 L500,168 L470,262 L266,280 Z" />
+          <Veins c={c} d="M276,262 L396,120 M290,266 L470,190 M296,270 L456,252" />
+          <Pane c={c} fill={url(id.pane)} d="M268,284 L420,296 L388,340 L412,390 L350,368 L296,336 Z" />
+          <polygon points={star(372, 222, 20, 9)} fill={shade(c, 0.55)} stroke={INK} strokeWidth="6" strokeLinejoin="round" />
         </g>
       </Mirror>
-      <Sparkles pts={[[478, 120, 20], [446, 380, 15], [508, 244, 12]]} />
-      <g transform="matrix(-1 0 0 1 512 0)">
-        <Sparkles pts={[[478, 120, 20], [446, 380, 15], [508, 244, 12]]} />
-      </g>
+      <WingSparkles pts={[[478, 110, 16], [446, 400, 13]]} />
     </Svg>
   );
 }
 
 /* ------------------------------------------------------------------ HAIR */
-/* Each style has a Back layer (behind the head) and a Front layer (bangs, in front). */
+/* Each style has a Back layer (behind the head) and a Front layer (fringe and the locks
+   that frame her face, in front of it). The model's swept, parted fringe is the front of
+   every straight style; the curls keep a fringe of their own. */
+
+/** The fringe and the two locks in front of her ears, which end at `lockY`. */
+function fringe(lockY: number) {
+  return [
+    // outside edge, from the left lock's tip over the top of her head to the right one's
+    `M100,${lockY} C80,${lockY - 70} 68,270 78,200 C90,118 164,60 256,60 C348,60 422,118 434,200 C444,270 432,${lockY - 70} 412,${lockY}`,
+    // up the inside of the right lock to her temple
+    `C396,${lockY - 50} 384,300 382,250 C380,222 372,204 360,192`,
+    // the fringe, strands swept from a parting over her left eye
+    'C352,166 338,150 324,142 C326,160 318,178 302,190',
+    'C296,166 284,148 268,138 C268,158 260,174 244,184',
+    'C240,160 230,140 214,128 C206,146 196,164 180,176',
+    'C176,160 168,148 156,140 C156,160 150,178 140,194',
+    // and down the inside of the left lock
+    `C132,220 128,300 130,${lockY - 60} C128,${lockY - 30} 118,${lockY - 8} 100,${lockY} Z`,
+  ].join(' ');
+}
+
+function HairShine({ c }: { c: string }) {
+  return (
+    <g fill="none" strokeLinecap="round">
+      {/* the parting, and strands combed away from it */}
+      <path d="M214,128 C222,104 236,82 256,68 M236,100 C290,94 350,116 392,168 M226,116 C270,116 314,134 338,152 M204,104 C168,100 132,122 110,168" stroke={shade(c, -0.22)} strokeWidth="6" />
+      <path d="M148,100 C186,76 232,70 270,72" stroke={shade(c, 0.55)} strokeWidth="11" opacity="0.85" />
+      <path d="M404,240 C410,280 410,320 402,352" stroke={shade(c, -0.2)} strokeWidth="5" />
+      <path d="M108,240 C102,280 102,320 110,352" stroke={shade(c, -0.2)} strokeWidth="5" />
+    </g>
+  );
+}
+
+function HairFront({ c, lockY, className }: { c: string; lockY: number; className?: string }) {
+  const id = useIds('hair');
+  return (
+    <Svg className={className}>
+      <defs>
+        <Down id={id.hair} color={c} y1={50} y2={lockY} lift={0.32} drop={-0.14} />
+      </defs>
+      <path d={fringe(lockY)} fill={url(id.hair)} {...O} />
+      <HairShine c={c} />
+    </Svg>
+  );
+}
+
+/** The short hair behind her head, seen only round her ears and jaw. */
+const NAPE = 'M256,70 C130,70 70,160 72,270 C74,340 96,390 130,410 L382,410 C416,390 438,340 440,270 C442,160 382,70 256,70 Z';
 
 export function HairLongBack({ colors, className }: PartSvgProps) {
   const c = colors.hair || FAIRY_DEFAULTS.hair.long;
+  const id = useIds('hair');
   return (
     <Svg className={className}>
+      <defs>
+        <Down id={id.hair} color={c} y1={50} y2={600} lift={0.2} drop={-0.18} />
+      </defs>
       <path
         d="M256,50 C120,50 62,150 66,270 C70,380 40,500 86,600 C160,600 190,560 200,470 L312,470 C322,560 352,600 426,600 C472,500 442,380 446,270 C450,150 392,50 256,50 Z"
-        fill={c}
+        fill={url(id.hair)}
         {...O}
       />
-      <path d="M110,300 C100,400 96,470 108,550 M402,300 C412,400 416,470 404,550" fill="none" stroke={shade(c, -0.25)} strokeWidth="10" strokeLinecap="round" />
+      <path d="M110,300 C100,400 96,470 108,550 M402,300 C412,400 416,470 404,550" fill="none" stroke={shade(c, -0.25)} strokeWidth="7" strokeLinecap="round" />
     </Svg>
   );
 }
 
 export function HairLongFront({ colors, className }: PartSvgProps) {
-  const c = colors.hair || FAIRY_DEFAULTS.hair.long;
-  return (
-    <Svg className={className}>
-      <path
-        d="M78,290 C66,150 140,56 256,56 C372,56 446,150 434,290 C420,220 392,176 350,180 C330,140 300,130 256,168 C220,132 170,146 154,190 C116,186 92,230 78,290 Z"
-        fill={c}
-        {...O}
-      />
-      <path d="M256,70 C280,100 300,120 320,130" fill="none" stroke={shade(c, 0.4)} strokeWidth="10" strokeLinecap="round" />
-    </Svg>
-  );
+  return <HairFront c={colors.hair || FAIRY_DEFAULTS.hair.long} lockY={470} className={className} />;
 }
 
 export function HairLong(props: PartSvgProps) {
@@ -379,29 +655,32 @@ export function HairLong(props: PartSvgProps) {
 
 export function HairBunsBack({ colors, className }: PartSvgProps) {
   const c = colors.hair || FAIRY_DEFAULTS.hair.buns;
+  const id = useIds('hair', 'bun');
   return (
     <Svg className={className}>
-      {/* one bun drawn, the other is its true mirror */}
+      <defs>
+        <Down id={id.hair} color={c} y1={60} y2={410} lift={0.2} drop={-0.18} />
+        <radialGradient id={id.bun} cx="40%" cy="30%" r="75%">
+          <stop offset="0" stopColor={shade(c, 0.45)} />
+          <stop offset="0.6" stopColor={c} />
+          <stop offset="1" stopColor={shade(c, -0.15)} />
+        </radialGradient>
+      </defs>
+      {/* two round buns high on her head — one drawn, the other is its true mirror */}
       <Mirror>
         <g>
-          <circle cx="368" cy="82" r="66" fill={c} {...O} />
-          <circle cx="392" cy="58" r="15" fill={shade(c, 0.45)} />
-          <path d="M330,122 C352,112 376,112 398,124" fill="none" stroke={shade(c, -0.28)} strokeWidth="9" strokeLinecap="round" />
+          <circle cx="362" cy="88" r="70" fill={url(id.bun)} {...O} />
+          <path d="M318,60 C344,34 392,36 412,66 M322,96 C348,72 392,74 414,100 M336,132 C360,116 392,118 410,132" fill="none" stroke={shade(c, -0.22)} strokeWidth="6" strokeLinecap="round" />
+          <ellipse cx="344" cy="54" rx="18" ry="10" fill="#fff" opacity="0.45" transform="rotate(-24 344 54)" />
         </g>
       </Mirror>
-      <path d="M256,66 C130,66 66,164 66,282 C66,332 76,352 92,368 L420,368 C436,352 446,332 446,282 C446,164 382,66 256,66 Z" fill={c} {...O} />
+      <path d={NAPE} fill={url(id.hair)} {...O} />
     </Svg>
   );
 }
 
 export function HairBunsFront({ colors, className }: PartSvgProps) {
-  const c = colors.hair || FAIRY_DEFAULTS.hair.buns;
-  return (
-    <Svg className={className}>
-      <path d="M82,250 C74,150 140,66 256,66 C372,66 438,150 430,250 C400,180 330,166 256,200 C182,166 112,180 82,250 Z" fill={c} {...O} />
-      <path d="M150,112 C182,92 220,86 256,88" fill="none" stroke={shade(c, 0.45)} strokeWidth="9" strokeLinecap="round" />
-    </Svg>
-  );
+  return <HairFront c={colors.hair || FAIRY_DEFAULTS.hair.buns} lockY={404} className={className} />;
 }
 
 export function HairBuns(props: PartSvgProps) {
@@ -425,10 +704,13 @@ export function HairCurlyBack({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       {CURLS.map(([x, y, r], i) => (
-        <circle key={i} cx={x} cy={y} r={r} fill={c} {...O} strokeWidth={12} />
+        <circle key={i} cx={x} cy={y} r={r} fill={c} {...O} />
       ))}
       {CURLS.map(([x, y, r], i) => (
         <circle key={`i${i}`} cx={x} cy={y} r={r - 2} fill={c} />
+      ))}
+      {CURLS.map(([x, y, r], i) => (
+        <circle key={`h${i}`} cx={x - r * 0.3} cy={y - r * 0.3} r={r * 0.28} fill={shade(c, 0.4)} opacity="0.55" />
       ))}
       <path d="M256,90 C140,90 90,190 90,300 L422,300 C422,190 372,90 256,90 Z" fill={c} />
     </Svg>
@@ -444,12 +726,14 @@ export function HairCurlyFront({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       {FRONT_CURLS.map(([x, y, r], i) => (
-        <circle key={i} cx={x} cy={y} r={r} fill={c} {...O} strokeWidth={12} />
+        <circle key={i} cx={x} cy={y} r={r} fill={c} {...O} />
       ))}
       {FRONT_CURLS.map(([x, y, r], i) => (
         <circle key={`i${i}`} cx={x} cy={y} r={r - 2} fill={c} />
       ))}
-      <circle cx="210" cy="118" r="10" fill={shade(c, 0.45)} />
+      {FRONT_CURLS.map(([x, y, r], i) => (
+        <circle key={`h${i}`} cx={x - r * 0.3} cy={y - r * 0.3} r={r * 0.28} fill={shade(c, 0.45)} opacity="0.6" />
+      ))}
     </Svg>
   );
 }
@@ -470,31 +754,32 @@ function BraidRope({ x, color, ribbon }: { x: number; color: string; ribbon: str
   return (
     <g>
       {beads.map((y, i) => (
-        <circle key={y} cx={x + (i % 2 === 0 ? -9 : 9)} cy={y} r="32" fill={color} {...O} strokeWidth={12} />
+        <g key={y}>
+          <circle cx={x + (i % 2 === 0 ? -9 : 9)} cy={y} r="32" fill={color} {...O} />
+          <path d={`M${x - 20 + (i % 2 === 0 ? -9 : 9)},${y - 8} Q${x + (i % 2 === 0 ? -9 : 9)},${y + 14} ${x + 20 + (i % 2 === 0 ? -9 : 9)},${y - 8}`} fill="none" stroke={shade(color, -0.25)} strokeWidth="5" strokeLinecap="round" />
+        </g>
       ))}
-      <path d={`M${x - 28},${beads[0] - 34} L${x + 28},${beads[0] - 34} L${x},${beads[0] - 62} Z M${x - 28},${beads[0] - 34} L${x + 28},${beads[0] - 34} L${x},${beads[0] - 6} Z`} fill={ribbon} {...O} strokeWidth={9} />
+      <path d={`M${x - 28},${beads[0] - 34} L${x + 28},${beads[0] - 34} L${x},${beads[0] - 62} Z M${x - 28},${beads[0] - 34} L${x + 28},${beads[0] - 34} L${x},${beads[0] - 6} Z`} fill={ribbon} {...O} strokeWidth={8} />
     </g>
   );
 }
 
 export function HairBraidBack({ colors, className }: PartSvgProps) {
   const c = colors.hair || FAIRY_DEFAULTS.hair.braid;
+  const id = useIds('hair');
   return (
     <Svg className={className}>
-      <path d="M256,50 C130,50 66,154 66,274 C66,338 82,372 104,392 L408,392 C430,372 446,338 446,274 C446,154 382,50 256,50 Z" fill={c} {...O} />
+      <defs>
+        <Down id={id.hair} color={c} y1={50} y2={410} lift={0.2} drop={-0.18} />
+      </defs>
+      <path d={NAPE} fill={url(id.hair)} {...O} />
       <BraidRope x={402} color={c} ribbon="#FF6EC7" />
     </Svg>
   );
 }
 
 export function HairBraidFront({ colors, className }: PartSvgProps) {
-  const c = colors.hair || FAIRY_DEFAULTS.hair.braid;
-  return (
-    <Svg className={className}>
-      <path d="M80,272 C70,152 140,56 256,56 C372,56 442,152 432,272 C418,202 372,162 312,178 C280,146 226,146 188,182 C140,178 96,214 80,272 Z" fill={c} {...O} />
-      <path d="M236,78 C268,104 300,126 336,140" fill="none" stroke={shade(c, 0.42)} strokeWidth="10" strokeLinecap="round" />
-    </Svg>
-  );
+  return <HairFront c={colors.hair || FAIRY_DEFAULTS.hair.braid} lockY={330} className={className} />;
 }
 
 export function HairBraid(props: PartSvgProps) {
@@ -528,18 +813,24 @@ function Vine({ color = '#7ED957' }: { color?: string }) {
   );
 }
 
+/**
+ * The model's flowers: a little bunch of lilac blossoms pinned at the foot of each bun,
+ * rather than a garland across the top of her head.
+ */
 export function CrownFlower({ className }: PartSvgProps) {
+  const lilac = '#B98CFF';
+  const pale = '#DCC6FF';
   return (
     <Svg className={className}>
-      <Vine />
       <Mirror>
         <g>
-          <Flower x={382} y={412} petal="#FF6EC7" />
-          <Flower x={316} y={366} petal="#FFF3C4" />
+          <path d="M352,452 C370,430 398,424 414,430 C400,452 374,462 352,452 Z" fill="#7ED957" {...O} strokeWidth={8} />
+          <Flower x={410} y={404} petal={pale} r={22} heart="#FFD93D" />
+          <Flower x={366} y={430} petal={lilac} r={26} heart="#FFD93D" />
+          <circle cx="358" cy="414" r="6" fill="#fff" opacity="0.7" />
         </g>
       </Mirror>
-      <Flower x={256} y={348} petal="#FF6B78" r={25} />
-      <Sparkles pts={[[256, 286, 16]]} />
+      <Sparkles pts={[[256, 360, 16]]} />
     </Svg>
   );
 }
@@ -551,12 +842,12 @@ export function CrownLeaf({ className }: PartSvgProps) {
       <Vine color="#4FAE4A" />
       <Mirror>
         <g>
-          <path d="M320,364 C356,330 400,326 424,334 C396,382 346,392 318,378 Z" fill={c} {...O} strokeWidth={10} />
+          <path d="M320,364 C356,330 400,326 424,334 C396,382 346,392 318,378 Z" fill={c} {...O} />
           <path d="M326,372 C356,354 388,346 414,344" fill="none" stroke={shade(c, -0.32)} strokeWidth="7" strokeLinecap="round" />
-          <path d="M386,410 C412,386 446,382 464,388 C444,424 406,432 384,420 Z" fill={shade(c, 0.22)} {...O} strokeWidth={10} />
+          <path d="M386,410 C412,386 446,382 464,388 C444,424 406,432 384,420 Z" fill={shade(c, 0.22)} {...O} />
         </g>
       </Mirror>
-      <path d="M256,332 C226,300 226,258 242,232 C278,254 288,300 274,332 Z" fill={c} {...O} strokeWidth={10} />
+      <path d="M256,332 C226,300 226,258 242,232 C278,254 288,300 274,332 Z" fill={c} {...O} />
       <path d="M260,330 C250,296 248,266 246,242" fill="none" stroke={shade(c, -0.32)} strokeWidth="7" strokeLinecap="round" />
     </Svg>
   );
@@ -602,25 +893,45 @@ export function CrownBerry({ className }: PartSvgProps) {
 }
 
 /* ------------------------------------------------------------------ EYES */
+/* The eyes' box is smaller than the head's: here the face's centre line is x=256 and the
+   eyes sit either side of it, big and a little low, as on the model. */
 
-function SparkleEye({ cx, cy, r = 62, iris = '#3AA0FF' }: { cx: number; cy: number; r?: number; iris?: string }) {
+/**
+ * One of the model's eyes: a tall white, a big green iris with a darker ring, a round
+ * pupil, two catch-lights, a heavy upper lash line and two lashes flicked out at the side.
+ * `side` is 1 for the eye on the right of the picture, -1 for the left one.
+ */
+function FairyEye({ cx, cy, r = 88, iris = '#43B047', side = 1 }: { cx: number; cy: number; r?: number; iris?: string; side?: 1 | -1 }) {
+  const rx = r * 0.84;
+  const ic = cy + r * 0.12;
+  const f = (n: number) => n.toFixed(1);
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill="#fff" {...O} />
-      <circle cx={cx} cy={cy + 4} r={r * 0.7} fill={iris} />
-      <circle cx={cx} cy={cy + 6} r={r * 0.42} fill={INK} />
-      <circle cx={cx + r * 0.28} cy={cy - r * 0.28} r={r * 0.2} fill="#fff" />
-      <circle cx={cx - r * 0.2} cy={cy + r * 0.25} r={r * 0.1} fill="#fff" />
-      <path d={`M${cx - r * 0.9},${cy - r * 0.9} L${cx - r * 1.15},${cy - r * 1.3} M${cx},${cy - r * 1.05} L${cx},${cy - r * 1.5}`} fill="none" stroke={INK} strokeWidth="10" strokeLinecap="round" />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={r} fill="#fff" stroke={INK} strokeWidth="7" />
+      <circle cx={cx} cy={ic} r={r * 0.66} fill={iris} />
+      <circle cx={cx} cy={ic + r * 0.14} r={r * 0.4} fill={shade(iris, 0.4)} opacity="0.7" />
+      <circle cx={cx} cy={ic} r={r * 0.66} fill="none" stroke={shade(iris, -0.5)} strokeWidth={r * 0.09} />
+      <circle cx={cx} cy={ic} r={r * 0.32} fill="#101522" />
+      <ellipse cx={cx + r * 0.24} cy={cy - r * 0.18} rx={r * 0.2} ry={r * 0.24} fill="#fff" />
+      <circle cx={cx - r * 0.22} cy={cy + r * 0.38} r={r * 0.09} fill="#fff" />
+      {/* the upper lid follows the top of the white */}
+      <path d={`M${f(cx - rx * 1.04)},${f(cy + r * 0.05)} A${f(rx * 1.04)},${f(r * 1.04)} 0 0 1 ${f(cx + rx * 1.04)},${f(cy + r * 0.05)}`} fill="none" stroke={INK} strokeWidth={r * 0.17} strokeLinecap="round" />
+      <path
+        d={`M${f(cx + side * rx * 0.92)},${f(cy - r * 0.36)} l${f(side * r * 0.34)},${f(-r * 0.2)} M${f(cx + side * rx * 0.68)},${f(cy - r * 0.72)} l${f(side * r * 0.26)},${f(-r * 0.3)}`}
+        fill="none"
+        stroke={INK}
+        strokeWidth={r * 0.12}
+        strokeLinecap="round"
+      />
     </g>
   );
 }
 
-function ClosedHappy({ cx, cy }: { cx: number; cy: number }) {
+function ClosedHappy({ cx, cy, side = 1 }: { cx: number; cy: number; side?: 1 | -1 }) {
   return (
-    <g fill="none" stroke={INK} strokeWidth="18" strokeLinecap="round">
-      <path d={`M${cx - 56},${cy + 18} Q${cx},${cy - 60} ${cx + 56},${cy + 18}`} />
-      <path d={`M${cx - 50},${cy - 26} L${cx - 66},${cy - 48} M${cx + 50},${cy - 26} L${cx + 66},${cy - 48}`} strokeWidth="10" />
+    <g fill="none" stroke={INK} strokeLinecap="round">
+      <path d={`M${cx - 62},${cy + 20} Q${cx},${cy - 58} ${cx + 62},${cy + 20}`} strokeWidth="16" />
+      <path d={`M${cx + side * 56},${cy - 4} l${side * 26},-16 M${cx + side * 36},${cy - 22} l${side * 18},-24`} strokeWidth="10" />
     </g>
   );
 }
@@ -629,9 +940,8 @@ export function EyesSparkly({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
-        <SparkleEye cx={362} cy={262} iris="#7ED957" />
+        <FairyEye cx={392} cy={262} />
       </Mirror>
-      <Sparkles pts={[[256, 196, 14]]} />
     </Svg>
   );
 }
@@ -640,7 +950,7 @@ export function EyesHappy({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
-        <ClosedHappy cx={362} cy={262} />
+        <ClosedHappy cx={392} cy={270} />
       </Mirror>
     </Svg>
   );
@@ -649,9 +959,9 @@ export function EyesHappy({ className }: PartSvgProps) {
 export function EyesWink({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
-      <SparkleEye cx={150} cy={262} iris="#7ED957" />
-      <ClosedHappy cx={362} cy={262} />
-      <Sparkles pts={[[420, 196, 16]]} />
+      <FairyEye cx={120} cy={262} side={-1} />
+      <ClosedHappy cx={392} cy={270} />
+      <Sparkles pts={[[478, 170, 16]]} />
     </Svg>
   );
 }
@@ -660,17 +970,13 @@ export function EyesBig({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Mirror>
-        <g>
-          <SparkleEye cx={356} cy={264} r={86} iris="#A77BFF" />
-          <path d="M296,182 L282,152 M356,164 L356,130 M416,182 L432,154" fill="none" stroke={INK} strokeWidth="12" strokeLinecap="round" />
-        </g>
+        <FairyEye cx={388} cy={258} r={104} iris="#A77BFF" />
       </Mirror>
     </Svg>
   );
 }
 
-/** The fairy has no mouth category; this smile is baked into the 2D head and
- *  projected onto the 3D head as a decal. */
+/** The fairy has no mouth category; this smile is the one drawn on her 2D head. */
 export function Smile({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
@@ -695,7 +1001,7 @@ export function WandStar({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Stick color="#FFE066" to={190} />
-      <polygon points={star(256, 152, 82, 38)} fill="#FFD93D" {...O} />
+      <polygon points={star(256, 152, 82, 38)} fill="#FFD93D" {...O} strokeWidth={14} />
       <circle cx="240" cy="134" r="11" fill="#fff" />
       <Sparkles pts={[[368, 88, 22], [146, 108, 18], [352, 200, 14], [156, 210, 13]]} />
     </Svg>
@@ -707,9 +1013,9 @@ export function WandFlower({ className }: PartSvgProps) {
     <Svg className={className}>
       <Stick color="#7ED957" to={200} />
       <Mirror>
-        <path d="M262,300 C300,278 336,282 352,292 C324,326 286,330 262,314 Z" fill="#7ED957" {...O} strokeWidth={10} />
+        <path d="M262,300 C300,278 336,282 352,292 C324,326 286,330 262,314 Z" fill="#7ED957" {...O} />
       </Mirror>
-      <Flower x={256} y={158} petal="#FF6EC7" r={48} heart="#FFD93D" />
+      <Flower x={256} y={158} petal="#FF6EC7" r={48} heart="#FFD93D" line={10} />
       <Sparkles pts={[[368, 96, 20], [148, 116, 16]]} />
     </Svg>
   );
@@ -719,7 +1025,7 @@ export function WandMoon({ className }: PartSvgProps) {
   return (
     <Svg className={className}>
       <Stick color="#A77BFF" to={210} />
-      <path d="M256,84 A78,78 0 1,0 256,240 A62,62 0 1,1 256,84 Z" fill="#FFD93D" {...O} />
+      <path d="M256,84 A78,78 0 1,0 256,240 A62,62 0 1,1 256,84 Z" fill="#FFD93D" {...O} strokeWidth={14} />
       <circle cx="230" cy="122" r="10" fill="#fff" />
       <Sparkles pts={[[360, 116, 20], [146, 140, 16], [332, 206, 13]]} />
     </Svg>
