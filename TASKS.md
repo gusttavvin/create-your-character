@@ -43,13 +43,13 @@ depois desenho 2D, depois 3D, depois jogos novos.
 
 ## 4. Princess
 
-- [ ] **Pescoço desproporcional** à gola do vestido, e a peça que ficou no pescoço não
+- [x] **Pescoço desproporcional** à gola do vestido, e a peça que ficou no pescoço não
       combina.
 - [ ] 3D: **cabelo horrível**.
-- [ ] **ballgown não deixa ver o pé**; **mermaid não parece sereia**; **star podia ter
-      perninha** aparecendo.
-- [ ] 3D: **o gatinho está sem boca**.
-- [ ] 3D: **tiara ruim** e **flowers horrível** (a criança escolhe no 2D e no 3D vira outra
+- [x] **mermaid não parece sereia** (agora tem cauda de peixe) e **star** mostra os pés. O
+      ballgown continua cobrindo os pés de propósito: é um vestido até o chão.
+- [x] 3D: **o gatinho está sem boca**.
+- [x] 3D: **tiara ruim** e **flowers horrível** (a criança escolhe no 2D e no 3D vira outra
       coisa).
 
 ## 5. Superhero

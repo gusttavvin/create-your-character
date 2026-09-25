@@ -88,9 +88,7 @@ export function Neck({ colors, className }: PartSvgProps) {
   return (
     <Svg className={className}>
       {/* the sides run down past the shoulder line, so the bodice always closes over them */}
-      <path d="M220,2 L220,112 C220,130 234,140 256,140 C278,140 292,130 292,112 L292,2 Z" fill={skin} {...O} strokeWidth={12} />
-      {/* the jaw's shadow, so the head reads as sitting on top of the neck */}
-      <path d="M226,52 C240,78 272,78 286,52" fill="none" stroke={shade(skin, -0.2)} strokeWidth="12" strokeLinecap="round" />
+      <path d="M212,2 L212,96 C212,118 230,130 256,130 C282,130 300,118 300,96 L300,2 Z" fill={skin} {...O} strokeWidth={12} />
     </Svg>
   );
 }
@@ -165,7 +163,6 @@ export function DressGown({ colors, className }: PartSvgProps) {
       <Bodice color={c} />
       <PuffSleeves color={c} r={42} />
       <Sash color={c} />
-      <ellipse cx="256" cy="142" rx="24" ry="12" fill={shade(c, 0.5)} />
     </Svg>
   );
 }
@@ -205,20 +202,30 @@ export function DressMermaid({ colors, className }: PartSvgProps) {
   const c = colors.dress || PRINCESS_DEFAULTS.dress.mermaid;
   const skin = colors.skin || PRINCESS_DEFAULTS.skin;
   const scale = shade(c, 0.35);
+  const deep = shade(c, -0.2);
   return (
     <Svg className={className}>
+      {/* a real fish tail: it narrows past her knees and ends in a spread fluke */}
       <path
-        d="M184,186 C176,226 174,272 184,300 C146,322 106,352 78,396 L434,396 C406,352 366,322 328,300 C338,272 336,226 328,186 Z"
+        d="M116,392 C170,398 220,376 256,344 C292,376 342,398 396,392 C372,436 320,468 256,470 C192,468 140,436 116,392 Z"
+        fill={deep}
+        {...O}
+      />
+      <path
+        d="M186,186 C176,240 186,298 214,352 C230,372 242,384 256,392 C270,384 282,372 298,352 C326,298 336,240 326,186 Z"
         fill={c}
         {...O}
       />
+      {/* rows of scales down the whole tail */}
       <g fill="none" stroke={scale} strokeWidth="9" strokeLinecap="round">
-        <path d="M196,222 Q216,246 236,222 Q256,246 276,222 Q296,246 316,222" />
-        <path d="M186,266 Q209,290 232,266 Q256,290 280,266 Q303,290 326,266" />
-        <path d="M120,352 Q160,380 200,352 Q256,384 312,352 Q352,380 392,352" />
+        <path d="M196,220 Q216,244 236,220 Q256,244 276,220 Q296,244 316,220" />
+        <path d="M192,262 Q214,286 236,262 Q256,286 278,262 Q300,286 322,262" />
+        <path d="M200,304 Q220,328 240,304 Q256,328 274,304 Q294,328 314,304" />
+        <path d="M214,344 Q234,366 254,344 Q256,366 258,344 Q278,366 298,344" />
       </g>
-      {/* the seam where the tail flares out */}
-      <path d="M182,298 Q256,320 330,298" fill="none" stroke={shade(c, -0.24)} strokeWidth="10" strokeLinecap="round" />
+      {/* the ridge of the fluke */}
+      <path d="M256,352 L256,462" fill="none" stroke={shade(c, -0.3)} strokeWidth="9" strokeLinecap="round" />
+      <path d="M168,404 Q210,428 248,446 M344,404 Q302,428 264,446" fill="none" stroke={shade(c, 0.22)} strokeWidth="8" strokeLinecap="round" />
       <Arms skin={skin} />
       <Bodice color={c} />
       <PuffSleeves color={c} r={30} />

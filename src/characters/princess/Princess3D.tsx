@@ -77,7 +77,7 @@ function lathe(points: [number, number][], phiStart = 0, phiLength = Math.PI * 2
  */
 const SKIRT: Record<string, [number, number][]> = {
   // a huge round bell that sweeps the floor
-  gown: [[0, -1.72], [1.32, -1.70], [1.26, -1.46], [1.02, -1.12], [0.76, -0.82], [0.58, -0.54], [0.48, -0.32], [0.42, -0.27], [0, -0.24]],
+  gown: [[0, -1.48], [1.32, -1.46], [1.26, -1.46], [1.02, -1.12], [0.76, -0.82], [0.58, -0.54], [0.48, -0.32], [0.42, -0.27], [0, -0.24]],
   // stops at her knees, so her legs show
   aline: [[0, -0.98], [0.88, -0.96], [0.78, -0.76], [0.60, -0.52], [0.48, -0.32], [0.42, -0.27], [0, -0.24]],
   // hugs her legs, then opens into a fish tail on the floor
@@ -99,8 +99,9 @@ function skirtRadius(profile: [number, number][], y: number) {
   return r;
 }
 
-const SHOE_Y = -1.84;
-const SHOE_Z = 0.2;
+// far enough forward to peep out from under a long hem, the way the drawing shows them
+const SHOE_Y = -1.72;
+const SHOE_Z = 0.82;
 
 /* ----------------------------------------------------------------- dress */
 
@@ -149,7 +150,7 @@ function Dress({ kind, color, skin, grad }: { kind: string | null; color: string
         [...Array(16).keys()].map((i) => {
           const a = (i / 16) * Math.PI * 2;
           return (
-            <mesh key={i} position={[Math.sin(a) * 1.3, -1.7, Math.cos(a) * 1.3]} scale={[1, 0.7, 0.7]}>
+            <mesh key={i} position={[Math.sin(a) * 1.3, -1.52, Math.cos(a) * 1.3]} scale={[1, 0.7, 0.7]}>
               <sphereGeometry args={[0.18, 14, 14]} />
               <Toon color={shade(color, 0.28)} map={grad} />
               <Ink thin />
@@ -157,12 +158,27 @@ function Dress({ kind, color, skin, grad }: { kind: string | null; color: string
           );
         })}
 
+      {/* the fluke: two flat lobes spreading up and out, so it reads as a fish tail */}
       {kind === 'mermaid' && (
-        <mesh position={[0, -1.76, -0.06]} scale={[1.35, 0.2, 1.1]}>
-          <sphereGeometry args={[0.82, 26, 26]} />
-          <Toon color={shade(color, 0.3)} map={grad} />
-          <Ink />
-        </mesh>
+        <group position={[0, -1.8, -0.02]}>
+          {[1, -1].map((side) => (
+            <mesh
+              key={side}
+              position={[side * 0.42, 0.14, 0]}
+              rotation={[0, 0, side * -0.55]}
+              scale={[0.95, 0.42, 0.34]}
+            >
+              <sphereGeometry args={[0.62, 26, 26]} />
+              <Toon color={shade(color, 0.3)} map={grad} />
+              <Ink />
+            </mesh>
+          ))}
+          <mesh scale={[0.3, 0.3, 0.28]}>
+            <sphereGeometry args={[0.6, 20, 20]} />
+            <Toon color={shade(color, 0.12)} map={grad} />
+            <Ink thin />
+          </mesh>
+        </group>
       )}
 
       {kind === 'star' &&
@@ -394,36 +410,55 @@ function Crown({ kind, grad }: { kind: string | null; grad: THREE.DataTexture })
     );
   }
   if (kind === 'flowers') {
+    // real blooms: five flat petals round a yellow middle, with leaves between them
     return (
-      <group position={[0, y, 0]} rotation={[0.15, 0, 0]}>
+      <group position={[0, y - 0.02, 0]} rotation={[0.15, 0, 0]}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.5, 0.05, 8, 40]} />
-          <Toon color="#7ED957" map={grad} />
+          <torusGeometry args={[0.5, 0.045, 8, 40]} />
+          <Toon color="#5FA83F" map={grad} />
+          <Ink thin />
         </mesh>
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => {
-          const a = (i / 7) * Math.PI * 2;
-          const c = ['#FF6EC7', '#ffffff', '#FF6B78', '#A77BFF'][i % 4];
+        {[0, 1, 2, 3, 4].map((i) => {
+          const a = (i / 5) * Math.PI * 2 + 0.3;
+          const c = ['#FF6EC7', '#ffffff', '#FF6B78', '#A77BFF', '#FFD93D'][i % 5];
           return (
-            <group key={i} position={[Math.sin(a) * 0.5, 0.04, Math.cos(a) * 0.5]}>
-              {[0, 1, 2, 3, 4].map((p) => {
-                const b = (p / 5) * Math.PI * 2;
+            <group key={i} position={[Math.sin(a) * 0.5, 0.06, Math.cos(a) * 0.5]} rotation={[0.35, -a, 0]}>
+              {[0, 1, 2, 3, 4].map((q) => {
+                const b = (q / 5) * Math.PI * 2;
                 return (
-                  <mesh key={p} position={[Math.sin(b) * 0.07, 0, Math.cos(b) * 0.07]}>
-                    <sphereGeometry args={[0.05, 10, 10]} />
-                    <meshToonMaterial color={c} gradientMap={grad} />
+                  <mesh key={q} position={[Math.sin(b) * 0.1, 0, Math.cos(b) * 0.1]} scale={[1, 0.42, 1]}>
+                    <sphereGeometry args={[0.085, 14, 14]} />
+                    <Toon color={c} map={grad} />
+                    <Ink thin />
                   </mesh>
                 );
               })}
-              <mesh position={[0, 0.02, 0]}>
-                <sphereGeometry args={[0.04, 10, 10]} />
-                <meshToonMaterial color="#FFD93D" gradientMap={grad} />
+              <mesh position={[0, 0.035, 0]} scale={[1, 0.6, 1]}>
+                <sphereGeometry args={[0.055, 12, 12]} />
+                <meshToonMaterial color="#FFC400" gradientMap={grad} />
               </mesh>
             </group>
+          );
+        })}
+        {[0, 1, 2, 3, 4].map((i) => {
+          const a = (i / 5) * Math.PI * 2 + 0.3 + Math.PI / 5;
+          return (
+            <mesh
+              key={i}
+              position={[Math.sin(a) * 0.5, 0.02, Math.cos(a) * 0.5]}
+              rotation={[0.5, -a, 0]}
+              scale={[0.55, 0.22, 1]}
+            >
+              <sphereGeometry args={[0.12, 12, 12]} />
+              <Toon color="#7ED957" map={grad} />
+              <Ink thin />
+            </mesh>
           );
         })}
       </group>
     );
   }
+
   if (kind === 'bow') {
     return (
       <group position={[0.36, y + 0.06, 0.12]} rotation={[0, 0, -0.4]}>
@@ -444,24 +479,31 @@ function Crown({ kind, grad }: { kind: string | null; grad: THREE.DataTexture })
       </group>
     );
   }
-  // tiara
+  // tiara: a silver band that rises into three points, with a jewel on each
   return (
-    <group position={[0, y - 0.04, 0.05]} rotation={[0.35, 0, 0]}>
+    <group position={[0, y - 0.06, 0.03]} rotation={[0.3, 0, 0]}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.48, 0.035, 8, 40, Math.PI]} />
+        <torusGeometry args={[0.47, 0.045, 10, 40, Math.PI * 1.15]} />
         <Toon color="#E4E9F7" map={grad} />
         <Ink thin />
       </mesh>
-      <mesh position={[0, 0.16, 0.42]} rotation={[0, 0, Math.PI / 4]}>
-        <octahedronGeometry args={[0.12, 0]} />
-        <Toon color="#FF6EC7" map={grad} />
-        <Ink thin />
-      </mesh>
-      {[-0.3, 0.3].map((x) => (
-        <mesh key={x} position={[x, 0.06, 0.36]}>
-          <sphereGeometry args={[0.05, 12, 12]} />
-          <meshToonMaterial color="#4FC3FF" gradientMap={grad} />
-        </mesh>
+      {([
+        [0, 0.3, 1],
+        [-0.55, 0.19, 0.72],
+        [0.55, 0.19, 0.72],
+      ] as const).map(([a, h, k], i) => (
+        <group key={i} position={[Math.sin(a) * 0.47, 0.02, Math.cos(a) * 0.47]} rotation={[0, -a, 0]}>
+          <mesh position={[0, h / 2, 0]}>
+            <coneGeometry args={[0.1 * k, h, 4]} />
+            <Toon color="#E4E9F7" map={grad} />
+            <Ink thin />
+          </mesh>
+          <mesh position={[0, h + 0.05, 0]} rotation={[0, 0, Math.PI / 4]}>
+            <octahedronGeometry args={[0.075 * k + 0.03, 0]} />
+            <Toon color={i === 0 ? '#FF6EC7' : '#4FC3FF'} map={grad} />
+            <Ink thin />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -513,14 +555,38 @@ function Accessory({ kind, grad }: { kind: string | null; grad: THREE.DataTextur
               </mesh>
             </group>
           ))}
+          {/* a face: eyes, a nose, a smile and whiskers, so it is plainly a kitten */}
           {[-0.06, 0.06].map((x) => (
-            <mesh key={x} position={[x, 0.17, 0.2]}>
-              <sphereGeometry args={[0.025, 8, 8]} />
+            <mesh key={x} position={[x, 0.18, 0.2]}>
+              <sphereGeometry args={[0.027, 10, 10]} />
               <meshBasicMaterial color={INK3D} />
             </mesh>
           ))}
+          <mesh position={[0, 0.12, 0.215]} scale={[1, 0.7, 0.7]}>
+            <sphereGeometry args={[0.022, 8, 8]} />
+            <meshBasicMaterial color="#FF6B78" />
+          </mesh>
+          {[1, -1].map((s) => (
+            <mesh key={s} position={[s * 0.035, 0.085, 0.2]} rotation={[0, 0, s * 0.5]}>
+              <torusGeometry args={[0.035, 0.008, 6, 14, Math.PI]} />
+              <meshBasicMaterial color={INK3D} />
+            </mesh>
+          ))}
+          {[1, -1].map((s) =>
+            [0, 1].map((k) => (
+              <mesh
+                key={`${s}-${k}`}
+                position={[s * 0.13, 0.11 + k * 0.035, 0.16]}
+                rotation={[0, 0, s * (0.1 - k * 0.25)]}
+              >
+                <boxGeometry args={[0.12, 0.006, 0.006]} />
+                <meshBasicMaterial color={INK3D} />
+              </mesh>
+            )),
+          )}
         </group>
       )}
+
       {(kind === 'wand' || kind === 'scepter') && (
         <group rotation={[0, 0, 0.1]}>
           <mesh position={[0, 0.3, 0]}>
