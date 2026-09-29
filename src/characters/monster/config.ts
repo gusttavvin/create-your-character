@@ -28,7 +28,7 @@ export const MONSTER: CharacterDefinition = {
         { id: 'stalks', label: 'Stalks', phrase: 'eyes on stalks', img: `${P}/eyes/stalks.png` },
         { id: 'multiple', label: 'Multiple', phrase: 'multiple eyes', img: `${P}/eyes/multiple.png` },
         { id: 'one', label: 'One', phrase: 'one big eye', img: `${P}/eyes/one.png` },
-        { id: 'sleepy', label: 'Sleepy', phrase: 'sleepy eyes', img: `${P}/eyes/sleepy.png` },
+        { id: 'angry', label: 'Angry', phrase: 'angry eyes', img: `${P}/eyes/angry.png` },
       ],
     },
     {
@@ -71,6 +71,8 @@ export const MONSTER: CharacterDefinition = {
   colorSlots: [],
   defaultParts: { body: 'round', eyes: 'stalks', mouth: 'teeth', arms: 'claw', legs: 'stubby' },
   defaultColors: {},
+  // the frowning eyes were called "sleepy" until the drawing was matched in 3D
+  renamed: { eyes: { sleepy: 'angry' } },
   sentence: (parts: PartMap, name?: string) => {
     const who = name ? `${name} the monster` : 'My monster';
     const has = listPhrases(phrasesOf(MONSTER, parts, ['body', 'eyes', 'mouth', 'arms', 'legs']));
@@ -110,5 +112,5 @@ export const MONSTER_COLORS = {
   body: { round: '#8BD43B', egg: '#A97CF1', square: '#4FA9F5', hourglass: '#FF8A2A' } as Record<string, string>,
   arms: { claw: '#8BD43B', tentacle: '#FF6EC7', pincher: '#4FA9F5', fuzzy: '#FF8A2A' } as Record<string, string>,
   legs: { stubby: '#A97CF1', bird: '#FFC400', thick: '#8BD43B', snake: '#FF3B4A' } as Record<string, string>,
-  eyes: { stalks: '#7ED957', multiple: '#ffffff', one: '#3AA0FF', sleepy: '#3AA0FF' } as Record<string, string>,
+  eyes: { stalks: '#7ED957', multiple: '#ffffff', one: '#3AA0FF', angry: '#3AA0FF' } as Record<string, string>,
 };

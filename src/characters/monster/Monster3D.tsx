@@ -52,6 +52,48 @@ function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
   return { base: color, pattern: s.pattern, scale: s.scale };
 }
 
+/**
+ * The soft horns that ride the round body's outline.
+ *
+ * The drawing is not a plain egg: rounded nubs run all around its edge, and without them
+ * the model reads as a green ball — which is exactly how it looked. They are spread over
+ * the whole body rather than on a single ring, so the crest still shows whichever way the
+ * model is turned; the front is left bare, because that is where the face is drawn.
+ */
+function Crest({ color, grad, rx, ry, rz }: { color: string; grad: THREE.DataTexture; rx: number; ry: number; rz: number }) {
+  const nubs = useMemo(() => {
+    const out: { pos: [number, number, number]; quat: [number, number, number, number]; len: number }[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const n = 36; // the drawing has a dozen or so chunky lobes, not a pincushion
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i++) {
+      const y = 1 - (2 * (i + 0.5)) / n;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const a = golden * i + 1.7;
+      const dir = new THREE.Vector3(Math.cos(a) * ring, y, Math.sin(a) * ring);
+      if (dir.z > 0.45) continue; // the face is printed on the front, so it stays smooth
+      // the nub stands on the body's surface, pointing straight out of it
+      const nrm = new THREE.Vector3(dir.x / rx, dir.y / ry, dir.z / rz).normalize();
+      const len = 0.06 + ((i * 7) % 5) * 0.03;
+      const p = new THREE.Vector3(dir.x * rx, dir.y * ry, dir.z * rz).addScaledVector(nrm, len * 0.4);
+      const q = new THREE.Quaternion().setFromUnitVectors(up, nrm);
+      out.push({ pos: [p.x, p.y, p.z], quat: [q.x, q.y, q.z, q.w], len });
+    }
+    return out;
+  }, [rx, ry, rz]);
+  return (
+    <group>
+      {nubs.map((t, i) => (
+        <mesh key={i} position={t.pos} quaternion={t.quat}>
+          <capsuleGeometry args={[0.135, t.len, 6, 16]} />
+          <meshToonMaterial color={color} gradientMap={grad} />
+          <Ink thin />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 /** Tufts around a body's outline, so a furry monster still looks furry in profile. */
 function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataTexture; w: number; h: number; d: number }) {
   const tufts = useMemo(() => {
@@ -74,7 +116,9 @@ function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataText
     }
 
     // and over the faces as well, so the whole body is furry rather than just its edge.
-    // The patch where the face is drawn stays clear, or the fur would swallow it.
+    // A square of the front used to be left bare so the painted face would not be buried;
+    // Clara asked for the tufts everywhere, with no bald patch, so the front is covered
+    // too and the face now shows through the fur rather than sitting in a clearing.
     const cols = 6;
     const rows = 6;
     for (const side of [-1, 1]) {
@@ -82,7 +126,6 @@ function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataText
         for (let cy = 0; cy < rows; cy++) {
           const x = (-1 + (2 * (cx + 0.5)) / cols) * w * 0.86;
           const y = (-1 + (2 * (cy + 0.5)) / rows) * h * 0.86;
-          if (side > 0 && Math.abs(x) < w * 0.62 && y > -h * 0.78 && y < h * 0.6) continue;
           out.push({
             pos: [x, y, (side * d) / 2],
             rot: [(side * Math.PI) / 2, 0, 0],
@@ -107,6 +150,25 @@ function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataText
 
 /* ------------------------------------------------------------------ body */
 
+/**
+ * How wide the painted mouth sits on each body, in that body's own units.
+ *
+ * The hourglass gets the smallest patch, because its face has only the upper lobe to sit
+ * on: a patch sized like the round body's reached past the waist and printed the mouth
+ * across the pinch as well.
+ */
+const MOUTH_ON_BODY: Record<string, number> = { round: 0.82, egg: 0.75, square: 0.9, hourglass: 0.52 };
+
+/**
+ * A mouth that needs a patch of its own size.
+ *
+ * The painted face is cut out of a square patch on the body, and the kit draws every
+ * mouth inside the same 512 px box — but the big tongue hangs far lower in its box than
+ * the others, so at the shared size the patch ended before the tongue did and sliced its
+ * tip off flat. A roomier patch gives the tongue somewhere to land.
+ */
+const MOUTH_FIT: Record<string, number> = { big_tongue: 1.3 };
+
 interface FaceSpec {
   eyeY: number;
   mouthY: number;
@@ -118,30 +180,43 @@ interface FaceSpec {
 
 function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null; grad: THREE.DataTexture }) {
   const color = (kind && MONSTER_COLORS.body[kind]) || '#8BD43B';
-  // the round body is an oval whose outline is scalloped with soft nubs, exactly as drawn:
-  // the bumps ride the silhouette and the face in front of them stays smooth
-  const blob = useMemo(() => blobGeometry({ radius: 0.92, bumps: 13, amount: 0.17, spread: 0.24, rim: true }), []);
-  // the peanut body is one soft surface, not three balls stacked into a snowman
+  // the round body's own wobble is gentle now that the crest carries its outline: a
+  // deeper one moved the surface out from under the nubs and left them hanging in the air
+  const blob = useMemo(() => blobGeometry({ radius: 0.92, bumps: 13, amount: 0.05, spread: 0.3, rim: true }), []);
+  /**
+   * The hourglass, traced off its own drawing.
+   *
+   * The first one stacked a big ball under a small one, which is not what the kit draws:
+   * the picture is two squat lobes, both wider than they are tall, the lower one only a
+   * little broader than the upper, pinched to half that width at the waist. These numbers
+   * are the silhouette of `body/hourglass.png` measured row by row, scaled so the widest
+   * point is 1.
+   */
   const peanut = useMemo(
     () =>
       latheBody([
-        [0, -1.32],
-        [0.55, -1.24],
-        [0.9, -0.95],
-        [0.98, -0.5],
-        [0.82, -0.12],
-        [0.47, 0.22],
-        [0.45, 0.42],
-        [0.63, 0.7],
-        [0.8, 1.04],
-        [0.72, 1.45],
-        [0.38, 1.7],
-        [0, 1.78],
+        [0, -1.36],
+        [0.52, -1.33],
+        [0.88, -1.14],
+        [1.0, -0.82],
+        [0.92, -0.55],
+        [0.74, -0.4],
+        [0.59, -0.22],
+        [0.54, -0.04],
+        [0.59, 0.14],
+        [0.7, 0.32],
+        [0.8, 0.5],
+        [0.86, 0.72],
+        [0.83, 0.9],
+        [0.72, 1.1],
+        [0.5, 1.26],
+        [0, 1.36],
       ]),
     [],
   );
   const tex = usePatternTexture(skinOf(BODY_SKIN, kind, color));
   const face = useImageTexture(mouth ? `/assets/monster/parts/mouth/${mouth}.png` : null);
+  const mouthSize = (MOUTH_ON_BODY[kind ?? ''] ?? 0.82) * (MOUTH_FIT[mouth ?? ''] ?? 1);
   if (!kind) return null;
   if (kind === 'egg') {
     return (
@@ -167,21 +242,26 @@ function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null
   }
   if (kind === 'hourglass') {
     return (
-      <mesh key="hourglass" geometry={peanut} position={[0, -0.1, 0]}>
+      <mesh key="hourglass" geometry={peanut}>
         <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-        <FaceDecal part="mouth" tex={face} y={1.0} z={0.8} size={0.7} />
+        {/* the ink is drawn by pushing the surface outwards, and at a waist this tight a
+            full-thickness line folded through the front and showed as a black smudge */}
+        <Ink px={4} />
+        <FaceDecal part="mouth" tex={face} y={0.46} z={0.76} size={mouthSize} />
       </mesh>
     );
   }
 
-  // round (default)
+  // round (default): a soft egg wearing the crest of nubs the drawing gives it
   return (
-    <mesh key="round" geometry={blob} position={[0, 0.3, 0]} scale={[0.95, 1.18, 0.82]}>
-      <Toon color={color} map={grad} tex={tex} />
-      <Ink />
-      <FaceDecal part="mouth" tex={face} y={-0.26} z={0.95} size={0.82} />
-    </mesh>
+    <group key="round" position={[0, 0.3, 0]}>
+      <Crest color={color} grad={grad} rx={0.92 * 0.95} ry={0.92 * 1.18} rz={0.92 * 0.82} />
+      <mesh geometry={blob} scale={[0.95, 1.18, 0.82]}>
+        <Toon color={color} map={grad} tex={tex} />
+        <Ink />
+        <FaceDecal part="mouth" tex={face} y={-0.26} z={0.95} size={mouthSize} />
+      </mesh>
+    </group>
   );
 }
 
@@ -189,7 +269,8 @@ const FACES: Record<string, FaceSpec> = {
   round: { eyeY: 0.72, mouthY: 0, z: 0.92, halfW: 1.12, armY: 0.32, bottom: -0.62 },
   egg: { eyeY: 0.85, mouthY: 0, z: 0.88, halfW: 0.92, armY: 0.3, bottom: -0.78 },
   square: { eyeY: 0.75, mouthY: 0, z: 0.85, halfW: 1.14, armY: 0.35, bottom: -0.7 },
-  hourglass: { eyeY: 1.12, mouthY: 0, z: 0.72, halfW: 0.94, armY: -0.35, bottom: -1.3 },
+  // the face rides the upper lobe, the arms the lower one, where the body is widest
+  hourglass: { eyeY: 0.95, mouthY: 0, z: 0.8, halfW: 0.95, armY: -0.6, bottom: -1.24 },
 };
 
 /* ------------------------------------------------------------------ eyes */
@@ -219,13 +300,19 @@ function Eyeball({
   pos,
   grad,
   lashes,
+  look,
 }: {
   r: number;
   iris: string;
   pos: [number, number, number];
   grad: THREE.DataTexture;
   lashes?: boolean;
+  /** Where the pupil sits on the ball, as a sideways and an up-down nudge (0 = straight out). */
+  look?: [number, number];
 }) {
+  // the pupil rides the surface rather than sliding off it, so a lowered gaze still
+  // looks painted on the eye instead of floating in front of it
+  const dir = new THREE.Vector3(look?.[0] ?? 0, look?.[1] ?? 0, 1).normalize();
   return (
     <group position={pos}>
       {lashes && <Lashes r={r} />}
@@ -234,11 +321,11 @@ function Eyeball({
         <Toon color="#ffffff" map={grad} />
         <Ink thin />
       </mesh>
-      <mesh position={[0, 0, r * 0.78]}>
+      <mesh position={[dir.x * r * 0.78, dir.y * r * 0.78, dir.z * r * 0.78]}>
         <sphereGeometry args={[r * 0.45, 24, 24]} />
         <meshToonMaterial color={iris} gradientMap={grad} />
       </mesh>
-      <mesh position={[0, 0, r * 0.95]}>
+      <mesh position={[dir.x * r * 0.95, dir.y * r * 0.95, dir.z * r * 0.95]}>
         <sphereGeometry args={[r * 0.22, 16, 16]} />
         <meshBasicMaterial color={INK3D} />
       </mesh>
@@ -273,18 +360,27 @@ function Eyes({ kind, y, z, grad }: { kind: string | null; y: number; z: number;
       </group>
     );
   }
-  if (kind === 'sleepy') {
+  if (kind === 'angry') {
+    /**
+     * A scowl, copied off the drawing: a blue lid pulled down over the top of each eye and
+     * tipped so its inner corner dips towards the nose, with the pupil sitting low in the
+     * white underneath. The lid used to sit level, which made the pair look sleepy — the
+     * slant is the whole difference between sleepy and angry.
+     */
     return (
       <group>
-        {[-0.34, 0.34].map((x) => (
-          <group key={x} position={[x, y, z - 0.05]}>
-            <Eyeball r={0.3} iris="#111827" pos={[0, 0, 0]} grad={grad} />
-            <mesh rotation={[0, 0, 0]} position={[0, 0.02, 0]}>
-              <sphereGeometry args={[0.315, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
-              <Toon color={MONSTER_COLORS.eyes.sleepy} map={grad} />
-            </mesh>
-          </group>
-        ))}
+        {[-0.32, 0.32].map((x) => {
+          const inward = x < 0 ? -1 : 1; // tips the lid down on the side nearest the nose
+          return (
+            <group key={x} position={[x, y, z - 0.05]}>
+              <Eyeball r={0.3} iris="#111827" pos={[0, 0, 0]} grad={grad} look={[0, -0.34]} />
+              <mesh rotation={[0, 0, inward * 0.55]}>
+                <sphereGeometry args={[0.315, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
+                <Toon color={MONSTER_COLORS.eyes.angry} map={grad} />
+              </mesh>
+            </group>
+          );
+        })}
       </group>
     );
   }

@@ -131,3 +131,25 @@ depois desenho 2D, depois 3D, depois jogos novos.
       cada peça como GLB separado, encaixando nos mesmos pivôs (o LEIA-ME do pacote
       explica: esconder o grupo original e usar o pivô como ponto de encaixe).
 - [ ] Se a Clara aprovar, fazer o mesmo com princesa, monstro, dragão e super-herói.
+
+## Monstro em 3D montado sozinho
+
+- [x] **O 3D do monstro se monta sozinho e não dá para arrastar as peças**: elas ficam
+      onde o modelo coloca. O que a Clara ajusta na folha 2D não é mais levado para o 3D,
+      porque lá o corpo é outra forma e o mesmo empurrãozinho caía no lugar errado. Quem
+      manda nisso é `movable3d.ts` (lista vazia = personagem montado), e o `Character3D`
+      só passa para o 3D os ajustes das peças que podem ser mexidas ali.
+- [x] **Crista do corpo round**: o 3D era um ovo liso, sem os bicos arredondados que o
+      desenho tem em volta. Agora são peças de verdade (`Crest`), espalhadas pelo corpo
+      todo menos na frente, onde fica o rosto — assim a crista aparece de qualquer lado.
+- [x] **Square peludo sem exceção**: tirado o quadrado sem pelo que existia em volta do
+      rosto.
+- [x] **Hourglass refeito**: era uma bola grande com uma pequena em cima. O perfil novo é
+      a silhueta do próprio desenho, medida linha a linha: dois lóbulos baixos e largos,
+      o de baixo só um pouco mais largo, com cintura no meio.
+- [x] **"Sleepy" virou "Angry"**: no 3D as pálpebras ficavam retas e a cara saía
+      sonolenta; agora caem na direção do nariz como no desenho, com a pupila embaixo. Os
+      monstros salvos antes disso continuam abrindo certo (`renamed` no `config.ts`).
+- [x] **Big tongue cortada**: a mancha onde o rosto é pintado acabava antes da língua e
+      cortava a ponta dela reto. Agora cada boca pode pedir uma mancha do tamanho que
+      precisa (`MOUTH_FIT`).

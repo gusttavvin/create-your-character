@@ -215,7 +215,11 @@ export default function Builder({ def, initial }: Props) {
               </button>
             </div>
             <span className="hint">
-              {mode === '3d' ? 'Drag a piece to move it · drag the background to spin' : 'Drag a piece onto the picture, or tap it'}
+              {mode === '3d'
+                ? movable3d(def.kind, parts).length > 0
+                  ? 'Drag a piece to move it · drag the background to spin'
+                  : 'Drag the background to spin it around'
+                : 'Drag a piece onto the picture, or tap it'}
             </span>
           </div>
 

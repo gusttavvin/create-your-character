@@ -4,6 +4,7 @@ import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Box3, Vector3, type Group, type PerspectiveCamera } from 'three';
 import type { CharacterKind, ColorMap, LayoutMap, PartMap } from '../characters/types';
 import { Layout3DContext } from './layout3d';
+import { movable3d } from '../characters/movable3d';
 import Monster3D from '../characters/monster/Monster3D';
 import Dragon3D from '../characters/dragon/Dragon3D';
 import Princess3D from '../characters/princess/Princess3D';
@@ -94,10 +95,29 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
   const floor = useRef<Group>(null);
   // the model is re-measured when the pieces change, not while one is being dragged
   const sig = useMemo(() => kind + '|' + Object.entries(parts).sort().join(','), [kind, parts]);
-  const ctx = useMemo(
-    () => ({ layout: layout ?? {}, selected: selected ?? null, editable: !!editable, onSelect, onMove }),
-    [layout, selected, editable, onSelect, onMove],
-  );
+  /**
+   * A piece the child cannot pick up in 3D keeps the place the model gives it: the sheet's
+   * offsets are meant for the flat drawing, and a body that is an oval on paper is a
+   * different shape here, so the same nudge lands somewhere else. Only the pieces that can
+   * be dragged in 3D follow what was done to them on the sheet, and a character with no
+   * draggable pieces at all is assembled rather than edited.
+   */
+  // one constant list per character kind, so its identity is stable across renders
+  const movable = movable3d(kind, parts);
+  const ctx = useMemo(() => {
+    const own: LayoutMap = {};
+    for (const id of movable) {
+      const t = layout?.[id];
+      if (t) own[id] = t;
+    }
+    return {
+      layout: own,
+      selected: selected ?? null,
+      editable: !!editable && movable.length > 0,
+      onSelect,
+      onMove,
+    };
+  }, [movable, layout, selected, editable, onSelect, onMove]);
 
   return (
     <Canvas
@@ -106,7 +126,7 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
       gl={{ alpha: true, antialias: true }}
       camera={{ position: [0, 0.4, 6.2], fov: 38 }}
       style={{ background: 'transparent' }}
-      onPointerMissed={editable ? () => onSelect?.(null) : undefined}
+      onPointerMissed={ctx.editable ? () => onSelect?.(null) : undefined}
     >
       <DevExpose />
       <ambientLight intensity={0.9} />
@@ -141,7 +161,7 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
         minPolarAngle={0.6}
         maxPolarAngle={1.75}
         /* while a piece is picked the model holds still, so it is easy to place */
-        autoRotate={!(editable && selected)}
+        autoRotate={!(ctx.editable && selected)}
         autoRotateSpeed={1.2}
         target={[0, 0, 0]}
         makeDefault

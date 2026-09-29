@@ -84,6 +84,13 @@ export interface CharacterDefinition {
   colorSlots: ColorSlot[];
   defaultParts: PartMap;
   defaultColors: ColorMap;
+  /**
+   * Options that used to go by another name, as `category id -> { old id: new id }`.
+   * A character saved before the rename still names the old piece, so it is translated
+   * when it is loaded; without this the child's monster would quietly come back wearing
+   * the category's default instead of the piece they chose.
+   */
+  renamed?: Record<string, Record<string, string>>;
   /** Builds the English sentence that describes the character. */
   sentence: (parts: PartMap, name?: string) => string;
 }
@@ -172,7 +179,8 @@ export function normalizeParts(def: CharacterDefinition, parts?: Partial<PartMap
   const out: PartMap = { ...def.defaultParts };
   if (parts) {
     for (const c of def.categories) {
-      const v = parts[c.id];
+      const saved = parts[c.id];
+      const v = (saved && def.renamed?.[c.id]?.[saved]) || saved;
       if (v === ERASED) out[c.id] = ERASED;
       else if (v && c.options.some((o) => o.id === v)) out[c.id] = v;
     }
