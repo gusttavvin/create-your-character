@@ -1,700 +1,672 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
-import FaceDecal from '../../components/FaceDecal';
-import Ink from '../../components/Ink';
+import { Component, Suspense, useMemo, type ReactNode } from 'react';
 import * as THREE from 'three';
-import type { PartMap } from '../types';
-import { MONSTER_COLORS } from './config';
-import { INK3D, blobGeometry, latheBody, pickPart, useGradientMap, useImageTexture, usePatternTexture } from '../../lib/three';
-import type { PatternKind } from '../../lib/three';
 import Part3D from '../../components/Part3D';
+import { Monstrinho, type MonstrinhoPart, type PartOverride } from '../../components/Monstrinho';
+import ToonInk from '../../components/ToonInk';
+import { useGradientMap, pickPart } from '../../lib/three';
+import { domeAt, drawnLines, drawnShapes, inflated, inkRim, layOn, rod, svgOf, type DrawnShape } from '../../lib/svg3d';
+import { MONSTER_PIECES, MONSTER_PART_RECT, type DrawnPiece } from './paths3d';
+import { MONSTER_PART_SPAN } from './parts';
+import { MONSTRINHO_ROWS } from '../../components/monstrinho-rows';
+import { MONSTER_BODY_LAYOUT, MONSTER_SHEET, type SlotRect } from './layout';
+import { MONSTER } from './config';
+import type { PartMap } from '../types';
 
 /**
- * Toon surface. When a pattern texture is given it already carries the part's
- * colour (the material multiplies `color` by `map`), so the tint goes to white
- * and the canvas does the painting.
- */
-function Toon({ color, map, tex }: { color: string; map: THREE.Texture; tex?: THREE.Texture | null }) {
-  return <meshToonMaterial color={tex ? '#ffffff' : color} gradientMap={map} map={tex ?? null} />;
-}
-
-/** Which hand-drawn surface each part wears, mirroring the PNG kit. */
-interface Skin {
-  pattern: PatternKind;
-  scale: number;
-}
-
-const BODY_SKIN: Record<string, Skin> = {
-  round: { pattern: 'spots', scale: 1.3 }, // green body covered in darker blobs
-  egg: { pattern: 'dots', scale: 1.3 }, // purple egg with even polka dots
-  square: { pattern: 'fur', scale: 1.5 }, // blue fuzz, strokes all one way
-  hourglass: { pattern: 'smooth', scale: 1 }, // orange jelly with a highlight
-};
-
-const ARM_SKIN: Record<string, Skin> = {
-  claw: { pattern: 'spots', scale: 1 },
-  tentacle: { pattern: 'dots', scale: 1.1 },
-  pincher: { pattern: 'smooth', scale: 1 },
-  fuzzy: { pattern: 'fur', scale: 1.2 },
-};
-
-const LEG_SKIN: Record<string, Skin> = {
-  stubby: { pattern: 'dots', scale: 1 },
-  bird: { pattern: 'smooth', scale: 1 },
-  thick: { pattern: 'spots', scale: 1.3 },
-  snake: { pattern: 'smooth', scale: 1 },
-};
-
-function skinOf(map: Record<string, Skin>, kind: string | null, color: string) {
-  if (!kind) return null;
-  const s = map[kind] ?? { pattern: 'smooth' as PatternKind, scale: 1 };
-  return { base: color, pattern: s.pattern, scale: s.scale };
-}
-
-/**
- * The soft horns that ride the round body's outline.
+ * The monster, modelled.
  *
- * The drawing is not a plain egg: rounded nubs run all around its edge, and without them
- * the model reads as a green ball — which is exactly how it looked. They are spread over
- * the whole body rather than on a single ring, so the crest still shows whichever way the
- * model is turned; the front is left bare, because that is where the face is drawn.
+ * Nothing here is arranged to resemble a drawing. Every piece IS the drawn piece: its
+ * outline is read straight out of one of the six pictures Clara approved, given thickness,
+ * and then inflated so it swells in the middle and thins away at its edge, the way a soft
+ * toy does. The silhouette of the model is the silhouette of the drawing because it is the
+ * same outline; what makes it a model rather than a picture standing up is the volume put
+ * into it and the light falling across it.
+ *
+ * An earlier version built these monsters out of spheres, cones and tubes pushed around
+ * until they looked roughly right. They did not look right, and could not: a cone is not a
+ * horn, and no amount of nudging a cone makes it one.
+ *
+ * Where a piece goes is decided by the same numbers the flat sheet uses — see layout.ts —
+ * so turning the model round and looking at the sheet show one creature, not two.
  */
-function Crest({ color, grad, rx, ry, rz }: { color: string; grad: THREE.DataTexture; rx: number; ry: number; rz: number }) {
-  const nubs = useMemo(() => {
-    const out: { pos: [number, number, number]; quat: [number, number, number, number]; len: number }[] = [];
-    const up = new THREE.Vector3(0, 1, 0);
-    const n = 36; // the drawing has a dozen or so chunky lobes, not a pincushion
-    const golden = Math.PI * (3 - Math.sqrt(5));
-    for (let i = 0; i < n; i++) {
-      const y = 1 - (2 * (i + 0.5)) / n;
-      const ring = Math.sqrt(Math.max(0, 1 - y * y));
-      const a = golden * i + 1.7;
-      const dir = new THREE.Vector3(Math.cos(a) * ring, y, Math.sin(a) * ring);
-      if (dir.z > 0.45) continue; // the face is printed on the front, so it stays smooth
-      // the nub stands on the body's surface, pointing straight out of it
-      const nrm = new THREE.Vector3(dir.x / rx, dir.y / ry, dir.z / rz).normalize();
-      const len = 0.06 + ((i * 7) % 5) * 0.03;
-      const p = new THREE.Vector3(dir.x * rx, dir.y * ry, dir.z * rz).addScaledVector(nrm, len * 0.4);
-      const q = new THREE.Quaternion().setFromUnitVectors(up, nrm);
-      out.push({ pos: [p.x, p.y, p.z], quat: [q.x, q.y, q.z, q.w], len });
-    }
-    return out;
-  }, [rx, ry, rz]);
-  return (
-    <group>
-      {nubs.map((t, i) => (
-        <mesh key={i} position={t.pos} quaternion={t.quat}>
-          <capsuleGeometry args={[0.135, t.len, 6, 16]} />
-          <meshToonMaterial color={color} gradientMap={grad} />
-          <Ink thin />
-        </mesh>
-      ))}
-    </group>
-  );
-}
 
-/** Tufts around a body's outline, so a furry monster still looks furry in profile. */
-function FurRing({ color, grad, w, h, d }: { color: string; grad: THREE.DataTexture; w: number; h: number; d: number }) {
-  const tufts = useMemo(() => {
-    const out: { pos: [number, number, number]; rot: [number, number, number]; len: number }[] = [];
-    const len = (i: number) => 0.2 + ((i * 7) % 5) * 0.035;
-
-    // round the silhouette, so the outline is furry from every side
-    const ringsAt = [-d * 0.42, -d * 0.16, d * 0.16, d * 0.42];
-    const n = 30;
-    for (const z of ringsAt) {
-      for (let i = 0; i < n; i++) {
-        const angle = (i / n) * Math.PI * 2;
-        // a superellipse traces the rounded square the body actually is
-        const ca = Math.cos(angle);
-        const sa = Math.sin(angle);
-        const x = Math.sign(ca) * Math.abs(ca) ** 0.55 * w;
-        const y = Math.sign(sa) * Math.abs(sa) ** 0.55 * h;
-        out.push({ pos: [x, y, z], rot: [0, 0, Math.atan2(y, x) - Math.PI / 2], len: len(i) });
-      }
-    }
-
-    // and over the faces as well, so the whole body is furry rather than just its edge.
-    // A square of the front used to be left bare so the painted face would not be buried;
-    // Clara asked for the tufts everywhere, with no bald patch, so the front is covered
-    // too and the face now shows through the fur rather than sitting in a clearing.
-    const cols = 6;
-    const rows = 6;
-    for (const side of [-1, 1]) {
-      for (let cx = 0; cx < cols; cx++) {
-        for (let cy = 0; cy < rows; cy++) {
-          const x = (-1 + (2 * (cx + 0.5)) / cols) * w * 0.86;
-          const y = (-1 + (2 * (cy + 0.5)) / rows) * h * 0.86;
-          out.push({
-            pos: [x, y, (side * d) / 2],
-            rot: [(side * Math.PI) / 2, 0, 0],
-            len: len(cx * rows + cy),
-          });
-        }
-      }
-    }
-    return out;
-  }, [w, h, d]);
-  return (
-    <group>
-      {tufts.map((t, i) => (
-        <mesh key={i} position={t.pos} rotation={t.rot}>
-          <capsuleGeometry args={[0.075, t.len, 4, 8]} />
-          <meshToonMaterial color={color} gradientMap={grad} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ body */
+const { vw: SHEET_W, vh: SHEET_H } = MONSTER_SHEET;
+/** How tall the sheet is in the scene. The stage scales the model to the frame afterwards. */
+const WORLD = 4.4 / SHEET_H;
+/** Matches the flat compositor: a borrowed piece is fitted by width, its height capped. */
+const TALLEST = 2.2;
 
 /**
- * How wide the painted mouth sits on each body, in that body's own units.
+ * How round each row of the worksheet comes out, from flat to as deep as it is wide.
  *
- * The hourglass gets the smallest patch, because its face has only the upper lobe to sit
- * on: a patch sized like the round body's reached past the waist and printed the mouth
- * across the pinch as well.
+ * A body, a limb, a horn and an eyeball are things with volume, so they are modelled as
+ * such: a drawn circle becomes a ball, a drawn arm a tube. A mouth is a hole in a face, so
+ * it stays shallow — blown up like the rest it becomes a muzzle stuck on the front.
  */
-const MOUTH_ON_BODY: Record<string, number> = { round: 0.82, egg: 0.75, square: 0.9, hourglass: 0.52 };
+/**
+ * How deep each row swells, as a share of how thick it is across.
+ *
+ * These are not guesses any more: they are measured off Clara's own sculpted monster,
+ * `public/models/monstrinho.glb`, by `art-source/approved/read-model.cjs`. She asked for
+ * the modelled one to be carried over to the other pieces; his shapes cannot be copied,
+ * because the file holds one of each and they are his, but his PROPORTIONS can, and they
+ * are what makes a piece read as modelled rather than as a puffed-up sticker.
+ *
+ *   body  0.462 deep / 0.752 wide = 0.61   — he is flatter than a ball
+ *   arms  0.229 / 0.358            = 0.64
+ *   legs  0.239 / 0.178            = 1.34  — a leg is narrow from the front and deep
+ *   eyes  0.227 / 0.251            = 0.90  — very nearly a ball, but HIS are sunk into his
+ *                                        face and a built pair sits on the skin, so 0.55
+ *   mouth 0.076 / 0.430            = 0.18, taken up to 0.35 so the teeth keep their relief
+ */
+const ROUND: Record<string, number> = { body: 0.61, arms: 0.64, legs: 1.34, eyes: 0.55, mouth: 0.35 };
+/** How far a marking lying on another piece rises, as a share of its own smaller side. */
+const RELIEF = 0.14;
+/** The hair of depth each step of the painting order is worth, in drawing units. */
+const STACK = 1.6;
 
 /**
- * A mouth that needs a patch of its own size.
+ * How far a marking floats above what it is painted on, as a share of that piece's size.
  *
- * The painted face is cut out of a square patch on the body, and the kit draws every
- * mouth inside the same 512 px box — but the big tongue hangs far lower in its box than
- * the others, so at the shared size the patch ended before the tongue did and sliced its
- * tip off flat. A roomier patch gives the tongue somewhere to land.
+ * Nought means the two surfaces touch all along the marking's rim, and a card cannot say
+ * which of two surfaces at the same depth is in front: the iris and the eyeball it lies on
+ * came out mottled, in patches that crawled as the monster turned.
  */
-const MOUTH_FIT: Record<string, number> = { big_tongue: 1.3 };
+const CLEAR = 0.035;
 
-interface FaceSpec {
-  eyeY: number;
-  mouthY: number;
-  z: number; // front surface z at face height
-  halfW: number; // where arms attach
-  armY: number;
-  bottom: number; // where legs attach
+/**
+ * How far a piece that sits on the body sinks into it, as a share of its own depth.
+ *
+ * Nought glues the piece to the skin by its middle, which is right for something flat and
+ * wrong for anything with real volume: an eyeball as deep as it is wide then stood entirely
+ * clear of the head, a ball beside the face instead of an eye in it.
+ */
+const SINK = 0.5;
+
+/**
+ * How wide the ink line is drawn, as a multiple of the width the artist gave it.
+ *
+ * A line painted on a surface is seen at an angle wherever the surface turns away, so it
+ * needs to be a little fatter than the flat drawing's to read the same.
+ */
+const LINE = 1.45;
+
+interface Built {
+  geo: THREE.BufferGeometry;
+  color: string;
+  /** Whether the piece's colours are painted on its vertices rather than set on it. */
+  painted: boolean;
+  /** The line the artist drew round this piece, for the card to draw pixel by pixel. */
+  rim?: { w0: number; w1: number; ink: string };
 }
 
-function Body({ kind, mouth, grad }: { kind: string | null; mouth: string | null; grad: THREE.DataTexture }) {
-  const color = (kind && MONSTER_COLORS.body[kind]) || '#8BD43B';
-  // the round body's own wobble is gentle now that the crest carries its outline: a
-  // deeper one moved the surface out from under the nubs and left them hanging in the air
-  const blob = useMemo(() => blobGeometry({ radius: 0.92, bumps: 13, amount: 0.05, spread: 0.3, rim: true }), []);
-  /**
-   * The hourglass, traced off its own drawing.
-   *
-   * The first one stacked a big ball under a small one, which is not what the kit draws:
-   * the picture is two squat lobes, both wider than they are tall, the lower one only a
-   * little broader than the upper, pinched to half that width at the waist. These numbers
-   * are the silhouette of `body/hourglass.png` measured row by row, scaled so the widest
-   * point is 1.
-   */
-  const peanut = useMemo(
-    () =>
-      latheBody([
-        [0, -1.36],
-        [0.52, -1.33],
-        [0.88, -1.14],
-        [1.0, -0.82],
-        [0.92, -0.55],
-        [0.74, -0.4],
-        [0.59, -0.22],
-        [0.54, -0.04],
-        [0.59, 0.14],
-        [0.7, 0.32],
-        [0.8, 0.5],
-        [0.86, 0.72],
-        [0.83, 0.9],
-        [0.72, 1.1],
-        [0.5, 1.26],
-        [0, 1.36],
-      ]),
-    [],
-  );
-  const tex = usePatternTexture(skinOf(BODY_SKIN, kind, color));
-  const face = useImageTexture(mouth ? `/assets/monster/parts/mouth/${mouth}.png` : null);
-  const mouthSize = (MOUTH_ON_BODY[kind ?? ''] ?? 0.82) * (MOUTH_FIT[mouth ?? ''] ?? 1);
-  if (!kind) return null;
-  if (kind === 'egg') {
-    return (
-      <mesh key="egg" position={[0, 0.35, 0]} scale={[0.9, 1.2, 0.9]}>
-        <sphereGeometry args={[1, 48, 48]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-        <FaceDecal part="mouth" tex={face} y={-0.25} z={1} size={0.75} />
-      </mesh>
-    );
-  }
-  if (kind === 'square') {
-    return (
-      <group key="square" position={[0, 0.35, 0]}>
-        <FurRing color={color} grad={grad} w={1.02} h={1.02} d={1.62} />
-        <RoundedBox args={[2.05, 2.05, 1.65]} radius={0.62} smoothness={8}>
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink />
-          <FaceDecal part="mouth" tex={face} y={-0.3} z={0.87} size={0.9} />
-        </RoundedBox>
-      </group>
-    );
-  }
-  if (kind === 'hourglass') {
-    return (
-      <mesh key="hourglass" geometry={peanut}>
-        <Toon color={color} map={grad} tex={tex} />
-        {/* the ink is drawn by pushing the surface outwards, and at a waist this tight a
-            full-thickness line folded through the front and showed as a black smudge */}
-        <Ink px={4} />
-        <FaceDecal part="mouth" tex={face} y={0.46} z={0.76} size={mouthSize} />
-      </mesh>
-    );
-  }
-
-  // round (default): a soft egg wearing the crest of nubs the drawing gives it
-  return (
-    <group key="round" position={[0, 0.3, 0]}>
-      <Crest color={color} grad={grad} rx={0.92 * 0.95} ry={0.92 * 1.18} rz={0.92 * 0.82} />
-      <mesh geometry={blob} scale={[0.95, 1.18, 0.82]}>
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-        <FaceDecal part="mouth" tex={face} y={-0.26} z={0.95} size={mouthSize} />
-      </mesh>
-    </group>
-  );
+function biggest(list: DrawnShape[]) {
+  return list.reduce((a, b) => (a.box.getSize(new THREE.Vector2()).length() >= b.box.getSize(new THREE.Vector2()).length() ? a : b));
 }
 
-const FACES: Record<string, FaceSpec> = {
-  round: { eyeY: 0.72, mouthY: 0, z: 0.92, halfW: 1.12, armY: 0.32, bottom: -0.62 },
-  egg: { eyeY: 0.85, mouthY: 0, z: 0.88, halfW: 0.92, armY: 0.3, bottom: -0.78 },
-  square: { eyeY: 0.75, mouthY: 0, z: 0.85, halfW: 1.14, armY: 0.35, bottom: -0.7 },
-  // the face rides the upper lobe, the arms the lower one, where the body is widest
-  hourglass: { eyeY: 0.95, mouthY: 0, z: 0.8, halfW: 0.95, armY: -0.6, bottom: -1.24 },
-};
-
-/* ------------------------------------------------------------------ eyes */
-
-/** The little lashes the kit draws over an eye. */
-function Lashes({ r }: { r: number }) {
-  const len = r * 0.5;
-  return (
-    <group position={[0, 0, r * 0.3]}>
-      {[-0.75, 0, 0.75].map((a) => (
-        <mesh
-          key={a}
-          position={[Math.sin(a) * (r + len * 0.35), Math.cos(a) * (r + len * 0.35), 0]}
-          rotation={[0, 0, -a]}
-        >
-          <coneGeometry args={[r * 0.09, len, 8]} />
-          <meshBasicMaterial color={INK3D} />
-        </mesh>
-      ))}
-    </group>
-  );
+function mergeAll(geos: THREE.BufferGeometry[]) {
+  const merged = new THREE.BufferGeometry();
+  const pos: number[] = [];
+  const nor: number[] = [];
+  for (const g of geos) {
+    const p = g.attributes.position;
+    const n = g.attributes.normal;
+    const idx = g.index;
+    const count = idx ? idx.count : p.count;
+    for (let i = 0; i < count; i++) {
+      const k = idx ? idx.getX(i) : i;
+      pos.push(p.getX(k), p.getY(k), p.getZ(k));
+      nor.push(n.getX(k), n.getY(k), n.getZ(k));
+    }
+  }
+  merged.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  merged.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  return merged;
 }
 
-function Eyeball({
-  r,
-  iris,
-  pos,
-  grad,
-  lashes,
-  look,
-}: {
-  r: number;
-  iris: string;
-  pos: [number, number, number];
-  grad: THREE.DataTexture;
-  lashes?: boolean;
-  /** Where the pupil sits on the ball, as a sideways and an up-down nudge (0 = straight out). */
-  look?: [number, number];
-}) {
-  // the pupil rides the surface rather than sliding off it, so a lowered gaze still
-  // looks painted on the eye instead of floating in front of it
-  const dir = new THREE.Vector3(look?.[0] ?? 0, look?.[1] ?? 0, 1).normalize();
-  return (
-    <group position={pos}>
-      {lashes && <Lashes r={r} />}
-      <mesh>
-        <sphereGeometry args={[r, 32, 32]} />
-        <Toon color="#ffffff" map={grad} />
-        <Ink thin />
-      </mesh>
-      <mesh position={[dir.x * r * 0.78, dir.y * r * 0.78, dir.z * r * 0.78]}>
-        <sphereGeometry args={[r * 0.45, 24, 24]} />
-        <meshToonMaterial color={iris} gradientMap={grad} />
-      </mesh>
-      <mesh position={[dir.x * r * 0.95, dir.y * r * 0.95, dir.z * r * 0.95]}>
-        <sphereGeometry args={[r * 0.22, 16, 16]} />
-        <meshBasicMaterial color={INK3D} />
-      </mesh>
-    </group>
-  );
+/**
+ * Builds every outline of one part into geometry.
+ *
+ * Each piece is laid on the piece it was drawn on top of. The artist painted an iris on an
+ * eyeball, a tooth in a mouth, a blush on a cheek and a belly on a body, so a piece looks
+ * back through the ones already placed for the last one whose box holds its middle, asks
+ * how high that one's surface has swelled at that exact spot, and sits there. That is what
+ * makes the model read as one creature instead of a stack of cut-outs: nothing hovers in
+ * front of anything, everything rests on something.
+ *
+ * The largest piece of all swells both ways, because it is the thing with volume. The rest
+ * swell only forwards. A piece painted before the largest one — a horn, an ear — is left at
+ * the back, which is what painting it first meant.
+ */
+/**
+ * How finely to cut up each curve of an outline.
+ *
+ * What matters is how many points the finished outline has, not how many each curve gets. A
+ * silhouette drawn as two big arcs needs a great many points per arc to come out round; the
+ * traced hand is already a hundred and fifty short curves and needs two each. Asking
+ * for seventy either way gave the hand ten thousand points round its edge, and triangulating
+ * that hung the page.
+ */
+function segmentsFor(d: string) {
+  const curves = (d.match(/[CSQAcsqa]/g) ?? []).length || 1;
+  return Math.max(2, Math.min(72, Math.round(300 / curves)));
 }
 
-function Eyes({ kind, y, z, grad }: { kind: string | null; y: number; z: number; grad: THREE.DataTexture }) {
-  if (!kind) return null;
-  if (kind === 'stalks') {
-    return (
-      <group>
-        {[-0.38, 0.38].map((x) => (
-          <group key={x} position={[x, y, z - 0.25]}>
-            <mesh position={[0, 0.35, 0]}>
-              <cylinderGeometry args={[0.09, 0.11, 0.8, 16]} />
-              <Toon color={MONSTER_COLORS.eyes.stalks} map={grad} />
-              <Ink thin />
-            </mesh>
-            <Eyeball r={0.27} iris="#111827" pos={[0, 0.85, 0]} grad={grad} />
-          </group>
-        ))}
-      </group>
-    );
-  }
-  if (kind === 'multiple') {
-    return (
-      <group>
-        <Eyeball r={0.24} iris="#111827" pos={[-0.42, y + 0.1, z - 0.02]} grad={grad} lashes />
-        <Eyeball r={0.2} iris="#111827" pos={[0.05, y + 0.32, z - 0.04]} grad={grad} lashes />
-        <Eyeball r={0.24} iris="#111827" pos={[0.45, y - 0.05, z - 0.02]} grad={grad} lashes />
-      </group>
-    );
-  }
-  if (kind === 'angry') {
+function usePart(optionId: string | null, round: number): Built[] {
+  return useMemo(() => {
+    if (!optionId) return [];
+    const part = MONSTER_PIECES[optionId];
+    if (!part) return [];
+    const out: Built[] = [];
+
+    const filled = part.pieces.filter((p) => p.fill);
+    const main = filled.reduce<DrawnPiece | null>((best, p) => (!best || p.area > best.area ? p : best), null);
+    const mainAt = main ? part.pieces.indexOf(main) : -1;
+
+    const shapeOf = (p: DrawnPiece) => {
+      const list = drawnShapes(`${optionId}:${p.i}`, svgOf([p]));
+      return list.length ? biggest(list) : null;
+    };
+
     /**
-     * A scowl, copied off the drawing: a blue lid pulled down over the top of each eye and
-     * tipped so its inner corner dips towards the nose, with the pupil sitting low in the
-     * white underneath. The lid used to sit level, which made the pair look sleepy — the
-     * slant is the whole difference between sleepy and angry.
+     * What has been placed so far, so a later piece can find what it lies on.
+     *
+     * `base` is how far out that piece's own surface has already been carried by everything
+     * underneath it. It has to be carried forward, or a pupil painted on an iris is lifted
+     * only by the iris's own curve and sinks back inside the eyeball the iris is lying on.
      */
-    return (
-      <group>
-        {[-0.32, 0.32].map((x) => {
-          const inward = x < 0 ? -1 : 1; // tips the lid down on the side nearest the nose
-          return (
-            <group key={x} position={[x, y, z - 0.05]}>
-              <Eyeball r={0.3} iris="#111827" pos={[0, 0, 0]} grad={grad} look={[0, -0.34]} />
-              <mesh rotation={[0, 0, inward * 0.55]}>
-                <sphereGeometry args={[0.315, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
-                <Toon color={MONSTER_COLORS.eyes.angry} map={grad} />
-              </mesh>
-            </group>
-          );
-        })}
-      </group>
-    );
-  }
-  // one big eye
-  return <Eyeball r={0.48} iris="#3AA0FF" pos={[0, y - 0.05, z - 0.1]} grad={grad} lashes />;
+    /** The gap a marking keeps from the piece under it, in that piece's own units. */
+    const clearOf = (h: DrawnShape) => {
+      const size = h.box.getSize(new THREE.Vector2());
+      return Math.min(size.x, size.y) * CLEAR;
+    };
+
+    const placed: { shape: DrawnShape; base: number; top: number }[] = [];
+
+    part.pieces.forEach((p, order) => {
+      const cx = p.cx;
+      const cy = p.cy;
+      const isMain = order === mainAt;
+
+      /** The last thing already placed whose outline holds this piece's middle. */
+      const host = isMain
+        ? null
+        : [...placed]
+            .reverse()
+            // inside the outline, not merely inside the box it fits in: by the box, one leg of
+            // a pair sat inside the other's box and was built as a marking painted on it —
+            // flat, so from the side the pair showed one leg and one black plate edge on
+            .find((q) => q.shape.box.containsPoint(new THREE.Vector2(cx, cy)) && domeAt(q.shape, cx, cy, round) > 0) ??
+          null;
+      const rest = host ? host.top : 0;
+
+      if (!p.fill) {
+        if (!p.stroke || !p.sw) return;
+        const lines = drawnLines(`${optionId}:${p.i}:line`, svgOf([p]));
+        if (!lines.length) return;
+        const geo = mergeAll(lines.map((l) => rod(l, p.sw / 2)));
+        // a line drawn on something follows it, point by point. Held at one depth — the top
+        // of whatever it is drawn on — a line that runs round the edge of a piece leaves the
+        // surface and hangs in the air beside it, which is what the outline round the hand did
+        if (host) layOn(geo, host.shape, round, host.base + clearOf(host.shape));
+        const z = host ? p.sw * 0.4 : order > mainAt ? rest + p.sw * 0.4 : -(rest + p.sw * 0.6);
+        geo.translate(p.dx, -p.dy, z);
+        out.push({ geo, color: p.stroke, painted: false });
+        return;
+      }
+
+      const d = shapeOf(p);
+      if (!d) return;
+      const size = d.box.getSize(new THREE.Vector2());
+      const small = Math.max(1e-3, Math.min(size.x, size.y));
+      // a piece resting on another one is a marking on it; anything else is a thing in
+      // itself and gets real volume
+      const geo = inflated(d, { round, relief: host ? RELIEF : 0, curveSegments: segmentsFor(p.d) });
+      // a patch of skin follows the body under it, point by point, instead of lying across
+      // it as a flat plate
+      if (host) layOn(geo, host.shape, round, host.base + clearOf(host.shape));
+      // painted before the big piece and resting on nothing: it belongs behind
+      const z = isMain || host ? 0 : order > mainAt ? rest : -rest - small * 0.25;
+      // and a hair per step of the painting order, so a pupil is always in front of the
+      // iris it was painted on and an iris in front of its eyeball, whatever the curves do
+      geo.translate(p.dx, -p.dy, z + order * STACK);
+      const fill = p.fill;
+      // the artist's own line, painted along the artist's own outline, at her own width
+      const inked = !!(p.stroke && p.sw) && !isMain;
+      if (inked) inkRim(geo, p.stroke!, p.sw * LINE);
+      out.push({
+        geo,
+        color: fill,
+        painted: false,
+        rim: inked ? (geo.userData.inkLine as Built['rim']) : undefined,
+      });
+      /**
+       * How high this piece now stands, for anything painted on top of it.
+       *
+       * `base` is the floor its own curve was measured from — where the piece sits before
+       * its own swelling — and `top` is the surface a child of it should rest on. Leaving
+       * `base` at nought for a piece that itself lies on something sank every pupil back
+       * inside the eyeball its iris was painted on.
+       */
+      const base = host
+        ? host.base + clearOf(host.shape) + domeAt(host.shape, cx, cy, round)
+        : z + order * STACK;
+      const rise = domeAt(d, cx, cy, round) * (host ? Math.min(1, RELIEF * 2) : 1);
+      placed.push({ shape: d, base, top: base + rise });
+    });
+
+    return out;
+  }, [optionId, round]);
 }
 
-/* ------------------------------------------------------------------ arms */
+/** One part, put where the sheet says it goes. */
+type Wrap = (
+  geo: THREE.BufferGeometry,
+  slot: SlotRect,
+  partBox: { x: number; y: number; w: number; h: number },
+  pk: number,
+) => THREE.BufferGeometry;
 
-/**
- * A bendy limb.
- *
- * A bare tube is open at both ends, which is why a tentacle and a snake leg looked
- * sliced off: this closes them with a ball at each end and lets the tip be thinner
- * than the root, the way the kit tapers its limbs.
- */
-function Noodle({
-  pts,
-  r,
-  tip = 1,
-  color,
+function Layer({
+  optionId,
+  slot,
+  z,
+  round,
   grad,
-  tex,
+  wrap,
 }: {
-  pts: [number, number, number][];
-  r: number;
-  tip?: number;
-  color: string;
+  optionId: string | null;
+  slot: SlotRect;
+  z: number;
+  round: number;
   grad: THREE.DataTexture;
-  tex?: THREE.Texture | null;
+  /** Bends the whole part onto the body, for the parts that lie on its face. */
+  wrap?: Wrap;
 }) {
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))), [pts]);
-  const a = pts[0];
-  const b = pts[pts.length - 1];
-  return (
-    <group>
-      <mesh>
-        <tubeGeometry args={[curve, 48, r, 16, false]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-      </mesh>
-      <mesh position={a}>
-        <sphereGeometry args={[r, 20, 20]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-      </mesh>
-      <mesh position={b}>
-        <sphereGeometry args={[r * tip, 20, 20]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * A paw: a round palm with four short, fat fingers fanned over the top of it.
- *
- * The first hands were four thin sticks on the end of a tube. Clara sent a picture of a
- * monster whose hand is a little rounded mitten and asked for that instead: fingers
- * about as long as they are wide, well apart, every tip round.
- */
-function Paw({
-  y,
-  size = 1,
-  color,
-  grad,
-  tex,
-}: {
-  y: number;
-  size?: number;
-  color: string;
-  grad: THREE.DataTexture;
-  tex?: THREE.Texture | null;
-}) {
-  return (
-    <group position={[0, y, 0]} scale={size}>
-      <mesh scale={[1, 0.94, 0.86]}>
-        <sphereGeometry args={[0.2, 26, 26]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink thin />
-      </mesh>
-      {[-1.5, -0.5, 0.5, 1.5].map((k) => {
-        const a = k * 0.5;
-        return (
-          <mesh
-            key={k}
-            position={[Math.sin(a) * 0.21, 0.15 + Math.cos(a) * 0.08, 0.01]}
-            rotation={[0, 0, -a]}
-            scale={[1, 1, 0.9]}
-          >
-            <capsuleGeometry args={[0.06, 0.11, 6, 14]} />
-            <Toon color={color} map={grad} tex={tex} />
-            <Ink thin />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-function Arm({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
-  const color = MONSTER_COLORS.arms[kind] ?? '#8BD43B';
-  const tex = usePatternTexture(skinOf(ARM_SKIN, kind, color));
-  // every hook runs for every arm style, so switching styles never reorders them
-  const curl = useMemo<[number, number, number][]>(
-    () => [
-      [0, 0, 0],
-      [0.1, 0.45, 0.05],
-      [0.02, 0.9, 0.12],
-      [0.34, 1.2, 0.1],
-      [0.72, 1.3, 0],
-      [0.95, 1.05, -0.08],
-    ],
-    [],
-  );
-  const reach = useMemo<[number, number, number][]>(
-    () => [
-      [0, 0, 0],
-      [0.06, 0.4, 0.04],
-      [0.14, 0.8, 0.06],
-      [0.2, 1.05, 0.04],
-    ],
-    [],
-  );
-  const tufts = useMemo(() => {
-    const arr: [number, number, number, number][] = [];
-    for (let i = 0; i < 30; i++) {
-      const a = (i / 30) * Math.PI * 2 * 3;
-      const y = 0.1 + (i / 30) * 0.95;
-      arr.push([Math.cos(a) * 0.17, y, Math.sin(a) * 0.17, a]);
+  const built = usePart(optionId, round);
+  /**
+   * A pair of arms is fitted by the hole it leaves, not by its box.
+   *
+   * The slot for that row is the width of the body where the arms meet it, and what has to
+   * match it is the gap between the two arms. Fitted by the box, a pair that is mostly hole —
+   * two little tentacles — ended up hanging in the air beside the body.
+   */
+  const box = optionId ? MONSTER_PART_RECT[optionId] : null;
+  const span = optionId ? MONSTER_PART_SPAN[optionId] : undefined;
+  let k = box ? slot.w / box.w : 1;
+  /** Hung by the middle of the hole between the two arms, not the middle of their box. */
+  const off = box && span ? (box.x + box.w / 2 - span[1]) * k : 0;
+  if (box && box.h * k > slot.h * TALLEST) k = (slot.h * TALLEST) / box.h;
+  const bent = useMemo(() => {
+    // how much volume this part has, measured before it is bent onto the body
+    let deep = 0;
+    for (const b of built) {
+      b.geo.computeBoundingBox();
+      const bb = b.geo.boundingBox;
+      if (bb) deep = Math.max(deep, bb.max.z - bb.min.z);
     }
-    return arr;
-  }, []);
-
-  if (kind === 'tentacle') {
-    // one curling arm that ends in a round tip instead of a cut pipe
-    return <Noodle pts={curl} r={0.17} tip={0.62} color={color} grad={grad} tex={tex} />;
-  }
-  if (kind === 'pincher') {
-    // a crab claw: the arm splits into two curved tips that face each other
-    return (
-      <group>
-        <Noodle pts={reach} r={0.14} tip={1.15} color={color} grad={grad} tex={tex} />
-        {[-1, 1].map((side) => (
-          <group key={side} position={[0.2, 1.05, 0]} rotation={[0, 0, side * 0.5]}>
-            <mesh position={[0, 0.2, 0]} rotation={[0, 0, side * -0.25]}>
-              <capsuleGeometry args={[0.09, 0.34, 6, 14]} />
-              <Toon color={color} map={grad} tex={tex} />
-              <Ink thin />
-            </mesh>
-            <mesh position={[side * -0.06, 0.44, 0]} rotation={[0, 0, side * -0.9]}>
-              <capsuleGeometry args={[0.06, 0.2, 6, 12]} />
-              <Toon color={color} map={grad} tex={tex} />
-              <Ink thin />
-            </mesh>
-          </group>
-        ))}
-      </group>
-    );
-  }
-  if (kind === 'fuzzy') {
-    return (
-      <group>
-        <Noodle pts={reach} r={0.18} tip={1.05} color={color} grad={grad} tex={tex} />
-        {tufts.map(([x, y, z, a], i) => (
-          <mesh key={i} position={[x, y, z]} rotation={[Math.PI / 2, 0, -a]}>
-            <coneGeometry args={[0.05, 0.14, 6]} />
-            <meshToonMaterial color={color} gradientMap={grad} />
-          </mesh>
-        ))}
-        <Paw y={1.08} size={0.95} color={color} grad={grad} tex={tex} />
-      </group>
-    );
-  }
-  // claw: a soft arm with the four fingers the drawing has
+    if (wrap && box) for (const b of built) wrap(b.geo, slot, box, k);
+    return { list: built, deep };
+  }, [built, wrap, box, slot, k]);
+  // a piece that sits on the body beds into it by a share of its own depth
+  const sink = wrap ? bent.deep * SINK * k * WORLD : 0;
+  if (!optionId || !bent.list.length || !box) return null;
   return (
-    <group>
-      <Noodle pts={reach} r={0.17} tip={1.15} color={color} grad={grad} tex={tex} />
-      <Paw y={1.06} color={color} grad={grad} tex={tex} />
-    </group>
-  );
-}
-
-/** How far out from straight up an arm is held, in radians: nearly flat, as drawn. */
-const ARM_OUT = 1.38;
-
-function Arms({ kind, halfW, y, grad }: { kind: string | null; halfW: number; y: number; grad: THREE.DataTexture }) {
-  const l = useRef<THREE.Group>(null);
-  const r = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    // the drawing holds its arms out sideways, so the model does too
-    const w = Math.sin(t * 2.2) * 0.08;
-    if (l.current) l.current.rotation.z = ARM_OUT + w;
-    if (r.current) r.current.rotation.z = -ARM_OUT - w;
-  });
-  if (!kind) return null;
-  return (
-    <group>
-      <group ref={r} position={[halfW - 0.12, y, 0]} rotation={[0, 0, -ARM_OUT]}>
-        <Arm kind={kind} grad={grad} />
-      </group>
-      <group ref={l} position={[-halfW + 0.12, y, 0]} rotation={[0, 0, ARM_OUT]} scale={[-1, 1, 1]}>
-        <Arm kind={kind} grad={grad} />
-      </group>
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ legs */
-
-function Leg({ kind, grad }: { kind: string; grad: THREE.DataTexture }) {
-  const color = MONSTER_COLORS.legs[kind] ?? '#A97CF1';
-  const tex = usePatternTexture(skinOf(LEG_SKIN, kind, color));
-  const snake = useMemo<[number, number, number][]>(
-    () => [
-      [0, 0, 0],
-      [0.18, -0.3, 0],
-      [-0.15, -0.6, 0],
-      [0.15, -0.9, 0],
-      [-0.04, -1.12, 0],
-    ],
-    [],
-  );
-
-  if (kind === 'bird') {
-    return (
-      <group>
-        <mesh position={[0, -0.45, 0]}>
-          <cylinderGeometry args={[0.07, 0.07, 0.9, 12]} />
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink thin />
-        </mesh>
-        {[-0.5, 0, 0.5].map((a) => (
-          <mesh key={a} position={[Math.sin(a) * 0.2, -0.9, Math.cos(a) * 0.2]} rotation={[Math.PI / 2 - 0.1, 0, -a]}>
-            <capsuleGeometry args={[0.05, 0.3, 4, 8]} />
-            <Toon color={color} map={grad} tex={tex} />
-            <Ink thin />
+    <group position={[(slot.cx - SHEET_W / 2 + off) * WORLD, (SHEET_H / 2 - slot.cy) * WORLD, z - sink]} scale={k * WORLD}>
+      <group position={[-(box.x + box.w / 2), box.y + box.h / 2, 0]}>
+        {bent.list.map((b, i) => (
+          <mesh key={i} geometry={b.geo}>
+            <ToonInk color={b.color} vertexColors={b.painted} rim={b.rim} gradientMap={grad} />
           </mesh>
         ))}
       </group>
-    );
-  }
-  if (kind === 'thick') {
-    return (
-      <group>
-        <mesh position={[0, -0.4, 0]}>
-          <cylinderGeometry args={[0.2, 0.22, 0.8, 16]} />
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink />
-        </mesh>
-        <mesh position={[0, -0.85, 0.12]} scale={[1, 0.6, 1.5]}>
-          <sphereGeometry args={[0.28, 24, 24]} />
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink />
-        </mesh>
-      </group>
-    );
-  }
-  if (kind === 'snake') {
-    return <Noodle pts={snake} r={0.12} tip={0.85} color={color} grad={grad} tex={tex} />;
-  }
-  // stubby
-  return (
-    <group>
-      <mesh position={[0, -0.35, 0]}>
-        <cylinderGeometry args={[0.16, 0.18, 0.7, 16]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-      </mesh>
-      <mesh position={[0, -0.74, 0.08]} scale={[1, 0.62, 1.45]}>
-        <sphereGeometry args={[0.21, 24, 24]} />
-        <Toon color={color} map={grad} tex={tex} />
-        <Ink />
-      </mesh>
-      {[-0.13, 0, 0.13].map((x) => (
-        <mesh key={x} position={[x, -0.76, 0.26]}>
-          <sphereGeometry args={[0.075, 16, 16]} />
-          <Toon color={color} map={grad} tex={tex} />
-          <Ink thin />
-        </mesh>
-      ))}
     </group>
   );
 }
 
-function Legs({ kind, bottom, grad }: { kind: string | null; bottom: number; grad: THREE.DataTexture }) {
-  if (!kind) return null;
+/**
+ * How far out the body's surface is at a place on the sheet.
+ *
+ * Now that a body is as deep as it is wide, there is no single "front" to put a face on:
+ * the surface at the eyes is a long way forward, the surface near the chin is not. So the
+ * body is asked directly how high it has risen at that exact spot, the same question every
+ * piece inside a part asks of the piece it lies on.
+ */
+function useBodyCurve(bodyId: string) {
+  return useMemo(() => {
+    const part = MONSTER_PIECES[bodyId];
+    const box = MONSTER_PART_RECT[bodyId];
+    const L = MONSTER_BODY_LAYOUT[bodyId] ?? MONSTER_BODY_LAYOUT.round;
+    /**
+     * Every lump the body is made of, not just its biggest.
+     *
+     * Two of these creatures are a head and a body rather than one shape, and asking only
+     * the larger of the two how high it is left the face sunk inside a head the question
+     * never reached. The surface at a point is simply the highest of them there.
+     */
+    const filled = (part?.pieces ?? []).filter((q) => q.fill && q.area > box.w * box.h * 0.06);
+    const main = filled.reduce<DrawnPiece | null>((best, q) => (!best || q.area > best.area ? q : best), null);
+    const lumps = filled
+      .map((q) => {
+        const list = drawnShapes(`${bodyId}:${q.i}`, svgOf([q]));
+        return list.length ? { piece: q, shape: biggest(list) } : null;
+      })
+      .filter((q): q is { piece: DrawnPiece; shape: DrawnShape } => !!q);
+    const k = L.body.w / box.w;
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+
+    /** How high the body stands at a point of its own drawing. */
+    const height = (px: number, py: number) => {
+      let best = 0;
+      for (const l of lumps) {
+        const h = domeAt(l.shape, px - l.piece.dx, py - l.piece.dy, ROUND.body);
+        if (h > best) best = h;
+      }
+      return best;
+    };
+
+    /** How high the body has risen under a point of the sheet, in world units. */
+    const at = (sheetX: number, sheetY: number) => {
+      if (!main) return 0;
+      return height((sheetX - L.body.cx) / k + cx, (sheetY - L.body.cy) / k + cy) * k * WORLD;
+    };
+
+    /**
+     * Bends a whole part onto the body, point by point.
+     *
+     * A face was being stood at one height in front of the body — right in the middle of the
+     * face and wrong everywhere else, so a mouth lifted off the cheek as soon as the monster
+     * was turned. Every vertex now asks the body how high it is under that exact spot.
+     *
+     * The part is drawn in its own creature's coordinates and the body in the body's, so
+     * each vertex is carried across: out to the sheet through the part's own placement, and
+     * back in through the body's.
+     */
+    const wrap = (
+      geo: THREE.BufferGeometry,
+      slot: SlotRect,
+      partBox: { x: number; y: number; w: number; h: number },
+      pk: number,
+    ) => {
+      if (!main) return geo;
+      const pcx = partBox.x + partBox.w / 2;
+      const pcy = partBox.y + partBox.h / 2;
+      const pos = geo.attributes.position;
+      // the part's units are pk wide where the body's are k, so a height crosses over at pk/k
+      const toBody = k / pk;
+      for (let i = 0; i < pos.count; i++) {
+        // the vertex, on the sheet, then back in the body's own drawing
+        const sheetX = slot.cx + (pos.getX(i) - pcx) * pk;
+        const sheetY = slot.cy - (pos.getY(i) + pcy) * pk;
+        const bx = (sheetX - L.body.cx) / k + cx;
+        const by = (sheetY - L.body.cy) / k + cy;
+        pos.setZ(i, pos.getZ(i) + height(bx, by) * toBody);
+      }
+      pos.needsUpdate = true;
+      geo.computeVertexNormals();
+      return geo;
+    };
+    return { at, wrap };
+  }, [bodyId]);
+}
+
+/* --------------------------------------------------------------- modelled
+ *
+ * The orange one is modelled rather than built.
+ *
+ * Every other body here is the flat drawing given volume, which is the best that can be
+ * done from a picture. The orange one has an actual model — public/models/monstrinho.glb,
+ * the same creature sculpted — and a sculpted monster beats an inflated drawing every time,
+ * so when a child picks him that is what they get.
+ *
+ * The model carries one of each piece: his own eyes, his own smile, his own paws. Those are
+ * exactly the pieces his row of the worksheet starts on, so while the child keeps them the
+ * model shows them, and the moment they choose a different mouth his mouth is hidden and
+ * the built one takes its place. Nothing in the game is lost by him being modelled.
+ */
+
+/** Which groups of the model each row of the worksheet owns. A hand rides on its arm. */
+const OWNS: Record<string, MonstrinhoPart[]> = {
+  eyes: ['Olhos', 'Sobrancelhas'],
+  mouth: ['Boca'],
+  arms: ['Braco_E', 'Braco_D'],
+  legs: ['Pernas'],
+};
+
+/** The worksheet choice each of the model's own pieces is — the outfit he arrives in. */
+const MODELLED: Record<string, string> = MONSTER.outfits?.round ?? {};
+
+/** Whether the model can show this row itself, or has to stand aside for a built piece. */
+function modelHas(row: string, chosen: string | undefined) {
+  return !!chosen && chosen === MODELLED[row];
+}
+
+/** The pieces of him that hang straight off the model, one per row and one for his body. */
+const MODEL_TOP: MonstrinhoPart[] = [
+  'Corpo', 'Juba', 'Rosto', 'Bochechas', 'Pintinhas', 'Chifres', 'Topete',
+  'Olhos', 'Sobrancelhas', 'Boca', 'Braco_E', 'Braco_D', 'Pernas',
+];
+
+/** Everything hidden but the groups this row switches on. */
+function onlyRow(row: string | null) {
+  const keep = row ? OWNS[row] ?? [] : MODEL_TOP.filter((g) => !Object.values(OWNS).flat().includes(g));
+  const out: Partial<Record<MonstrinhoPart, PartOverride>> = {};
+  for (const g of MODEL_TOP) out[g] = { visible: keep.includes(g) };
+  if (row === 'eyes') for (const g of OWNS.eyes) out[g] = { visible: true, scale: EYES_SIZE };
+  return out;
+}
+
+/**
+ * One of the modelled monster's own pieces, worn by any body.
+ *
+ * Clara asked for his sculpted pieces to be used everywhere, not only on him. The file holds
+ * ONE of each, so a row shows his only when the child has chosen the option that IS his —
+ * his eyes for "angry eyes", his mouth for "a smile with a tongue" — and every other row is
+ * whatever the child picked, built from the drawings. Each instance clones its own
+ * materials, so two monsters on one page never share a colour.
+ */
+function ModelPart({ row, slot, z }: { row: string; slot: SlotRect; z: number }) {
+  const overrides = useMemo(() => onlyRow(row), [row]);
+  const r = MONSTRINHO_ROWS[row];
+  if (!r) return null;
+  const size = [0, 1, 2].map((i) => r.max[i] - r.min[i]);
+  // a pair of arms is fitted by the hole it leaves for the body, like the drawn pairs
+  const across = r.gap ?? size[0];
+  let k = (slot.w * WORLD) / across;
+  if (size[1] * k > slot.h * TALLEST * WORLD) k = (slot.h * TALLEST * WORLD) / size[1];
+  const mid = [r.gap != null ? r.mid! : (r.min[0] + r.max[0]) / 2, (r.min[1] + r.max[1]) / 2, (r.min[2] + r.max[2]) / 2];
   return (
-    <group>
-      {/* the left leg is the right one reflected, like a real pair */}
-      <group position={[-0.45, bottom + 0.1, 0]} scale={[-1, 1, 1]}>
-        <Leg kind={kind} grad={grad} />
-      </group>
-      <group position={[0.45, bottom + 0.1, 0]}>
-        <Leg kind={kind} grad={grad} />
+    <group position={[(slot.cx - SHEET_W / 2) * WORLD, (SHEET_H / 2 - slot.cy) * WORLD, z]} scale={k}>
+      <group position={[-mid[0], -mid[1], -mid[2]]}>
+        <Monstrinho parts={overrides} />
       </group>
     </group>
   );
 }
 
-/* ------------------------------------------------------------------ root */
+/** Where a row sits on the sheet, and how far forward, once the model is standing. */
+export type Anchors = Partial<Record<string, SlotRect & { z: number }>>;
+
+/** The modelled monster's eyes are drawn larger than the rest of him; Clara asked for less. */
+const EYES_SIZE = 0.82;
+
+/**
+ * How tall the model stands on a body, and how far off the floor.
+ *
+ * He is 1.2 m on his own feet; the sheet wants him as tall as the drawn body is.
+ */
+function modelStand(layout: (typeof MONSTER_BODY_LAYOUT)['round']) {
+  const top = (SHEET_H / 2 - (layout.body.cy - layout.body.h / 2)) * WORLD;
+  const floor = (SHEET_H / 2 - (layout.legs.cy + layout.legs.h / 2)) * WORLD;
+  return { floor, scale: (top - floor) / 1.2 };
+}
+
+/**
+ * Where he keeps his own eyes, mouth, arms and legs, in sheet units.
+ *
+ * A built piece is normally placed by the drawing. He is the same creature in a different
+ * hand: his face sits higher and smaller on him. So on his own body a row goes where HIS is,
+ * measured off the model rather than off the drawing — and a piece that replaces his lands
+ * in the same place, which is what keeps a swapped mouth off the belly.
+ *
+ * The numbers come from the generated table, so nothing has to be measured on screen.
+ */
+function modelAnchors(layout: (typeof MONSTER_BODY_LAYOUT)['round']): Anchors {
+  const { floor, scale } = modelStand(layout);
+  const out: Anchors = {};
+  for (const [row, r] of Object.entries(MONSTRINHO_ROWS)) {
+    if (row === 'body') continue;
+    const mid = [0, 1, 2].map((i2) => ((r.min[i2] + r.max[i2]) / 2) * scale);
+    const size = [0, 1, 2].map((i2) => (r.max[i2] - r.min[i2]) * scale);
+    out[row] = {
+      cx: SHEET_W / 2 + (r.gap != null ? r.mid! * scale : mid[0]) / WORLD,
+      cy: SHEET_H / 2 - (mid[1] + floor) / WORLD,
+      // the arms are placed by the hole they leave, so that is the width their slot carries
+      w: (r.gap != null ? r.gap * scale : size[0]) / WORLD,
+      h: size[1] / WORLD,
+      z: r.max[2] * scale,
+    };
+  }
+  return out;
+}
+
+/** His body and the things that grow out of it; every row he wears is a piece of its own. */
+function MonstrinhoBody({ layout }: { layout: (typeof MONSTER_BODY_LAYOUT)['round'] }) {
+  const overrides = useMemo(() => onlyRow(null), []);
+  const { floor, scale } = modelStand(layout);
+  return (
+    <group position={[0, floor, 0]} scale={scale}>
+      <Monstrinho parts={overrides} />
+    </group>
+  );
+}
+/**
+ * Falls back to the built body if the model cannot be loaded.
+ *
+ * A missing or broken GLB would otherwise take the whole page down, and a child in the
+ * middle of a lesson would be left looking at a blank sheet rather than at a monster.
+ */
+class IfModelLoads extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 export default function Monster3D({ parts }: { parts: PartMap }) {
   const grad = useGradientMap();
-  const body = pickPart(parts.body, 'round');
-  const face = FACES[body ?? ''] ?? FACES.round;
+  const bodyId = pickPart(parts.body, 'round') ?? 'round';
+  const L = MONSTER_BODY_LAYOUT[bodyId] ?? MONSTER_BODY_LAYOUT.round;
+  const body = useBodyCurve(bodyId);
+  /**
+   * How far a face has to stand off the body to clear whatever is already on it.
+   *
+   * The face now follows the body's curve point by point, so all that is left to decide is
+   * how far it stands off it: a pale muzzle or a belly wraps the body too and stands a
+   * little proud, and a face laid exactly on the skin ends up underneath them.
+   */
+  // his own muzzle stands 0.16 of his body's width proud of it; measured, not guessed
+  const clear = L.body.w * 0.14 * WORLD;
+
+  /**
+   * The limbs stay on the body's middle plane. Pushed back as well, a whole arm disappeared
+   * behind a body that bulges this much and only a hand was left showing.
+   */
+
+  const legs = pickPart(parts.legs, 'paws');
+  const arms = pickPart(parts.arms, 'claw');
+  const mouth = pickPart(parts.mouth, 'tongue');
+  const eyes = pickPart(parts.eyes, 'angry');
+
+  /** His body is the round one; his pieces, though, can be worn by any of the four. */
+  const sculpted = bodyId === 'round';
+  const anchors = useMemo(() => (sculpted ? modelAnchors(L) : {}), [sculpted, L]);
+  /** On his own body a row goes where HIS is, whether it is his piece or one built for him. */
+  const where = (row: string, fallback: SlotRect) => anchors[row] ?? fallback;
+  const depth = (row: string, fallback: number) => anchors[row]?.z ?? fallback;
+
+  /**
+   * One row: his own sculpted piece if the child chose the option that is his, and the piece
+   * built from the drawings otherwise. Choosing his eyes does not bring his mouth with them.
+   */
+  const rowOf = (
+    row: string,
+    chosen: string | null,
+    slot: SlotRect,
+    z: number,
+    round: number,
+    wrap?: Wrap,
+    /**
+     * How high the body has risen where this row sits.
+     *
+     * A built face piece is bent onto the body vertex by vertex, so it finds the surface by
+     * itself. A modelled one is a solid thing and cannot bend, so it is simply stood on top of
+     * the body — without this it was buried inside a head half a metre thick.
+     */
+    lift = 0,
+    /**
+     * Where a piece built from the drawings goes, when that is not where his own one goes.
+     *
+     * His arms are stubs and his arm row is sized for them; a drawn pair has to reach round
+     * the body, so it keeps the room the sheet gives it.
+     */
+    drawnSlot = slot,
+  ) =>
+    modelHas(row, chosen ?? undefined) ? (
+      <IfModelLoads fallback={<Layer optionId={chosen} slot={drawnSlot} round={round} z={z} grad={grad} wrap={wrap} />}>
+        <Suspense fallback={null}>
+          <ModelPart row={row} slot={slot} z={z + lift} />
+        </Suspense>
+      </IfModelLoads>
+    ) : (
+      <Layer optionId={chosen} slot={drawnSlot} round={round} z={z} grad={grad} wrap={wrap} />
+    );
+
+  /** The body's own surface under a slot — nought on the sculpted one, which is not drawn. */
+  const onSkin = (slot: SlotRect) => (sculpted ? 0 : body.at(slot.cx, slot.cy));
+  // his face is his own shape, so a piece put on it is not bent to the drawn body's curve
+  const bend = sculpted ? undefined : body.wrap;
+
+  const shapes = (
+    <>
+      <Part3D id="legs">{rowOf('legs', legs, where('legs', L.legs), depth('legs', 0), ROUND.legs)}</Part3D>
+      <Part3D id="arms">
+        {rowOf('arms', arms, where('arms', L.arms), depth('arms', 0), ROUND.arms, undefined, 0, L.arms)}
+      </Part3D>
+      <Part3D id="mouth">{rowOf('mouth', mouth, where('mouth', L.mouth), depth('mouth', clear), ROUND.mouth, bend, onSkin(L.mouth))}</Part3D>
+      <Part3D id="eyes">{rowOf('eyes', eyes, where('eyes', L.eyes), depth('eyes', clear), ROUND.eyes, bend, onSkin(L.eyes))}</Part3D>
+    </>
+  );
+
+  const shell = (
+    <Part3D id="body">
+      <Layer optionId={bodyId} slot={L.body} round={ROUND.body} z={0} grad={grad} />
+    </Part3D>
+  );
+
+  if (!sculpted) {
+    return (
+      <group>
+        {shapes}
+        {shell}
+      </group>
+    );
+  }
+
   return (
-    <group position={[0, -0.2, 0]}>
-      <Part3D id="body"><Body kind={body} mouth={pickPart(parts.mouth, 'teeth')} grad={grad} /></Part3D>
-      <Part3D id="eyes"><Eyes kind={pickPart(parts.eyes, 'stalks')} y={face.eyeY} z={face.z} grad={grad} /></Part3D>
-      <Part3D id="arms"><Arms kind={pickPart(parts.arms, 'claw')} halfW={face.halfW} y={face.armY} grad={grad} /></Part3D>
-      <Part3D id="legs"><Legs kind={pickPart(parts.legs, 'stubby')} bottom={face.bottom} grad={grad} /></Part3D>
+    <group>
+      {shapes}
+      <Part3D id="body">
+        <IfModelLoads fallback={shell}>
+          <Suspense fallback={null}>
+            <MonstrinhoBody layout={L} />
+          </Suspense>
+        </IfModelLoads>
+      </Part3D>
     </group>
   );
 }

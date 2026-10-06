@@ -81,6 +81,14 @@ export default function Builder({ def, initial }: Props) {
     return () => clearTimeout(t);
   }, [toast]);
 
+  /**
+   * One row at a time, and only the row that was tapped.
+   *
+   * Choosing a body used to bring that creature's whole outfit with it — its own eyes, mouth,
+   * arms and legs. Clara asked for it to stop: "quando eu clicar no corpo, não quero que você
+   * escolhe automáticamente os braços, pernas, olhos e bocas". The child is the one choosing,
+   * and a body that overwrote four other choices undid their work.
+   */
   const pick = useCallback((category: PartCategory, option: PartOption) => {
     setParts((p) => ({ ...p, [category.id]: option.id }));
     setDirty(true);
@@ -166,6 +174,9 @@ export default function Builder({ def, initial }: Props) {
     playClick();
   };
 
+  // what the character is actually drawn in, which for the monster is decided by its body
+  const shownColors = def.colorsFor ? def.colorsFor(parts, colors) : colors;
+
   const sentence = def.sentence(parts, name || undefined);
   const readAloud = () => speak(sentence, { force: true, rate: 0.85 });
 
@@ -199,7 +210,7 @@ export default function Builder({ def, initial }: Props) {
       <div className="ws-body">
         <div className="ws-grid">
           {def.categories.map((c) => (
-            <PartRow key={c.id} def={def} category={c} value={parts[c.id]} onPick={pick} onErase={erase} />
+            <PartRow key={c.id} def={def} category={c} value={parts[c.id]} colors={shownColors} onPick={pick} onErase={erase} />
           ))}
           <ColorRow slots={def.colorSlots} colors={colors} onPick={pickColor} />
         </div>

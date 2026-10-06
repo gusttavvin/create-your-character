@@ -18,6 +18,8 @@ interface Props {
   layout?: LayoutMap;
   /** Lets the child drag the pieces of the model around. */
   editable?: boolean;
+  /** Holds the model facing the front instead of turning it, for looking at it side by side. */
+  still?: boolean;
   selected?: string | null;
   onSelect?: (categoryId: string | null) => void;
   onMove?: (categoryId: string, dx: number, dy: number, dz: number) => void;
@@ -91,7 +93,7 @@ function Idle({ children }: { children: React.ReactNode }) {
   return <group ref={ref}>{children}</group>;
 }
 
-export default function Character3D({ kind, parts, colors, layout, editable, selected, onSelect, onMove }: Props) {
+export default function Character3D({ kind, parts, colors, layout, editable, still, selected, onSelect, onMove }: Props) {
   const floor = useRef<Group>(null);
   // the model is re-measured when the pieces change, not while one is being dragged
   const sig = useMemo(() => kind + '|' + Object.entries(parts).sort().join(','), [kind, parts]);
@@ -123,15 +125,31 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
     <Canvas
       className="stage-canvas"
       dpr={[1, 2]}
+      /**
+       * No film tone curve.
+       *
+       * A renderer normally puts the picture through a cinema tone map before it reaches
+       * the screen, which rolls the bright colours off towards white and takes the punch
+       * out of them. The drawings these characters come from are flat, saturated colour
+       * and go to the screen exactly as painted, so the model has to as well — otherwise
+       * the same orange is vivid on the sheet and washed out on the model, which is
+       * exactly what Clara could see.
+       */
+      flat
       gl={{ alpha: true, antialias: true }}
       camera={{ position: [0, 0.4, 6.2], fov: 38 }}
       style={{ background: 'transparent' }}
       onPointerMissed={ctx.editable ? () => onSelect?.(null) : undefined}
     >
       <DevExpose />
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[4, 6, 5]} intensity={1.6} />
-      <directionalLight position={[-4, 2, -3]} intensity={0.5} />
+      {/* soft studio light: a broad fill that keeps the colours as painted, one key for
+          the form, and a cool rim so the silhouette lifts off the paper */}
+      {/* Lit to about one whole light on the side facing us, so a colour arrives on screen
+          as the colour it was painted, with the key only shaping the form. */}
+      <ambientLight intensity={0.95} />
+      <hemisphereLight args={['#ffffff', '#fff3e4', 0.4]} />
+      <directionalLight position={[3.5, 5.5, 6]} intensity={1.64} />
+      <directionalLight position={[-5, 2.5, -3]} intensity={0.46} color="#eaf0ff" />
       <Suspense fallback={null}>
         <Layout3DContext.Provider value={ctx}>
           <Fit sig={sig} floor={floor}>
@@ -161,7 +179,7 @@ export default function Character3D({ kind, parts, colors, layout, editable, sel
         minPolarAngle={0.6}
         maxPolarAngle={1.75}
         /* while a piece is picked the model holds still, so it is easy to place */
-        autoRotate={!(ctx.editable && selected)}
+        autoRotate={!still && !(ctx.editable && selected)}
         autoRotateSpeed={1.2}
         target={[0, 0, 0]}
         makeDefault

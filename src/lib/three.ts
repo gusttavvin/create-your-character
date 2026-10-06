@@ -7,7 +7,7 @@ export function useGradientMap(steps = 3) {
   return useMemo(() => {
     const data = new Uint8Array(steps * 4);
     for (let i = 0; i < steps; i++) {
-      const v = Math.round(255 * (0.55 + (0.45 * i) / (steps - 1)));
+      const v = Math.round(255 * (0.5 + (0.5 * i) / (steps - 1)));
       data.set([v, v, v, 255], i * 4);
     }
     const tex = new THREE.DataTexture(data, steps, 1, THREE.RGBAFormat);
@@ -246,4 +246,101 @@ export function latheBody(points: [number, number][], radial = 48, steps = 80) {
   const curve = new THREE.SplineCurve(points.map(([x, y]) => new THREE.Vector2(x, y)));
   const profile = curve.getPoints(steps).map((p) => new THREE.Vector2(Math.max(0, p.x), p.y));
   return new THREE.LatheGeometry(profile, radial);
+}
+
+/**
+ * Stamps one small shape out many times over and welds the copies into a single geometry.
+ *
+ * A monster's coat is a few hundred little tufts. Drawn as a few hundred meshes they cost
+ * a draw call each, and — worse — each one carries its own cartoon ink line, so the lines
+ * pile up between overlapping tufts and the whole coat goes muddy. Welded into one piece
+ * the coat takes a single ink line, which then traces the outside of the fur exactly the
+ * way it traces the outside of a body.
+ *
+ * `base` is used as a stencil and is not modified.
+ */
+export function stamp(base: THREE.BufferGeometry, at: THREE.Matrix4[]) {
+  const copies = at.map((m) => base.clone().applyMatrix4(m));
+  let points = 0;
+  let indices = 0;
+  for (const g of copies) {
+    points += g.attributes.position.count;
+    indices += g.index ? g.index.count : 0;
+  }
+  const position = new Float32Array(points * 3);
+  const normal = new Float32Array(points * 3);
+  const index = new Uint32Array(indices);
+  let p = 0;
+  let i = 0;
+  for (const g of copies) {
+    position.set(g.attributes.position.array as ArrayLike<number>, p * 3);
+    normal.set(g.attributes.normal.array as ArrayLike<number>, p * 3);
+    const gi = g.index;
+    if (gi) for (let k = 0; k < gi.count; k++) index[i + k] = gi.getX(k) + p;
+    p += g.attributes.position.count;
+    i += gi ? gi.count : 0;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  geo.setIndex(new THREE.BufferAttribute(index, 1));
+  return geo;
+}
+
+/**
+ * A bending limb that thins out along its length.
+ *
+ * THREE.TubeGeometry keeps one radius from end to end, which makes an arm or a leg read
+ * as a length of pipe; every limb in the kit is drawn fat where it leaves the body and
+ * narrow at the hand. This is the same swept tube, with the radius eased from `root` to
+ * `tip` as it travels.
+ */
+export function taperedTube(
+  points: [number, number, number][],
+  root: number,
+  tip: number,
+  steps = 40,
+  radial = 16,
+) {
+  const curve = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p)));
+  const frames = curve.computeFrenetFrames(steps, false);
+  const position: number[] = [];
+  const normal: number[] = [];
+  const index: number[] = [];
+  const p = new THREE.Vector3();
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    curve.getPointAt(t, p);
+    // eased so the limb keeps its bulk near the body and narrows towards the end
+    const r = root + (tip - root) * (t * t * (3 - 2 * t));
+    const N = frames.normals[i];
+    const B = frames.binormals[i];
+    for (let j = 0; j <= radial; j++) {
+      const a = (j / radial) * Math.PI * 2;
+      const nx = Math.cos(a) * N.x + Math.sin(a) * B.x;
+      const ny = Math.cos(a) * N.y + Math.sin(a) * B.y;
+      const nz = Math.cos(a) * N.z + Math.sin(a) * B.z;
+      position.push(p.x + nx * r, p.y + ny * r, p.z + nz * r);
+      normal.push(nx, ny, nz);
+    }
+  }
+  for (let i = 0; i < steps; i++) {
+    for (let j = 0; j < radial; j++) {
+      const a = i * (radial + 1) + j;
+      const b = a + radial + 1;
+      // wound so the faces look outwards: the other way round, the normals derived from
+      // them point into the limb and the toon shading paints the whole thing black
+      index.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  // The normals are the radial directions, as three's own TubeGeometry writes them, not
+  // ones measured off the triangles: a limb that doubles back on itself, like the snake
+  // leg, has triangles that face every which way, and reading the normals from them
+  // shattered the leg into loose red shards.
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+  geo.setIndex(index);
+  return geo;
 }

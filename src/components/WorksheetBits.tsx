@@ -1,4 +1,4 @@
-import type { CharacterDefinition, PartCategory, PartOption } from '../characters/types';
+import type { CharacterDefinition, ColorMap, PartCategory, PartOption } from '../characters/types';
 import { useDrag } from '../lib/drag';
 
 const UI = '/assets/monster/ui';
@@ -80,10 +80,12 @@ interface CardProps {
   category: PartCategory;
   option: PartOption;
   selected: boolean;
+  /** What the piece will look like once it is on the character. */
+  colors: ColorMap;
   onPick: (category: PartCategory, option: PartOption) => void;
 }
 
-export function OptionCard({ category, option, selected, onPick }: CardProps) {
+export function OptionCard({ category, option, selected, colors, onPick }: CardProps) {
   const Svg = option.Svg;
   const { beginDrag, drag } = useDrag();
   const held = drag?.option.id === option.id && drag.category.id === category.id;
@@ -101,7 +103,7 @@ export function OptionCard({ category, option, selected, onPick }: CardProps) {
       title={`${option.phrase} — drag me onto the picture`}
     >
       <span className="ws-card-art">
-        {option.img ? <img src={option.img} alt="" draggable={false} /> : Svg ? <Svg colors={{}} /> : null}
+        {option.img ? <img src={option.img} alt="" draggable={false} /> : Svg ? <Svg colors={colors} /> : null}
       </span>
       <span className="ws-card-label">{option.label}</span>
       {selected && (
@@ -117,21 +119,34 @@ export function PartRow({
   def,
   category,
   value,
+  colors,
   onPick,
   onErase,
 }: {
   def: CharacterDefinition;
   category: PartCategory;
   value: string;
+  colors: ColorMap;
   onPick: (category: PartCategory, option: PartOption) => void;
   onErase: (category: PartCategory) => void;
 }) {
   const erased = value === '';
+  // Each monster body is a whole creature and brings its own colour with it, so the four
+  // body cards show four colours. Every other card shows the piece in the colour the
+  // monster on the sheet is wearing, which is what the child gets when they pick it.
+  const cardColors = category.id === 'body' ? {} : colors;
   return (
     <div className="ws-row" data-cat={category.id}>
       <LabelTile def={def} category={category} />
       {category.options.map((o) => (
-        <OptionCard key={o.id} category={category} option={o} selected={value === o.id} onPick={onPick} />
+        <OptionCard
+          key={o.id}
+          category={category}
+          option={o}
+          selected={value === o.id}
+          colors={cardColors}
+          onPick={onPick}
+        />
       ))}
       {category.optional ? (
         <button

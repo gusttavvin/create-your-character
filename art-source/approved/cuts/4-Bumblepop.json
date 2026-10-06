@@ -1,0 +1,257 @@
+{
+ "monster": "4-Bumblepop",
+ "body": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  48
+ ],
+ "eyes": [
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43,
+  44
+ ],
+ "mouth": [
+  45,
+  46,
+  47
+ ],
+ "arms": [
+  12,
+  13,
+  14,
+  15
+ ],
+ "legs": [
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "unassigned": [],
+ "armsScreenLeft": [
+  12,
+  13
+ ],
+ "armsScreenRight": [
+  14,
+  15
+ ],
+ "legsScreenLeft": [
+  6,
+  8,
+  9
+ ],
+ "legsScreenRight": [
+  7,
+  10,
+  11
+ ],
+ "armsSymmetric": true,
+ "legsSymmetric": true,
+ "colorRoles": [
+  {
+   "value": "url(#skinHead)",
+   "role": "main",
+   "usedBy": [
+    25
+   ]
+  },
+  {
+   "value": "url(#skinBody)",
+   "role": "main",
+   "usedBy": [
+    16
+   ]
+  },
+  {
+   "value": "#FFD24A",
+   "role": "main",
+   "usedBy": [
+    12,
+    14
+   ]
+  },
+  {
+   "value": "#FFDC66",
+   "role": "main",
+   "usedBy": [
+    13,
+    15
+   ]
+  },
+  {
+   "value": "url(#bellyFill)",
+   "role": "light",
+   "usedBy": [
+    18
+   ]
+  },
+  {
+   "value": "#FFF0B4",
+   "role": "light",
+   "usedBy": [
+    26
+   ]
+  },
+  {
+   "value": "#FFAE2B",
+   "role": "dark",
+   "usedBy": [
+    19,
+    20,
+    21
+   ]
+  },
+  {
+   "value": "#FBA61F",
+   "role": "dark",
+   "usedBy": [
+    6,
+    7
+   ]
+  },
+  {
+   "value": "#F7B849",
+   "role": "dark",
+   "usedBy": [
+    23
+   ]
+  },
+  {
+   "value": "#EE9A1B",
+   "role": "dark",
+   "usedBy": [
+    17
+   ]
+  },
+  {
+   "value": "#DE8318",
+   "role": "dark",
+   "usedBy": [
+    29,
+    30,
+    31,
+    32,
+    33,
+    34
+   ]
+  },
+  {
+   "value": "#0B1B3B",
+   "role": "ink",
+   "usedBy": [
+    0,
+    1,
+    2,
+    3,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    18,
+    22,
+    24,
+    25,
+    35,
+    36,
+    37,
+    38,
+    45,
+    48
+   ]
+  },
+  {
+   "value": "#FFFFFF",
+   "role": "white",
+   "usedBy": [
+    4,
+    5,
+    37,
+    38,
+    41,
+    42,
+    43,
+    44,
+    47
+   ]
+  },
+  {
+   "value": "#FFA8C0",
+   "role": "cheek",
+   "usedBy": [
+    27,
+    28
+   ]
+  },
+  {
+   "value": "#FF8FB3",
+   "role": "accent",
+   "usedBy": [
+    2,
+    3
+   ]
+  },
+  {
+   "value": "#12244E",
+   "role": "pupil",
+   "usedBy": [
+    39,
+    40
+   ]
+  },
+  {
+   "value": "#7C2C4F",
+   "role": "mouthDark",
+   "usedBy": [
+    45
+   ]
+  },
+  {
+   "value": "#FF87A9",
+   "role": "mouthPink",
+   "usedBy": [
+    46
+   ]
+  }
+ ],
+ "notes": "49 shapes, indices 0-48, each assigned exactly once (body 26, eyes 10, mouth 3, arms 4, legs 6).\n\nDOUBLE-DRAWN SILHOUETTES (both copies belong to BODY):\n- Body: 16 is the filled copy (fill url(#skinBody) + stroke), 24 is the identical path re-drawn stroke-only (fill none) to put the outline back on top of the belly and shading. Same \"d\" apart from the closing Z.\n- Head: 25 is the filled copy (fill url(#skinHead) + stroke), 48 is the same path byte-for-byte, stroke-only, drawn last of all so the head outline sits above the eyes and mouth. Both belong to BODY, so the head outline will be repainted with the body piece, not the eyes.\n\nTHREE GRADIENTS instead of flat fills: url(#skinHead) #FFE47B -> #FCAC1F (head), url(#skinBody) #FFDC5F -> #F6A119 (body), url(#bellyFill) #FFF9E0 -> #FFE293 (belly). A recolouring routine must rewrite the gradient stops in <defs>, not just the fill attribute. All three defs entries are skipped by the flattener and carry no index.\n\nANTENNAE (BODY, not eyes): 0/1 are the navy stems, 2/3 the pink balls, 4/5 the small white catchlights on those balls. 4 and 5 are white circles that look like eye catchlights but sit at y=29/25, far above the head (head starts y=78), so they go with the antennae.\n\nSHAPES THAT COULD BE MISFILED:\n- 22 (navy curve at 250,500) is a belly-button line in the middle of the belly, 240px below the mouth. It is BODY shading detail, not a mouth.\n- 23 (#F7B849 at y 318-352) is the chin/neck shadow where head overlaps body: it straddles the head/body seam but is painted on the body silhouette, so BODY.\n- 17 (#EE9A1B) is the large shading patch down the screen-right side of the body; it has no stroke.\n- 35/36 are eyebrows (navy strokes at y~92-114, above the eyeballs) and belong to EYES, not to the antennae stems they sit near.\n- 47 is a white tooth, not a catchlight: it hangs from the upper lip inside the mouth cavity (y 251-283), so MOUTH.\n- Eyes have no separate iris ring: white eyeball (37/38) + one solid #12244E disc (39/40) that serves as iris and pupil + white catchlights (41-44, two per eye).\n\nPAIRING / MIRRORING (mirror axis is x=260, half of the 520 canvas):\n- Arms are an exact x-mirror of each other (192<->328, 146<->374, sums = 520), but the screen-right arm and hand are translated 8 units UP (y 384 vs 392, 338 vs 346). Same drawing mirrored, one pair raised slightly; not a different pose.\n- Legs are a near-mirror, hand-tweaked by 2-4 units: 218<->302 and 214<->306 are exact, but 168 mirrors to 352 while the right leg uses 350, and the right foot sits ~4 units lower (552 vs 548). Toe lines match the same way (136<->384 exact, 168<->354 off by 2). Treat as one mirrored drawing with a small jitter, not two separate poses.\n\nCOLOUR CAUTION FOR REPAINTING: there are FIVE distinct darker yellows, all shading versions of the one base yellow, ordered light to dark: #FFAE2B (belly spots) < #FBA61F (feet/legs) < #F7B849 (neck shadow) < #EE9A1B (body shadow) < #DE8318 (freckles). #FFDC66 (hands/claws, 13 and 15) is marked \"main\" rather than \"light\" on purpose: it is only a shade lighter than the arms' #FFD24A so the hands read in front of the arms. Repainting it with the pale belly tone would wash the hands out. Three different pinks must never be merged: #FFA8C0 cheeks, #FF8FB3 antenna balls (accent), #FF87A9 tongue. Fixed colours that must survive any recolour: #0B1B3B outline, #FFFFFF, #12244E pupils, #7C2C4F mouth cavity, and the three pinks.\n\nProcess note: the flat JSON was not on disk at first read (files 1, 2, 3 and 5 existed; 4 and 6 were still being written) and appeared a minute later. I read the real file before answering; its 49 entries match the SVG's drawable elements in document order one-to-one. No files were edited."
+}

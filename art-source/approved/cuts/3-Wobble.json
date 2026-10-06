@@ -1,0 +1,250 @@
+{
+ "arms": [
+  12,
+  13,
+  14,
+  15
+ ],
+ "armsScreenLeft": [
+  12,
+  14
+ ],
+ "armsScreenRight": [
+  13,
+  15
+ ],
+ "armsSymmetric": false,
+ "body": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  40,
+  41
+ ],
+ "colorRoles": [
+  {
+   "value": "url(#skin)",
+   "role": "main",
+   "usedBy": [
+    16
+   ]
+  },
+  {
+   "value": "#5CDFC3",
+   "role": "main",
+   "usedBy": [
+    0,
+    14,
+    15
+   ]
+  },
+  {
+   "value": "#57DCC0",
+   "role": "dark",
+   "usedBy": [
+    8,
+    9
+   ]
+  },
+  {
+   "value": "#54DABE",
+   "role": "dark",
+   "usedBy": [
+    2,
+    4
+   ]
+  },
+  {
+   "value": "#4BD4B9",
+   "role": "dark",
+   "usedBy": [
+    12,
+    13
+   ]
+  },
+  {
+   "value": "#41CDB2",
+   "role": "dark",
+   "usedBy": [
+    6,
+    7
+   ]
+  },
+  {
+   "value": "#31BCA2",
+   "role": "dark",
+   "usedBy": [
+    18,
+    19,
+    20,
+    21
+   ]
+  },
+  {
+   "value": "url(#belly)",
+   "role": "light",
+   "usedBy": [
+    17
+   ]
+  },
+  {
+   "value": "#9DEFDC",
+   "role": "light",
+   "usedBy": [
+    3,
+    5
+   ]
+  },
+  {
+   "value": "#C9F7EA",
+   "role": "light",
+   "usedBy": [
+    10,
+    11
+   ]
+  },
+  {
+   "value": "#EEFFFA",
+   "role": "light",
+   "usedBy": [
+    24
+   ]
+  },
+  {
+   "value": "#FFC46B",
+   "role": "accent",
+   "usedBy": [
+    1
+   ]
+  },
+  {
+   "value": "#0B1B3B",
+   "role": "ink",
+   "usedBy": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    7,
+    8,
+    9,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    25,
+    29,
+    33,
+    36,
+    37,
+    38,
+    39
+   ]
+  },
+  {
+   "value": "#FFFFFF",
+   "role": "white",
+   "usedBy": [
+    22,
+    23,
+    25,
+    27,
+    28,
+    29,
+    31,
+    32,
+    33,
+    35,
+    37,
+    38
+   ]
+  },
+  {
+   "value": "#12224A",
+   "role": "pupil",
+   "usedBy": [
+    26,
+    30,
+    34
+   ]
+  },
+  {
+   "value": "#D8486E",
+   "role": "mouthDark",
+   "usedBy": [
+    36
+   ]
+  },
+  {
+   "value": "#FF8FAE",
+   "role": "mouthPink",
+   "usedBy": [
+    39
+   ]
+  },
+  {
+   "value": "#FF9BB8",
+   "role": "cheek",
+   "usedBy": [
+    40,
+    41
+   ]
+  }
+ ],
+ "eyes": [
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35
+ ],
+ "legs": [
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "legsScreenLeft": [
+  6,
+  8,
+  10
+ ],
+ "legsScreenRight": [
+  7,
+  9,
+  11
+ ],
+ "legsSymmetric": true,
+ "monster": "Wobble",
+ "mouth": [
+  36,
+  37,
+  38,
+  39
+ ],
+ "unassigned": [],
+ "notes": "No shape is drawn twice: there is NO stroke-only silhouette overlay in this drawing. The silhouette (16) is a single filled+stroked path, and the outline stays on top only because the ears (2,4), arms (12,13), hands (14,15), legs (6,7) and feet (8,9) are all painted BEFORE 16, so they are tucked behind the body and only the parts sticking out are visible. Anything painted after 16 (belly 17, spots 18-21, belly highlights 22-23, head shine 24, eyes, mouth, cheeks) sits on top of the body.\n\nPart-by-part reasoning from the coordinates (canvas 520 wide, so screen-left is x < 260):\n- BODY: 0 = the little antenna stalk (x 248-268, y 46-80); 1 = the orange antenna ball (cx 280, cy 40); 2 + 3 = screen-left ear/fin (x 64-154) with its pale inner patch; 4 + 5 = screen-right ear/fin (x 368-462) with its pale inner patch; 16 = main silhouette (gradient skin); 17 = pale belly (gradient); 18-21 = four dark spots (158,404 / 154,442 / 358,434 / 352,392) which sit on the silhouette, just outside the belly edge; 22-23 = two small white highlight ellipses on the belly (206,382 and 192,408); 24 = pale shine patch on the upper-left of the head (x 136-210, y 80-160); 40-41 = blush cheeks (148,248 and 370,252).\n- EYES: THREE eyes, not two, and they are NOT symmetric. Big screen-left eye 25 (cx 200, r 54) with pupil 26 and catchlights 27-28; smaller screen-right eye 29 (cx 326, r 38) with pupil 30 and catchlights 31-32; plus a small third eye 33 (cx 262, cy 98, r 22) high on the forehead under the antenna, with pupil 34 and catchlight 35. Different radii (54 vs 38 vs 22) mean each eye must be its own drawing, not a mirror.\n- MOUTH: 36 cavity, 37 + 38 the two teeth (thinner stroke-width 3), 39 tongue. There is no separate lip shape.\n- ARMS: 12 = screen-left arm (x 98-200, y 348-426) with hand 14 (x 36-110, y 366-438); 13 = screen-right arm (x 318-430, y 374-470) with hand 15 (x 406-480, y 416-488). Posed differently, so armsSymmetric is false: point by point, arm 13 is the mirror of arm 12 but progressively dropped, from +26 at the shoulder to +44 at the elbow, and hand 15 is exactly hand 14 mirrored and moved 50 units DOWN. So the right arm droops lower than the left; mirroring alone will not reproduce it.\n- LEGS: 6 = screen-left leg with foot 8 (cx 198) and toe/foot highlight 10 (cx 172); 7 = screen-right leg with foot 9 (cx 322) and highlight 11 (cx 348). Feet and highlights mirror exactly across x=260 (198 <-> 322, 172 <-> 348, same rx/ry); leg path 7 is the mirror of leg 6 shifted 4 units right, a tiny wobble. Treated as symmetric.\n\nColour warnings for repainting:\n- Two gradients, not flat fills: url(#skin) is the base colour (#84F2DA -> #5CDFC3 -> #31BCA2) and url(#belly) is the pale belly (#EDFFFA -> #B4F4E2). Both gradients must be recoloured together with the flat greens or the body and its limbs will stop matching.\n- There is a whole ramp of five darker greens, not just one or two: #57DCC0 (feet), #54DABE (ears), #4BD4B9 (arms), #41CDB2 (legs), #31BCA2 (spots, also the gradient's darkest stop). #5CDFC3 is the base and is reused for the antenna stalk and both hands.\n- Three pale greens: #9DEFDC (inner ears), #C9F7EA (foot highlights), #EEFFFA (head shine).\n- #FFFFFF is doing two jobs: the eyeballs and teeth (must stay white) AND the two belly highlights 22-23. If white is ever remapped, exclude 22 and 23 or they will follow the eyes.\n- Must never change: #0B1B3B outline, #12224A pupils (no separate iris shape exists), #D8486E mouth cavity, #FF8FAE tongue, #FF9BB8 cheeks, #FFC46B antenna ball.\n- Stroke-width is 4 everywhere except the teeth (37, 38) and tongue (39), which use 3. Shapes with stroke \"none\" (3, 5, 10, 11, 18-24, 26-28, 30-32, 34, 35, 40, 41) have no outline and must keep it that way.\n\nNo file was edited."
+}

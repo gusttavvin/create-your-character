@@ -63,7 +63,7 @@ export default function Character2D({ kind, parts, colors, layout, animate = tru
       ) : kind === 'fairy' ? (
         <Fairy2D {...common} />
       ) : (
-        <Monster2D parts={parts} animate={animate} className={className} />
+        <Monster2D {...common} />
       )}
     </div>
   );

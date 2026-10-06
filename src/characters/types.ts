@@ -91,6 +91,26 @@ export interface CharacterDefinition {
    * the category's default instead of the piece they chose.
    */
   renamed?: Record<string, Record<string, string>>;
+  /**
+   * The rest of the outfit an option arrives wearing, as `option id -> the other parts`.
+   *
+   * The monster's four bodies are four whole creatures Clara approved, and this is what
+   * each one wears in its own drawing.
+   *
+   * Picking a body does NOT put this on any more — Clara asked for a tap to change the row
+   * it was aimed at and nothing else. What the table is still for: it names the pieces the
+   * sculpted monster carries himself, so the 3D knows which choice is his and which has to
+   * be built; and the comparison page dresses each body as its own creature to check the
+   * kit against the approved drawings.
+   */
+  outfits?: Record<string, PartMap>;
+  /**
+   * The colours a character is actually drawn in, when they are not the ones the child
+   * picked. The monster has no colour picker: each of its bodies is one of the creatures
+   * Clara approved and brings that creature's colour with it, so the worksheet has to ask
+   * the character what it is wearing rather than read it off the palette.
+   */
+  colorsFor?: (parts: PartMap, chosen: ColorMap) => ColorMap;
   /** Builds the English sentence that describes the character. */
   sentence: (parts: PartMap, name?: string) => string;
 }
