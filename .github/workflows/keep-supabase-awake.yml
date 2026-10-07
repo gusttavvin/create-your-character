@@ -1,43 +1,81 @@
 name: Keep Supabase awake
 
-# Supabase pauses a free project after about a week without activity, which would
-# take down sign-in, saving and the teacher area until someone unpauses it by hand.
-# A tiny read once a day counts as activity, so the project never goes to sleep
-# during a school break.
+# Supabase pauses a free project after about a week without activity, which takes
+# down sign-in, saving and the teacher area until someone resumes it by hand.
+#
+# A single read once a day was not enough: the project was paused on 5 Oct 2026 with
+# the ping running every day. So the ping now does what a class does — it writes to the
+# database (the keepalive() function stamps a row), reads the tables and asks the
+# sign-in service — twice a day. And when it fails it opens an issue on the repository,
+# which e-mails the owner the same day instead of failing quietly.
 
 on:
   schedule:
     - cron: '17 12 * * *' # every day, 09:17 in Brasília
+    - cron: '47 23 * * *' # and 20:47
   workflow_dispatch: # and whenever you press "Run workflow"
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Read one row from the database
+      - name: Write, read and sign-in, like a class would
         env:
           URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          code=$(curl -sS -o /tmp/body -w '%{http_code}' \
-            "$URL/rest/v1/characters?select=id&limit=1" \
-            -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
-          echo "HTTP $code"
-          head -c 300 /tmp/body; echo
-          if [ "$code" != "200" ]; then
-            echo "::error::Supabase answered $code — the project may be paused. Open https://supabase.com/dashboard to restore it."
+          # one call, tried three times so a passing hiccup is not taken for a pause
+          call() {
+            name=$1; shift
+            for try in 1 2 3; do
+              code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 30 \
+                -H "apikey: $KEY" -H "Authorization: Bearer $KEY" "$@") || code=000
+              if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+                echo "$name: HTTP $code"
+                return 0
+              fi
+              echo "$name: HTTP $code (try $try)"; head -c 300 /tmp/body 2>/dev/null; echo
+              sleep 20
+            done
+            return 1
+          }
+          ok=0
+          call "write heartbeat" -X POST -H 'Content-Type: application/json' -d '{}' "$URL/rest/v1/rpc/keepalive" || ok=1
+          call "read characters" "$URL/rest/v1/characters?select=id&limit=1" || ok=1
+          call "read classes" "$URL/rest/v1/classes?select=id&limit=1" || ok=1
+          call "sign-in service" "$URL/auth/v1/health" || ok=1
+          if [ "$ok" != "0" ]; then
+            echo "::error::Supabase did not answer — the project may be paused. Open https://supabase.com/dashboard to resume it."
             exit 1
           fi
+
+      - name: Tell the owner (opens an issue, which sends an e-mail)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title='Supabase is not answering — the site cannot sign in or save'
+          if gh issue list --state open --search "$title in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "An issue is already open."
+            exit 0
+          fi
+          gh issue create --title "$title" --body "The daily ping to Supabase failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Teacher sign-in, classes and saving to the cloud are down until the project is back.
+          1. Open https://supabase.com/dashboard and, if the project says **paused**, press **Resume project**.
+          2. When it is back, run this workflow again (Actions → Keep Supabase awake → Run workflow) and close this issue."
 
   # GitHub switches scheduled workflows off after 60 days with no commits, which
   # would quietly stop the ping above. One commit a month keeps the repository
   # awake so the schedule keeps running on its own.
   heartbeat:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' && github.event.schedule == '17 12 * * *' # once a day is enough
     steps:
       - uses: actions/checkout@v4
       - name: Stamp the date on the first of the month

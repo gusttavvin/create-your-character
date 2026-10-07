@@ -188,3 +188,29 @@ alter table public.characters
 -- character comes back exactly as it was arranged.
 alter table public.characters
   add column if not exists layout jsonb not null default '{}'::jsonb;
+
+-- ------------------------------------------------------------------ keepalive
+-- Supabase pauses a free project that sits idle for about a week. A plain read once a
+-- day did not count (the project was paused on 5 Oct 2026 with the ping running), so the
+-- GitHub workflow .github/workflows/keep-supabase-awake.yml calls this function: it
+-- writes one row, which is real database activity. One row only, overwritten each time;
+-- the table holds nothing else and nobody can read it through the API.
+create table if not exists public.keepalive (
+  id smallint primary key default 1 check (id = 1),
+  pinged_at timestamptz not null default now()
+);
+alter table public.keepalive enable row level security;
+
+create or replace function public.keepalive()
+returns timestamptz
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.keepalive (id, pinged_at) values (1, now())
+  on conflict (id) do update set pinged_at = excluded.pinged_at
+  returning pinged_at;
+$$;
+
+revoke all on function public.keepalive() from public;
+grant execute on function public.keepalive() to anon, authenticated;

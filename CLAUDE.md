@@ -50,13 +50,20 @@ npm run build    # confere os tipos e gera o site
   (`MemoryGame`, palavras em `MemoryWords` e `src/games/memory/`) e roleta (`WheelGame`).
 - `src/characters/<personagem>/` — monster, dragon, princess, superhero, fairy:
   - `config.ts`: linhas da folha (categorias), opções, cores e a frase em inglês.
-  - `parts.tsx`: desenhos 2D em SVG, cada peça numa caixa 512×512. O monstro é a exceção:
-    suas peças 2D são imagens em `public/assets/monster/parts/`.
+  - `parts.tsx`: desenhos 2D em SVG, cada peça numa caixa 512×512. As do monstro são
+    geradas a partir dos seis monstros que a Clara aprovou, pelos scripts em
+    `art-source/approved/` (veja o README de lá); não edite à mão o que é gerado.
   - `<Nome>2D.tsx`: monta as camadas 2D (folha de 600×720 unidades).
   - `<Nome>3D.tsx`: o personagem em 3D.
 - A fada em 3D é um modelo pronto: `public/models/fadinha.glb`, carregado por
   `src/components/Fadinha.tsx` (veja `docs/fadinha-glb.md`). Cada linha da folha comanda
   grupos do modelo em `Fairy3D.tsx`. O desenho 2D da fada segue o visual desse modelo.
+- O monstro em 3D: o corpo *round* é o modelo `public/models/monstrinho.glb`
+  (`Monstrinho.tsx`, `docs/monstrinho-glb.md`); os outros corpos e peças são o desenho 2D
+  ganhando volume (`src/lib/svg3d.ts`, `monster/paths3d.ts`). No 3D o monstro se monta
+  sozinho: as peças não são arrastáveis (`movable3d.ts`).
+- O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
+  `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/
   redimensionar (`SizeRail`, `AdjustBar`). `Part3D.tsx` (`useDragPart`) faz o mesmo no 3D.
 - `TASKS.md` — lista de pedidos da Clara e o que já foi feito. Atualize ao terminar algo.
