@@ -608,3 +608,27 @@ olho sobre os quatro corpos; o laranja continua igual ao modelo; e o 2D não mud
 **Ainda limitado:** visto de exatamente 90 graus, as abas laterais do corpo ovo (e as dos
 outros corpos desenhados) são finas demais e aparecem como uma fatia escura — um desenho
 chato visto de perfil é uma lâmina. Isso só se resolve modelando essas abas, como o laranja.
+
+## Biblioteca GLB para todas as opções do monstro — 7 de outubro de 2026
+
+- [x] Criados quinze GLBs para os três corpos e doze opções que ainda não tinham modelo.
+      Cores e silhuetas seguem os desenhos aprovados; o volume foi modelado por um
+      gerador reproduzível. Dedos têm espessura própria, olhos têm globos separados e
+      detalhes do rosto acompanham a superfície do corpo.
+- [x] A montagem usa GLBs em todas as opções e permite peças do laranja nos outros
+      corpos. O GLB original foi preservado. O encaixe dos olhos trata cada globo
+      separadamente e corrige a inclinação herdada do rosto original.
+- [x] Materiais e geometrias isolados por instância. Falha de carregamento de uma peça
+      aciona somente o fallback daquela fileira, sem impedir o resto da montagem.
+- [x] Desenhos 2D, IDs, frases e formato salvo preservados.
+- [x] Quinze arquivos validados sem erros/avisos e abaixo de 2 MB cada; build aprovado.
+      Matrizes dos quatro corpos com cada opção, nos quatro ângulos, conferidas no
+      navegador: 256 casos, sem coordenadas inválidas nem materiais compartilhados.
+- [x] Falha de carregamento simulada e recuperação conferida. Personagem salvo e
+      reaberto no modo convidado, mantendo escolhas e frase ao alternar 2D/3D.
+- [x] Gerador, catálogo, relatório glTF e página local `monster-review.html` incluídos.
+      Detalhes em `docs/monster-model-library.md`.
+
+**Ainda pendente:** aprovação visual de Gustavo/Clara e medição de desempenho em
+celulares. A garra tem cerca de 102 mil triângulos; não há LOD. As matrizes não cobrem
+exaustivamente todas as combinações simultâneas. Salvamento remoto não foi testado.
