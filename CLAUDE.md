@@ -58,15 +58,93 @@ npm run build    # confere os tipos e gera o site
 - A fada em 3D é um modelo pronto: `public/models/fadinha.glb`, carregado por
   `src/components/Fadinha.tsx` (veja `docs/fadinha-glb.md`). Cada linha da folha comanda
   grupos do modelo em `Fairy3D.tsx`. O desenho 2D da fada segue o visual desse modelo.
-- O monstro em 3D: o corpo *round* é o modelo `public/models/monstrinho.glb`
-  (`Monstrinho.tsx`, `docs/monstrinho-glb.md`); os outros corpos e peças são o desenho 2D
-  ganhando volume (`src/lib/svg3d.ts`, `monster/paths3d.ts`). No 3D o monstro se monta
+- O monstro em 3D usa `public/models/monstrinho.glb` para as peças originais e a biblioteca
+  de GLBs em `public/models/monster/` para as demais opções. A montagem e o encaixe ficam em
+  `monster/Monster3D.tsx`; `Monster3DFallback.tsx` mantém a construção antiga somente para
+  falhas de carregamento. Leia `docs/monster-model-library.md`. No 3D o monstro se monta
   sozinho: as peças não são arrastáveis (`movable3d.ts`).
 - O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
   `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/
   redimensionar (`SizeRail`, `AdjustBar`). `Part3D.tsx` (`useDragPart`) faz o mesmo no 3D.
 - `TASKS.md` — lista de pedidos da Clara e o que já foi feito. Atualize ao terminar algo.
+
+## Como criar ou alterar um monstro 3D
+
+Antes de modelar, leia `docs/monster-model-library.md`, a seção mais recente do monstro em
+`TASKS.md`, `src/characters/monster/config.ts`, `layout.ts` e `Monster3D.tsx`. Confira também
+o desenho aprovado em `art-source/approved/`. Uma imagem é referência visual, não um modelo
+pronto: se não existe um GLB para aquela opção, ele precisa ser construído e validado.
+
+### Contrato de cada modelo
+
+- Entregue um `.glb` glTF 2.0 em `public/models/monster/<id>.glb`.
+- Use metros, Y para cima, frente em +Z, base em Y=0 e centro em X/Z na origem.
+- O grupo raiz é `<fileira>_<id>` (`body_egg`, `eyes_one`, `arms_claw` etc.). Dê nomes
+  estáveis às submalhas e aos materiais de cada região visível.
+- Use materiais PBR (`MeshStandardMaterial`). Cores podem ser fatores dos materiais; não
+  crie dependências de arquivos externos. Não use Draco ou KTX2 sem antes preparar os
+  carregadores do site.
+- Não adicione rig ou animações. O movimento leve é feito no código.
+- Um GLB da biblioteca representa uma peça ou um par, não um personagem completo. A altura
+  de 1,20 m é a referência do personagem completo original.
+- Procure manter cada arquivo abaixo de 2 MB. Evite polígonos que não mudam a silhueta.
+
+### Qualidade da modelagem
+
+- Siga a silhueta, as proporções e as cores do 2D aprovado. Profundidade é uma decisão 3D:
+  confira sempre frente, três quartos, lado e costas.
+- Não infle uma peça inteira com um raio único. Palma, dedos, tentáculos, pernas e pontas
+  precisam de espessuras locais; um dedo fino não pode ficar grosso como a palma.
+- Faça corpos como volumes fechados. Modele olhos como globos separados, assente cada olho
+  individualmente na pele e mantenha pupila/íris ligeiramente acima do globo para não piscar.
+- Faça boca pintada acompanhar a superfície do corpo; bico, dente e outras formas salientes
+  mantêm volume próprio. Marcas, barriga e bochechas devem seguir a pele sem disputar a
+  mesma profundidade.
+- O GLB laranja contém somente `round`, `angry`, `tongue`, `fuzzy` e `paws`. Essas peças
+  podem ser encaixadas em outros corpos, mas o arquivo não contém versões das outras opções.
+
+### Gerar e integrar
+
+O gerador oficial é `art-source/approved/model-library.mjs`. Com as dependências instaladas:
+
+```bash
+npm run models:monster
+```
+
+Ele recria os GLBs procedurais, `src/characters/monster/model-library.json` (grupos, caixas e
+superfícies frontais) e `docs/monster-model-validation.json`. Ao adicionar um ID, mantenha o
+mesmo ID de `config.ts`, inclua-o no gerador/catálogo e faça `Monster3D.tsx` carregá-lo pela
+fileira correta. Não altere o GLB original nem o cache retornado por `useGLTF`: cada instância
+visível precisa clonar seus materiais e qualquer geometria que for deformada, liberando
+somente os recursos que ela própria criou.
+
+Mantenha o fallback por fileira: se um GLB falhar, apenas aquela peça usa
+`Monster3DFallback.tsx`; o restante do personagem deve continuar em 3D. Não use o fallback
+como padrão nem como referência de qualidade.
+
+### O que não pode quebrar
+
+- Não mude o 2D, os IDs, as frases ou o formato dos personagens salvos sem pedido explícito.
+- Escolher um corpo não pode escolher automaticamente olhos, boca, braços ou pernas.
+- Peças do mesmo ID precisam continuar funcionando em todos os quatro corpos.
+- Não guarde medições de objetos Three.js em estado React e não compartilhe materiais
+  mutáveis entre personagens.
+
+### Verificação obrigatória
+
+1. Rode `npm run models:monster` quando o gerador ou um modelo procedural mudar e exija zero
+   erros e zero avisos no relatório glTF.
+2. Rode `npm run dev` e abra `http://localhost:9090/monster-review.html`.
+3. Compare 2D e 3D. Para a fileira alterada, teste as quatro opções sobre os quatro corpos,
+   de frente, três quartos, lado e costas. Use `Check model instances`: coordenadas inválidas
+   e materiais compartilhados devem ficar em zero.
+4. Simule a falha do novo arquivo e confirme o fallback isolado; restaure o arquivo depois.
+5. No jogo real, escolha as peças, alterne 2D/3D, salve como convidado e reabra o personagem.
+   Confira a frase e o console do navegador.
+6. Rode `npm run build`. Registre no `TASKS.md` o que mudou, os testes e limitações reais,
+   como quantidade de triângulos, ausência de LOD ou desempenho móvel ainda não medido.
+7. Mostre imagens para aprovação. Só faça commit e push depois da confirmação explícita.
 
 ## Cuidados que já custaram caro
 
