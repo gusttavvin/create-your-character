@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MemoryItem } from '../games/memory/decks';
-import { allPacks, type Pack } from '../games/memory/packs';
+import { allPacks, centreSavedPictures, type Pack } from '../games/memory/packs';
 import PictureCredits from '../games/memory/Credits';
 import ItemPicture from '../games/memory/ItemPicture';
 import { speak } from '../lib/speech';
@@ -91,6 +91,11 @@ export default function MemoryGame() {
   );
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  // pictures chosen before they were centred are centred now; the event below reloads them
+  useEffect(() => {
+    void centreSavedPictures();
+  }, []);
 
   // a pack saved in the words page shows up here without reloading the site
   useEffect(() => {
@@ -242,13 +247,15 @@ export default function MemoryGame() {
         {cards.map((card, place) => {
           const isUp = up.includes(card.key) || found.includes(card.pair);
           const isFound = found.includes(card.pair);
+          // the pack as it is now, so a picture changed or centred since the deal shows up
+          const item = deck.items.find((i) => i.word === card.item.word) ?? card.item;
           return (
             <button
               key={card.key}
               type="button"
               className={`mcard${isUp ? ' is-up' : ''}${isFound ? ' is-found' : ''}`}
               onClick={() => flip(card)}
-              aria-label={isUp ? caps(card.item.word) : `Card ${place + 1}`}
+              aria-label={isUp ? caps(item.word) : `Card ${place + 1}`}
             >
               <span className="mcard-inner">
                 {/* a number, so the class can call out which two cards to turn */}
@@ -258,7 +265,7 @@ export default function MemoryGame() {
                 <span className="mcard-front">
                   {card.face === 'picture' ? (
                     <>
-                      <ItemPicture item={card.item} className="mcard-emoji" />
+                      <ItemPicture item={item} className="mcard-emoji" />
                       {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
                     </>
                   ) : (

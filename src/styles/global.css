@@ -2313,13 +2313,13 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   line-height: 1;
 }
 
-/* a picture from the teacher's computer: as big as the card allows, never cropped */
+/* a chosen picture: as big as the card allows, whole and in the middle (no rounded corners
+   to shave off whatever reaches the edge) */
 .mcard-emoji.is-photo {
   width: 88%;
   min-height: 0;
   flex: 1 1 auto;
   object-fit: contain;
-  border-radius: 10px;
 }
 
 .mcard-word,

@@ -1,4 +1,5 @@
 import { DECKS, DECK_BY_ID, type MemoryDeck, type MemoryItem } from './decks';
+import { needsCentring, recentre } from './images';
 
 const STORE = 'funny-games:memory-packs';
 
@@ -110,4 +111,36 @@ export const MIN_ITEMS = 3;
 
 export function newPackId() {
   return `my-${Date.now().toString(36)}`;
+}
+
+let centring: Promise<boolean> | null = null;
+
+/**
+ * Centres the pictures chosen before pictures were centred.
+ *
+ * Clara had already picked a fish that sat low in its square and looked cut off at the
+ * bottom; she should not have to pick it again. Each kept picture is measured, and only the
+ * ones that are off-centre are redrawn — a centred one measures as centred, so this costs
+ * nothing the next time the game opens. Says whether anything changed.
+ */
+export function centreSavedPictures(): Promise<boolean> {
+  centring ??= (async () => {
+    const packs = readPacks();
+    let changed = false;
+    for (const pack of packs) {
+      for (const item of pack.items) {
+        if (!item.image) continue;
+        try {
+          if (!(await needsCentring(item.image))) continue;
+          item.image = await recentre(item.image);
+          changed = true;
+        } catch {
+          // a picture that will not open is left as it was
+        }
+      }
+    }
+    if (changed) writePacks(packs);
+    return changed;
+  })();
+  return centring;
 }

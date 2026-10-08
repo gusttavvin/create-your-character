@@ -708,3 +708,26 @@ Clara: "quando eu mudar pra algum pairs ímpar, centralize a última linha".
       A mesa agora são linhas que quebram e se centralizam (em vez de uma grade): cada carta
       continua com a largura de uma coluna, e as que sobram ficam no meio.
       Conferido de 3 a 10 pares, medindo o espaço dos dois lados, no computador e no celular.
+
+## Jogo da memória: figura escolhida sempre no meio — 8 de outubro de 2026
+
+Clara: "eu escolhi um para o fish, mas cortou ele embaixo, sempre centralize a imagem
+escolhida".
+
+- [x] **A causa era a própria figura.** As coleções não centralizam os desenhos: o peixe da
+      Microsoft fica baixo no quadro (39 px livres em cima, 13 embaixo) e o do Twemoji encosta
+      na borda de baixo (1 px). O canto arredondado da figura na carta ainda raspava o que
+      encostava na borda.
+- [x] Ao escolher uma figura (de coleção ou do computador), o site agora recorta a sobra em
+      volta — partes transparentes, ou branco de papel numa figura sem transparência — e põe
+      o desenho no meio de um quadrado, com a mesma margem (7%) dos quatro lados. Toda figura
+      fica do mesmo tamanho na carta, venha de onde vier. Sem cantos arredondados na figura.
+- [x] **As figuras já escolhidas são centralizadas sozinhas** ao abrir o jogo ou a página de
+      palavras. Cada uma é medida; só as fora do meio são refeitas. As fotos (JPEG) são
+      medidas com folga, porque o JPEG borra as bordas: medidas sem folga, seriam refeitas a
+      cada visita e perderiam qualidade. Testado: quatro visitas seguidas, zero refeitas.
+- [x] As cartas mostram a figura do pacote como está agora, então uma figura centralizada
+      depois de dar as cartas já aparece certa.
+
+Conferido no navegador com o *fish* das dez coleções: antes com margens desiguais (Twemoji
+T50/B1), depois todas iguais dos dois lados. `npm run build` passa.

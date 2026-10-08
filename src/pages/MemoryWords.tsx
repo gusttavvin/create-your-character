@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { DECK_BY_ID, type MemoryItem } from '../games/memory/decks';
 import PictureCredits from '../games/memory/Credits';
 import ItemPicture from '../games/memory/ItemPicture';
-import { allPacks, hasPicture, isCustom, isShipped, MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack, type Pack } from '../games/memory/packs';
+import { allPacks, centreSavedPictures, hasPicture, isCustom, isShipped, MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack, type Pack } from '../games/memory/packs';
 import { fromCollection } from '../games/memory/images';
 import { fullSize } from '../games/memory/library';
 import PicturePicker, { type Picked } from '../games/memory/PicturePicker';
@@ -49,6 +49,11 @@ export default function MemoryWords() {
   const [typingRow, setTypingRow] = useState<number | null>(null);
   /** The picture being copied into the pack, while it is fetched. */
   const [copying, setCopying] = useState<string | null>(null);
+
+  // pictures chosen before they were centred are centred now
+  useEffect(() => {
+    void centreSavedPictures().then((changed) => changed && setPacks(allPacks()));
+  }, []);
 
   useEffect(() => {
     if (!editing || choosing) return;
