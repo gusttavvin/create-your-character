@@ -6,8 +6,10 @@
  * every card carries the English word, so the game teaches while it is played.
  */
 export interface MemoryItem {
-  /** The picture on the card. */
+  /** The picture on the card, when it is an emoji. */
   emoji: string;
+  /** A picture the teacher chose from her own computer, shrunk and kept as a data URL. */
+  image?: string;
   /** The English word, read aloud when the pair is found. */
   word: string;
 }

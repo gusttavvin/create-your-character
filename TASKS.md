@@ -632,3 +632,79 @@ chato visto de perfil é uma lâmina. Isso só se resolve modelando essas abas, 
 **Ainda pendente:** aprovação visual de Gustavo/Clara e medição de desempenho em
 celulares. A garra tem cerca de 102 mil triângulos; não há LOD. As matrizes não cobrem
 exaustivamente todas as combinações simultâneas. Salvamento remoto não foi testado.
+
+## Jogo da memória: editar o pacote, escolher a figura, números nas cartas — 8 de outubro de 2026
+
+Clara: "não quero fazer uma cópia do game para alterar ele, quero alterar o que já está
+criado; quero conseguir escolher a imagem e, atrás das cartas, ao invés de ?, números".
+
+- [x] **Os pacotes que vêm com o jogo agora se editam direto.** Saiu o "Copy to edit". A
+      versão editada fica guardada com o mesmo nome do original e entra no lugar dele no
+      jogo, na mesma posição. O pacote mudado ganha a etiqueta *changed* e o botão
+      **↩ Original**, que pergunta antes e devolve o pacote como veio. Pacotes que ela
+      mesma criou continuam com **🗑 Delete** (agora pergunta antes de apagar). Cópias
+      feitas antes desta mudança continuam lá como pacotes dela.
+- [x] **Escolher a figura com um clique.** Cada linha mostra a figura como um botão; ele
+      abre uma janela com 14 grupos de figuras (animais, mar, comida, escola, cores…), um
+      campo para digitar qualquer emoji e **📷 Use a picture from my computer**. A foto é
+      reduzida para 220 px antes de ser guardada (uma foto de celular tem megas, e o
+      navegador guarda pouco por site). O ícone do pacote usa a mesma janela, só com emoji.
+- [x] **Números atrás das cartas**, no lugar do ❓, pela posição na mesa (1, 2, 3…), no
+      mesmo estilo dos títulos, para a turma poder dizer "number five and number twelve!".
+- [x] Se não couber mais foto, aparece um aviso em vez de perder o pacote calado.
+
+Conferido no navegador, computador e celular: editar o *Sea animals*, trocar uma figura
+por outra da janela, enviar uma foto, salvar, ver as cartas no jogo, voltar ao original.
+`npm run build` passa.
+
+**Limitações reais:** os pacotes e as fotos continuam guardados só no computador onde
+foram feitos (como já era), não vão para outro computador nem para o celular dos alunos.
+Fotos ocupam espaço do navegador: cada uma fica com uns 10–30 KB, o que dá para centenas,
+mas o mesmo espaço guarda os personagens salvos em modo convidado.
+
+## Jogo da memória: figuras de várias coleções, escolhidas ao escrever a palavra — 8 de outubro de 2026
+
+Clara não gostou dos emojis ("por ser emoji não fica tão legal"). Mostrei duas comparações
+com os mesmos 12 desenhos em 12 estilos, e ela pediu: "deixa todas as possíveis! e eu
+escolho na hora que eu escrever o nome".
+
+- [x] **Dez coleções gratuitas**, todas com licença que deixa usar no site:
+      Microsoft 3D, Google 3D, Microsoft Color, Microsoft Flat, Google, Twemoji, OpenMoji,
+      Emoji One (desenhos), ARASAAC e Mulberry (símbolos feitos para ensino).
+      Ficaram de fora: Firefox OS (antigo, faltam muitas figuras), fotos de bancos gratuitos
+      (a busca automática trouxe uma pessoa pescando para *fish* — não dá para confiar), e
+      Flaticon/Freepik/Icons8/Noun Project (as regras não deixam baixar e redistribuir). Uma
+      figura desses sites pode ser baixada por ela e usada em *Use a picture from my computer*.
+- [x] **Ao escrever a palavra**, aparece logo embaixo da linha uma fileira com a melhor
+      figura de cada coleção. Um clique e ela vira a figura da carta. **More pictures** abre
+      a janela com até quatro opções de cada coleção e um campo para procurar outra palavra.
+      Uma coleção que não tem aquela figura não aparece.
+- [x] **A busca não depende de serviço de fora.** A primeira versão perguntava ao Iconify, e
+      alguns minutos de teste bastaram para ele começar a recusar (erro 1015, limite de
+      pedidos). Agora a lista de 1.932 nomes e palavras-chave vem do emojibase (MIT), fica
+      dentro do site (`src/games/memory/emoji-index.json`, gerada por
+      `npm run memory:index`) e só é carregada quando a janela abre. As figuras vêm de
+      endereços fixos (jsDelivr, GitHub, ARASAAC). ARASAAC e Mulberry procuram pela palavra.
+- [x] **A figura escolhida é copiada para dentro do pacote** (8–12 KB cada, em WebP com fundo
+      transparente), então a aula não precisa de internet nem desses sites no ar.
+- [x] Linha de crédito das coleções no rodapé do jogo e da página de palavras, como as
+      licenças CC BY / BY-SA / BY-NC-SA pedem.
+
+Conferido no navegador, computador e celular: *dolphin*, *teddy bear* e *cherries*, uma de cada
+coleção, salvas e vistas nas cartas do jogo. `npm run build` passa.
+
+**Limitações reais:** editar precisa de internet (o jogo não). Os pacotes de fábrica continuam
+com emoji até ela trocar figura por figura. A busca é pelo nome em inglês do emoji: coisa que
+não existe como emoji (*rubber*, *eraser*, *hen*, *biscuit*) não aparece nas coleções de
+desenho — aí ficam os símbolos de ensino, outra palavra (*chicken*) ou uma figura do computador. Algumas figuras do
+"Microsoft" falham quando o nome da pasta deles não bate com o nome do emoji; elas só não
+aparecem.
+
+## Jogo da memória: última linha no meio — 8 de outubro de 2026
+
+Clara: "quando eu mudar pra algum pairs ímpar, centralize a última linha".
+
+- [x] Com 3, 5, 7 ou 9 pares a última linha fica incompleta e ficava encostada à esquerda.
+      A mesa agora são linhas que quebram e se centralizam (em vez de uma grade): cada carta
+      continua com a largura de uma coluna, e as que sobram ficam no meio.
+      Conferido de 3 a 10 pares, medindo o espaço dos dois lados, no computador e no celular.

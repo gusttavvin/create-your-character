@@ -1,17 +1,21 @@
-import { DECKS, type MemoryDeck, type MemoryItem } from './decks';
+import { DECKS, DECK_BY_ID, type MemoryDeck, type MemoryItem } from './decks';
 
 const STORE = 'funny-games:memory-packs';
 
 /**
- * The teacher's own picture packs.
+ * The teacher's own picture packs, and her changes to the ones the game comes with.
  *
- * The packs that come with the game cannot be changed, but Clara can copy one, add her
- * own words to it, throw out the ones her class is not learning this term, and build
- * packs from scratch. They live on her computer, next to her class list for the wheel,
- * so they are here again next lesson without anybody signing in.
+ * At first the packs that come with the game could not be changed: Clara had to copy one
+ * and edit the copy, and ended up with "Sea animals" and "Sea animals (my copy)" side by
+ * side. Now she edits the pack itself. Her version is kept under the same id as the
+ * original and takes its place in the game; the original stays in the code, so she can
+ * always go back to it.
+ *
+ * Everything lives on the computer she teaches from, next to her class list for the
+ * wheel, so it is here again next lesson without anybody signing in.
  */
 export interface CustomPack extends MemoryDeck {
-  /** Marks the packs the teacher made, which are the ones she may edit. */
+  /** Marks a pack the teacher has written or changed. */
   custom: true;
 }
 
@@ -21,17 +25,36 @@ export function isCustom(pack: Pack): pack is CustomPack {
   return (pack as CustomPack).custom === true;
 }
 
+/** One of the packs the game comes with (changed or not), rather than one she started. */
+export function isShipped(id: string) {
+  return id in DECK_BY_ID;
+}
+
+/** A picture she chose from her computer: only images kept inline, nothing fetched from elsewhere. */
+function cleanImage(raw: unknown) {
+  return typeof raw === 'string' && raw.startsWith('data:image/') ? raw : undefined;
+}
+
+/** A card can be played once it has a picture of either kind and its English word. */
+export function hasPicture(item: MemoryItem) {
+  return !!(item.emoji.trim() || item.image);
+}
+
+function cleanItem(raw: unknown): MemoryItem {
+  const i = (raw ?? {}) as Partial<MemoryItem>;
+  const image = cleanImage(i.image);
+  const item: MemoryItem = { emoji: String(i.emoji ?? '').trim(), word: String(i.word ?? '').trim() };
+  if (image) item.image = image;
+  return item;
+}
+
 function clean(list: unknown): CustomPack[] {
   if (!Array.isArray(list)) return [];
   const out: CustomPack[] = [];
   for (const raw of list) {
     const p = raw as Partial<CustomPack>;
     if (!p || typeof p.id !== 'string' || typeof p.label !== 'string') continue;
-    const items: MemoryItem[] = Array.isArray(p.items)
-      ? p.items
-          .map((i) => ({ emoji: String((i as MemoryItem)?.emoji ?? '').trim(), word: String((i as MemoryItem)?.word ?? '').trim() }))
-          .filter((i) => i.emoji && i.word)
-      : [];
+    const items = Array.isArray(p.items) ? p.items.map(cleanItem).filter((i) => hasPicture(i) && i.word) : [];
     out.push({
       id: p.id,
       label: p.label.trim() || 'My pack',
@@ -52,18 +75,30 @@ export function readPacks(): CustomPack[] {
   }
 }
 
-export function writePacks(packs: CustomPack[]) {
+/**
+ * Keeps the teacher's packs. Says whether it worked.
+ *
+ * Pictures from her computer take room, and the browser only gives a site so much. It used
+ * to fail without a word, which with photos in the pack would have lost an afternoon's work.
+ */
+export function writePacks(packs: CustomPack[]): boolean {
   try {
     localStorage.setItem(STORE, JSON.stringify(packs));
   } catch {
-    /* a full or blocked storage should not take the lesson down */
+    return false;
   }
   window.dispatchEvent(new CustomEvent('funny-games:packs'));
+  return true;
 }
 
-/** Every pack the game offers: the ones it ships with, then the teacher's own. */
+/**
+ * Every pack the game offers: the ones it comes with, in their usual order and with her
+ * changes in place, then the ones she started herself.
+ */
 export function allPacks(): Pack[] {
-  return [...DECKS, ...readPacks()];
+  const mine = readPacks();
+  const changed = new Map(mine.map((p) => [p.id, p]));
+  return [...DECKS.map((d) => changed.get(d.id) ?? d), ...mine.filter((p) => !isShipped(p.id))];
 }
 
 export function packById(id: string): Pack | undefined {

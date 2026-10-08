@@ -2228,10 +2228,16 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   text-align: center;
 }
 
+/*
+ * Rows that wrap and centre, rather than a grid: with an odd number of pairs the last row
+ * is short, and in a grid it sat against the left edge. Each card is still one column wide.
+ */
 .memory-board {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
-  gap: 12px;
+  --gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap);
   /* big enough to read from the back of the class, small enough to see the whole board */
   max-width: calc(var(--cols, 4) * 150px);
   width: 100%;
@@ -2240,7 +2246,9 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 
 .mcard {
   all: unset;
+  box-sizing: border-box;
   cursor: pointer;
+  width: calc((100% - (var(--cols, 4) - 1) * var(--gap)) / var(--cols, 4));
   aspect-ratio: 3 / 4;
   perspective: 800px;
 }
@@ -2278,6 +2286,17 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   font-size: clamp(1.6rem, 5vw, 2.4rem);
 }
 
+/* big enough to call out from the back of the class: "number five and number twelve!" */
+.mcard-num {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  line-height: 1;
+  color: var(--cream);
+  -webkit-text-stroke: 0.11em var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0.05em 0.07em 0 var(--ink);
+}
+
 .mcard-front {
   background: #fff;
   transform: rotateY(180deg);
@@ -2292,6 +2311,15 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .mcard-emoji {
   font-size: clamp(2rem, 7vw, 3.4rem);
   line-height: 1;
+}
+
+/* a picture from the teacher's computer: as big as the card allows, never cropped */
+.mcard-emoji.is-photo {
+  width: 88%;
+  min-height: 0;
+  flex: 1 1 auto;
+  object-fit: contain;
+  border-radius: 10px;
 }
 
 .mcard-word,
@@ -2312,7 +2340,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 
 @media (max-width: 560px) {
   .memory-board {
-    gap: 8px;
+    --gap: 8px;
   }
 
   .mcard-back,
@@ -2528,9 +2556,162 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   align-items: center;
 }
 
-.words-emoji {
-  text-align: center;
-  font-size: 1.3rem;
+/* the picture on a line of the editor: a button that opens the picture chooser */
+.words-pic {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 58px;
+  width: 100%;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.words-pic:hover,
+.words-pic:focus-visible {
+  background: var(--sky-soft);
+}
+
+.words-pic.is-empty {
+  border-style: dashed;
+  background: var(--cream);
+}
+
+.words-pic-img {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.words-pic-img.is-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.words-pic-add {
+  font-size: 1.1rem;
+  opacity: 0.6;
+}
+
+.words-pack-tag {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+/* ------------------------------------------------------ the picture chooser */
+
+.modal.modal-wide {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.picker-head h2 {
+  margin: 0;
+}
+
+.picker-now {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.picker-now-pic {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.picker-now-pic.is-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.picker-problem {
+  margin: 0;
+  padding: 8px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: var(--rose-soft);
+  font-weight: 700;
+}
+
+.picker-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+  padding: 10px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
+.picker-pic {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-size: 2rem;
+  line-height: 1;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+}
+
+.picker-pic:hover,
+.picker-pic:focus-visible {
+  border-color: var(--ink);
+  transform: scale(1.08);
+}
+
+.picker-pic.is-on {
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+}
+
+.picker-type {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.picker-type .field {
+  flex: 1 1 auto;
 }
 
 .words-del {
@@ -2578,5 +2759,138 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 @media (max-width: 560px) {
   .words-row {
     grid-template-columns: 64px minmax(0, 1fr) 44px;
+  }
+}
+
+/* ------------------------------------- memory: pictures from the collections */
+
+/* the strip of pictures under the line being typed: one from each collection */
+.words-suggest {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 3px dashed var(--ink);
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
+.words-suggest-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wp-strip,
+.wp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wp-thumb {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 78px;
+  padding: 5px 4px 4px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+}
+
+/* still loading: kept out of sight, so a picture that never comes leaves no gap */
+.wp-thumb.is-loading {
+  display: none;
+}
+
+.wp-thumb img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.wp-thumb:hover,
+.wp-thumb:focus-visible {
+  background: var(--yellow);
+  transform: translateY(-2px);
+}
+
+.wp-thumb:disabled {
+  cursor: progress;
+}
+
+.wp-from {
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--muted);
+}
+
+.wp-busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 11px;
+}
+
+.wp-libraries {
+  /* side by side, so all the collections fit without scrolling far */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px 14px;
+  padding: 10px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
+/* a collection with no drawing of that word shows nothing at all */
+.wp-library:not(:has(.wp-thumb)) {
+  display: none;
+}
+
+.wp-name {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.wp-note {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.picture-credits {
+  margin: 8px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.picture-credits a {
+  color: inherit;
+}
+
+@media (max-width: 560px) {
+  .wp-thumb {
+    width: 66px;
+  }
+
+  .wp-thumb img {
+    width: 46px;
+    height: 46px;
   }
 }

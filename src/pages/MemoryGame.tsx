@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MemoryItem } from '../games/memory/decks';
 import { allPacks, type Pack } from '../games/memory/packs';
+import PictureCredits from '../games/memory/Credits';
+import ItemPicture from '../games/memory/ItemPicture';
 import { speak } from '../lib/speech';
 import { playClick, playPop, playTada } from '../lib/sounds';
 import { burstConfetti } from '../lib/confetti';
@@ -237,7 +239,7 @@ export default function MemoryGame() {
       )}
 
       <div className="memory-board" style={{ ['--cols' as string]: columns }}>
-        {cards.map((card) => {
+        {cards.map((card, place) => {
           const isUp = up.includes(card.key) || found.includes(card.pair);
           const isFound = found.includes(card.pair);
           return (
@@ -246,18 +248,17 @@ export default function MemoryGame() {
               type="button"
               className={`mcard${isUp ? ' is-up' : ''}${isFound ? ' is-found' : ''}`}
               onClick={() => flip(card)}
-              aria-label={isUp ? caps(card.item.word) : 'Hidden card'}
+              aria-label={isUp ? caps(card.item.word) : `Card ${place + 1}`}
             >
               <span className="mcard-inner">
+                {/* a number, so the class can call out which two cards to turn */}
                 <span className="mcard-back" aria-hidden>
-                  ❓
+                  <span className="mcard-num">{place + 1}</span>
                 </span>
                 <span className="mcard-front">
                   {card.face === 'picture' ? (
                     <>
-                      <span className="mcard-emoji" aria-hidden>
-                        {card.item.emoji}
-                      </span>
+                      <ItemPicture item={card.item} className="mcard-emoji" />
                       {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
                     </>
                   ) : (
@@ -269,6 +270,8 @@ export default function MemoryGame() {
           );
         })}
       </div>
+
+      <PictureCredits />
     </div>
   );
 }

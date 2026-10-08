@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DECKS, type MemoryItem } from '../games/memory/decks';
-import { MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack } from '../games/memory/packs';
+import { DECK_BY_ID, type MemoryItem } from '../games/memory/decks';
+import PictureCredits from '../games/memory/Credits';
+import ItemPicture from '../games/memory/ItemPicture';
+import { allPacks, hasPicture, isCustom, isShipped, MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack, type Pack } from '../games/memory/packs';
+import { fromCollection } from '../games/memory/images';
+import { fullSize } from '../games/memory/library';
+import PicturePicker, { type Picked } from '../games/memory/PicturePicker';
+import WordPictures from '../games/memory/WordPictures';
 import { playClick, playPop } from '../lib/sounds';
 
 const EMPTY_ROW: MemoryItem = { emoji: '', word: '' };
@@ -17,55 +23,83 @@ function blankPack(): CustomPack {
   };
 }
 
+/** The pack as it can be edited: a copy of its cards, under its own id. */
+function editable(pack: Pack): CustomPack {
+  return { ...pack, items: pack.items.map((i) => ({ ...i })), custom: true };
+}
+
+/** Which picture the picker is choosing: the pack's icon, or the picture on one card. */
+type Choosing = { kind: 'icon' } | { kind: 'card'; row: number };
+
 /**
  * Where the teacher writes the words the memory game plays with.
  *
- * Clara asked to be able to change the words, add her own and throw some out. The packs
- * the game ships with stay as they are; she copies one or starts an empty pack, and her
- * packs then sit beside the others in the game. No sign-in: the words live on the
- * computer she teaches from, like her class list for the wheel.
+ * Clara asked to be able to change the words, add her own and throw some out — and then
+ * to change the packs themselves instead of copies of them. Every pack, the ones the game
+ * comes with included, opens straight into the editor; a changed pack keeps its place in
+ * the game, and can be put back as it came. No sign-in: the words live on the computer she
+ * teaches from, like her class list for the wheel.
  */
 export default function MemoryWords() {
-  const [packs, setPacks] = useState<CustomPack[]>(readPacks);
+  const [packs, setPacks] = useState<Pack[]>(allPacks);
   const [editing, setEditing] = useState<CustomPack | null>(null);
+  const [choosing, setChoosing] = useState<Choosing | null>(null);
+  const [problem, setProblem] = useState('');
+  /** The line she is typing a word on: its pictures show up right under it. */
+  const [typingRow, setTypingRow] = useState<number | null>(null);
+  /** The picture being copied into the pack, while it is fetched. */
+  const [copying, setCopying] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!editing) return;
+    if (!editing || choosing) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setEditing(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [editing]);
+  }, [editing, choosing]);
+
+  /** Keeps the list of what she wrote, and tells her if it did not fit. */
+  const keep = (mine: CustomPack[]) => {
+    if (!writePacks(mine)) {
+      setProblem('There is no room left to keep these pictures. Try smaller pictures, or fewer of them.');
+      return false;
+    }
+    setProblem('');
+    setPacks(allPacks());
+    return true;
+  };
 
   const save = (pack: CustomPack) => {
-    const items = pack.items.map((i) => ({ emoji: i.emoji.trim(), word: i.word.trim() })).filter((i) => i.emoji && i.word);
-    const tidy: CustomPack = { ...pack, label: pack.label.trim() || 'My words', learn: (pack.label.trim() || 'my words').toLowerCase(), items };
-    const next = packs.some((p) => p.id === tidy.id) ? packs.map((p) => (p.id === tidy.id ? tidy : p)) : [...packs, tidy];
-    setPacks(next);
-    writePacks(next);
+    const items = pack.items
+      .map((i) => {
+        const row: MemoryItem = { emoji: i.emoji.trim(), word: i.word.trim() };
+        if (i.image) row.image = i.image;
+        return row;
+      })
+      .filter((i) => hasPicture(i) && i.word);
+    const label = pack.label.trim() || 'My words';
+    // a pack she renamed is still learning what it was learning
+    const learn = isShipped(pack.id) ? DECK_BY_ID[pack.id].learn : label.toLowerCase();
+    const tidy: CustomPack = { ...pack, label, learn, items };
+    const mine = readPacks();
+    const next = mine.some((p) => p.id === tidy.id) ? mine.map((p) => (p.id === tidy.id ? tidy : p)) : [...mine, tidy];
+    if (!keep(next)) return;
     setEditing(null);
+    setTypingRow(null);
     playPop();
   };
 
-  const remove = (id: string) => {
-    const next = packs.filter((p) => p.id !== id);
-    setPacks(next);
-    writePacks(next);
+  const remove = (pack: Pack) => {
+    if (!window.confirm(`Delete "${pack.label}"? This cannot be undone.`)) return;
+    keep(readPacks().filter((p) => p.id !== pack.id));
     playClick();
   };
 
-  const copyOf = (deckId: string) => {
-    const deck = DECKS.find((d) => d.id === deckId);
-    if (!deck) return;
-    setEditing({
-      id: newPackId(),
-      label: `${deck.label} (my copy)`,
-      emoji: deck.emoji,
-      learn: deck.learn,
-      items: deck.items.map((i) => ({ ...i })),
-      custom: true,
-    });
+  const restore = (pack: Pack) => {
+    const original = DECK_BY_ID[pack.id];
+    if (!window.confirm(`Put "${original.label}" back the way it came? Your changes to it will be lost.`)) return;
+    keep(readPacks().filter((p) => p.id !== pack.id));
     playClick();
   };
 
@@ -73,7 +107,43 @@ export default function MemoryWords() {
     const set = (patch: Partial<CustomPack>) => setEditing({ ...editing, ...patch });
     const setItem = (i: number, patch: Partial<MemoryItem>) =>
       set({ items: editing.items.map((row, k) => (k === i ? { ...row, ...patch } : row)) });
-    const ready = editing.items.filter((i) => i.emoji.trim() && i.word.trim()).length;
+    const ready = editing.items.filter((i) => hasPicture(i) && i.word.trim()).length;
+
+    const fromStrip = async (row: number, src: string) => {
+      setProblem('');
+      setCopying(src);
+      try {
+        const image = await fromCollection(fullSize(src));
+        playClick();
+        // she may have kept typing while it was fetched, so only this one picture changes
+        setEditing((e) => e && { ...e, items: e.items.map((it, k) => (k === row ? { ...it, emoji: '', image } : it)) });
+      } catch {
+        setProblem('That picture could not be copied. Check the internet, or choose another one.');
+      } finally {
+        setCopying(null);
+      }
+    };
+
+    const pick = (picked: Picked) => {
+      if (!choosing) return;
+      if (choosing.kind === 'icon') set({ emoji: picked.emoji || editing.emoji });
+      // a new picture replaces the old one of either kind
+      else setItem(choosing.row, { emoji: picked.emoji, image: picked.image });
+      setChoosing(null);
+    };
+
+    const pickerFor = choosing
+      ? choosing.kind === 'icon'
+        ? { title: 'Choose the pack icon', current: { emoji: editing.emoji }, allowUpload: false }
+        : {
+            title: editing.items[choosing.row].word.trim()
+              ? `A picture for "${editing.items[choosing.row].word.trim()}"`
+              : 'Choose a picture',
+            current: editing.items[choosing.row],
+            word: editing.items[choosing.row].word,
+            allowUpload: true,
+          }
+      : null;
 
     return (
       <div className="words-page">
@@ -82,9 +152,16 @@ export default function MemoryWords() {
             <h1 className="memory-title">
               <span className="t-cream">Edit the</span> <span className="t-yellow">Words</span>
             </h1>
-            <p className="memory-sub">A picture and its English word on each line.</p>
+            <p className="memory-sub">A picture and its English word on each line. Tap a picture to change it.</p>
           </div>
-          <button type="button" className="btn" onClick={() => setEditing(null)}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setEditing(null);
+              setTypingRow(null);
+            }}
+          >
             ← Back
           </button>
         </div>
@@ -95,39 +172,62 @@ export default function MemoryWords() {
               <span>Pack name</span>
               <input className="input" value={editing.label} maxLength={28} onChange={(e) => set({ label: e.target.value })} />
             </label>
-            <label className="field field-emoji">
+            <div className="field field-emoji">
               <span>Icon</span>
-              <input className="input" value={editing.emoji} maxLength={4} onChange={(e) => set({ emoji: e.target.value })} />
-            </label>
+              <button type="button" className="words-pic" aria-label="Choose the pack icon" onClick={() => setChoosing({ kind: 'icon' })}>
+                <span className="words-pic-img" aria-hidden>
+                  {editing.emoji}
+                </span>
+              </button>
+            </div>
           </div>
 
           <ol className="words-list">
             {editing.items.map((item, i) => (
               <li key={i} className="words-row">
-                <input
-                  className="input words-emoji"
-                  value={item.emoji}
-                  maxLength={4}
-                  placeholder="🐠"
-                  aria-label={`Picture ${i + 1}`}
-                  onChange={(e) => setItem(i, { emoji: e.target.value })}
-                />
+                <button
+                  type="button"
+                  className={`words-pic${hasPicture(item) ? '' : ' is-empty'}`}
+                  aria-label={`Choose picture ${i + 1}`}
+                  onClick={() => setChoosing({ kind: 'card', row: i })}
+                >
+                  {hasPicture(item) ? <ItemPicture item={item} className="words-pic-img" /> : <span className="words-pic-add">➕</span>}
+                </button>
                 <input
                   className="input"
                   value={item.word}
                   maxLength={22}
                   placeholder="fish"
                   aria-label={`Word ${i + 1}`}
-                  onChange={(e) => setItem(i, { word: e.target.value })}
+                  onChange={(e) => {
+                    setItem(i, { word: e.target.value });
+                    setTypingRow(i);
+                  }}
                 />
                 <button
                   type="button"
                   className="btn btn-ghost words-del"
                   aria-label={`Remove line ${i + 1}`}
-                  onClick={() => set({ items: editing.items.filter((_, k) => k !== i) })}
+                  onClick={() => {
+                    set({ items: editing.items.filter((_, k) => k !== i) });
+                    setTypingRow(null);
+                  }}
                 >
                   ✕
                 </button>
+                {typingRow === i && item.word.trim().length >= 2 && (
+                  <div className="words-suggest">
+                    <WordPictures word={item.word} perLibrary={1} compact busySrc={copying} onChoose={(src) => void fromStrip(i, src)} />
+                    <div className="words-suggest-tools">
+                      <button type="button" className="btn btn-ghost" onClick={() => setChoosing({ kind: 'card', row: i })}>
+                        🔎 More pictures
+                      </button>
+                      <button type="button" className="btn btn-ghost" onClick={() => setTypingRow(null)}>
+                        ✓ Done
+                      </button>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ol>
@@ -143,11 +243,15 @@ export default function MemoryWords() {
               💾 Save pack
             </button>
           </div>
+          {problem && (
+            <p className="picker-problem" role="alert">
+              {problem}
+            </p>
+          )}
         </div>
 
-        <p className="wheel-hint">
-          Type or paste any picture you like in the little box — an emoji keyboard is on ⊞ + . on Windows.
-        </p>
+        {pickerFor && <PicturePicker {...pickerFor} onPick={pick} onClose={() => setChoosing(null)} />}
+        <PictureCredits />
       </div>
     );
   }
@@ -159,7 +263,7 @@ export default function MemoryWords() {
           <h1 className="memory-title">
             <span className="t-cream">Memory</span> <span className="t-yellow">Words</span>
           </h1>
-          <p className="memory-sub">Your own picture packs for the memory game.</p>
+          <p className="memory-sub">The picture packs for the memory game. Change any of them, or make a new one.</p>
         </div>
         <Link to="/memory" className="btn" onClick={() => playClick()}>
           🧠 Back to the game
@@ -167,49 +271,59 @@ export default function MemoryWords() {
       </div>
 
       <section className="words-card">
-        <h2 className="words-h2">My packs</h2>
-        {packs.length === 0 ? (
-          <p className="note">No packs of your own yet. Start an empty one, or copy a pack below and change it.</p>
-        ) : (
-          <ul className="words-packs">
-            {packs.map((p) => (
+        <h2 className="words-h2">Picture packs</h2>
+        <ul className="words-packs">
+          {packs.map((p) => {
+            const shipped = isShipped(p.id);
+            const changed = shipped && isCustom(p);
+            return (
               <li key={p.id} className="words-pack">
                 <span className="words-pack-name">
                   <span aria-hidden>{p.emoji}</span> {p.label}
+                  {changed && <span className="words-pack-tag">changed</span>}
                 </span>
                 <span className="words-pack-count">{p.items.length} words</span>
-                <button type="button" className="btn btn-ghost" onClick={() => setEditing(p)}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setEditing(editable(p));
+                    playClick();
+                  }}
+                >
                   ✏️ Edit
                 </button>
-                <button type="button" className="btn btn-ghost" onClick={() => remove(p.id)}>
-                  🗑 Delete
-                </button>
+                {changed && (
+                  <button type="button" className="btn btn-ghost" onClick={() => restore(p)}>
+                    ↩ Original
+                  </button>
+                )}
+                {!shipped && (
+                  <button type="button" className="btn btn-ghost" onClick={() => remove(p)}>
+                    🗑 Delete
+                  </button>
+                )}
               </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="btn btn-fun" onClick={() => setEditing(blankPack())}>
+            );
+          })}
+        </ul>
+        <button
+          type="button"
+          className="btn btn-fun"
+          onClick={() => {
+            setEditing(blankPack());
+            playClick();
+          }}
+        >
           ➕ New pack
         </button>
+        {problem && (
+          <p className="picker-problem" role="alert">
+            {problem}
+          </p>
+        )}
       </section>
-
-      <section className="words-card">
-        <h2 className="words-h2">Packs that come with the game</h2>
-        <p className="note">These stay as they are. Copy one to make it yours, then add or remove words.</p>
-        <ul className="words-packs">
-          {DECKS.map((d) => (
-            <li key={d.id} className="words-pack">
-              <span className="words-pack-name">
-                <span aria-hidden>{d.emoji}</span> {d.label}
-              </span>
-              <span className="words-pack-count">{d.items.length} words</span>
-              <button type="button" className="btn btn-ghost" onClick={() => copyOf(d.id)}>
-                📋 Copy to edit
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <PictureCredits />
     </div>
   );
 }
