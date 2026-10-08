@@ -731,3 +731,111 @@ escolhida".
 
 Conferido no navegador com o *fish* das dez coleções: antes com margens desiguais (Twemoji
 T50/B1), depois todas iguais dos dois lados. `npm run build` passa.
+
+## Monstro 3D: olhos bravos, dentes e bochechas — 8 de outubro de 2026
+
+Clara: sobrancelha do *angry* laranja no 3D (é roxa); no ovo, quadrado e ampulheta ela fica em
+outro lugar (no redondo fica saltada sobre os olhos); olho do redondo oval; bochecha do
+redondo fora do centro; *a smile with a tongue* com um dente só no 3D.
+
+Tudo nas peças originais do GLB laranja, ajustadas em `Monster3D.tsx` na hora de montar; o
+`monstrinho.glb` não foi alterado.
+
+- [x] **Sobrancelha roxa.** O material do modelo é laranja-escuro (#c74c13); a cópia de cada
+      personagem passa a usar o roxo do desenho, #5E30B0.
+- [x] **Sobrancelha no mesmo lugar em todos os corpos.** Nos outros corpos ela era achatada na
+      pele da testa e ficava atrás dos olhos (só um fio aparecia, alto). Agora cada metade
+      acompanha o olho de baixo dela, do jeito que fica no laranja. Medido de frente: cobre
+      13% do topo do olho no redondo e 10–13% nos outros três. De lado, nos outros corpos, ela
+      fica um pouco à frente do olho: lá o olho é endireitado (para não ficar vesgo) e a borda
+      de cima dele vem para a frente.
+- [x] **Olho redondo.** O branco do modelo é 8% mais alto que largo (a pupila, 17%). Cada olho
+      é achatado no meio dele até virar círculo, e a sobrancelha desce o mesmo tanto.
+- [x] **Dois dentes.** O modelo foi feito com um (o documento dele diz "sorriso aberto com um
+      dente"); o 2D tem dois. O segundo é o primeiro espelhado, menor e mais afastado do
+      meio como no desenho (22×19 contra 32×23, a 39 contra 29 do meio), pendurado no lábio
+      de cima no lugar dele.
+- [ ] **Bochecha:** no modelo as duas estão simétricas — 0,254 m de cada lado do centro do
+      rosto, mesma altura, mesma profundidade — e com câmera reta caem a 101,8 px de cada
+      lado. Elas ficam na curva do rosto, então qualquer giro empurra uma para a borda. Não
+      mudei; perguntei à Clara se é isso que ela vê.
+
+Conferido: `monster-review.html` com olhos e bocas nos quatro corpos, de frente, três
+quartos, lado e costas; *Check model instances* com 16 personagens, 0 coordenadas inválidas e
+0 materiais compartilhados. No jogo, 2D/3D mantém as escolhas e a frase, sem erro no console.
+`npm run build` passa. Não rodei `npm run models:monster` (o gerador e os GLBs não mudaram) nem
+a falha simulada (nenhum arquivo novo). Não testei salvar: este navegador está com a conta
+da Clara aberta e salvar gravaria na galeria dela.
+
+## Monstro 3D: olhos de antena numa altura para cada corpo — 8 de outubro de 2026
+
+Clara mandou quatro imagens em 2D dos olhos *stalks* e pediu o 3D assim em cada corpo. No
+2D padrão do jogo os olhos ficam sobre o rosto, com as hastes descendo pela cara; nas
+imagens dela, no ovo, no quadrado e na ampulheta eles ficam levantados acima da cabeça, com
+as hastes entrando no alto dela, e no redondo ficam em cima da juba com as hastes descendo
+pela frente do rosto até a boca. Só o 3D mudou; o 2D continua como era.
+
+- [x] Altura do centro dos olhos acima do alto da cabeça, medida nas imagens, em diâmetros
+      do olho (`STALKS_ABOVE` em `Monster3D.tsx`): redondo 0,33 · ovo 1,2 · quadrado 0,95 ·
+      ampulheta 0,88. Antes eles ficavam abaixo do alto da cabeça nos quatro (−0,35 a −0,88).
+- [x] "Alto da cabeça" é a cabeça mesmo, sem chifres nem anteninhas: a juba no redondo e,
+      nos outros, a peça sólida mais larga que chega mais alto (`egg_16`, `square_19`,
+      `hourglass_25`), lida do próprio modelo do corpo.
+- [x] Ovo, quadrado e ampulheta: as hastes ficam retas e entram pelo menos um quarto de olho
+      na cabeça no ponto onde encostam (num topo arredondado, esse ponto é mais baixo que o
+      cume); o par fica onde as hastes encontram a frente da cabeça, um pouco afundado.
+- [x] Redondo: as hastes são esticadas até a altura da boca, como no desenho; com o
+      comprimento delas, paravam onde o rosto começa.
+
+Conferido em `monster-review.html`: os quatro corpos de frente, três quartos e lado, com bico
+e com língua; *Check model instances* com 16 personagens, 0 coordenadas inválidas e 0
+materiais compartilhados. No jogo, 2D/3D mantém as escolhas e a frase, sem erro no console.
+`npm run build` passa.
+
+**Limitação:** no 3D os olhos de antena continuam menores que no 2D em relação ao corpo
+(eram assim antes; ninguém pediu para mudar). Não testei salvar, pelo mesmo motivo de antes
+(conta da Clara aberta neste navegador).
+
+## Monstro 3D: olhos soltos no redondo, *one* e *multiple* menores — 8 de outubro de 2026
+
+Clara: "no round o olho stalks está encostado no corpo, não é para ficar encostado. O
+multiple está muito grande no hourglass e o one está muito grande em todos".
+
+- [x] **Stalks no redondo:** os olhos estavam assentados na juba, meio afundados nela, e as
+      hastes deitadas no rosto. Agora o centro dos olhos fica 0,78 olho acima da juba (antes
+      0,33 — a altura do desenho, onde eles encostavam), e as hastes descem retas, logo à
+      frente do rosto no ponto mais saliente dele, até a altura da boca.
+- [x] **One menor em todos os corpos** (75% do que era, `EYE_SIZE`). No 3D ele já era menor
+      que no 2D, mas cobria quase o rosto e encostava na boca.
+- [x] **Multiple menor na ampulheta** (78%). A cabeça dela é pequena para o corpo e a boca
+      fica alta: mesmo menores, *one* e *multiple* ainda sobrepunham a boca em 16% da altura
+      deles, então os dois também sobem um pouco nela (`EYE_LIFT`, 24% da altura).
+- Folga medida entre olho e boca, depois: *one* 24% / 9% / 11% / 8% (redondo, ovo, quadrado,
+  ampulheta); *multiple* 8% / −4% / −3% / 9%. No ovo e no quadrado o *multiple* encosta de
+  leve na boca, como já era; a Clara não reclamou desses.
+
+Conferido: frente, três quartos e lado no `monster-review.html`; *Check model instances*
+com 16 personagens, 0 coordenadas inválidas e 0 materiais compartilhados. `npm run build`
+passa. Não testei salvar (conta da Clara aberta neste navegador).
+
+## Monstro 3D: antenas no topo do bege, olho de cima do roxo — 8 de outubro de 2026
+
+Clara: no laranja o olho de antena estava grande demais e as hastes azuis muito maiores que
+nos outros corpos — "coloca ele no topo do bege e diminui o tamanho da arte azul"; no
+verde-água e no amarelo, as antenas um pouquinho mais para a frente; no roxo com três olhos,
+o olho de cima ficava metade tampado.
+
+- [x] **Laranja:** as antenas ficam em pé no topo do rosto bege, como nos outros corpos (a
+      "cabeça" delas passou a ser o `Rosto`, não a `Juba`); o olho do centro fica 0,9 olho
+      acima do topo do rosto. Ficaram 76% do tamanho (`EYE_SIZE.stalks.round`), o mesmo
+      tamanho de verdade dos outros corpos, e as hastes não são mais esticadas até a boca.
+- [x] **Ovo e ampulheta:** as antenas ficam um quarto de olho mais para a frente
+      (`STALKS_FORWARD`).
+- [x] **Olho de cima do roxo:** ficava na borda de cima da cabeça quadrada, onde a frente vira
+      o topo; encaixado pela pele bem no meio dele, afundava atrás da borda. Agora todo olho
+      solto (*one*, *multiple*) é encaixado pela parte mais saliente da pele embaixo dele.
+      Folga olho-boca depois: *one* 22/8/14/10%, *multiple* 5/−5/1/10% (redondo, ovo,
+      quadrado, ampulheta) — praticamente como antes.
+
+Conferido de frente, três quartos e lado; *Check model instances* com 16 personagens, 0
+coordenadas inválidas e 0 materiais compartilhados. `npm run build` passa.

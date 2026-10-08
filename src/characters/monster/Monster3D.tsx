@@ -81,6 +81,259 @@ function clonePart(scene: Group, names: string[]) {
   return { root: result, materials: [...materials.values()], geometries };
 }
 
+/** The 2D eyebrows of the angry eyes; the model was made with dark orange ones. */
+const BROW_PURPLE = "#5E30B0";
+
+function meshesIn(node: Object3D | undefined, match = "") {
+  const out: Mesh[] = [];
+  node?.traverse((o) => {
+    if (o instanceof Mesh && o.name.includes(match)) out.push(o);
+  });
+  return out;
+}
+
+function boxOf(meshes: Mesh[]) {
+  const box = new Box3();
+  for (const m of meshes) {
+    m.geometry.computeBoundingBox();
+    box.union(m.geometry.boundingBox!);
+  }
+  return box;
+}
+
+/**
+ * Stretches a mesh about a point, keeping its shading: the normals take the inverse
+ * stretch, as they must, instead of being worked out again from the new triangles.
+ */
+function stretch(geo: BufferGeometry, about: Vector3, s: Vector3, mirrorX = false) {
+  const p = geo.attributes.position,
+    n = geo.attributes.normal;
+  const sx = mirrorX ? -s.x : s.x;
+  for (let i = 0; i < p.count; i++) {
+    p.setXYZ(
+      i,
+      about.x + (p.getX(i) - about.x) * sx,
+      about.y + (p.getY(i) - about.y) * s.y,
+      about.z + (p.getZ(i) - about.z) * s.z,
+    );
+    if (n) {
+      const v = new Vector3(n.getX(i) / sx, n.getY(i) / s.y, n.getZ(i) / s.z).normalize();
+      n.setXYZ(i, v.x, v.y, v.z);
+    }
+  }
+  if (mirrorX) {
+    // a mirror image is inside out: each triangle has to be wound the other way round
+    const idx = geo.index;
+    if (idx) {
+      for (let i = 0; i + 2 < idx.count; i += 3) {
+        const a = idx.getX(i);
+        idx.setX(i, idx.getX(i + 2));
+        idx.setX(i + 2, a);
+      }
+      idx.needsUpdate = true;
+    } else {
+      for (const attr of Object.values(geo.attributes)) {
+        for (let i = 0; i + 2 < attr.count; i += 3)
+          for (let k = 0; k < attr.itemSize; k++) {
+            const a = attr.getComponent(i, k);
+            attr.setComponent(i, k, attr.getComponent(i + 2, k));
+            attr.setComponent(i + 2, k, a);
+          }
+        attr.needsUpdate = true;
+      }
+    }
+  }
+  p.needsUpdate = true;
+  if (n) n.needsUpdate = true;
+  geo.computeBoundingBox();
+}
+
+/**
+ * The angry eyes as they are drawn: round, with purple eyebrows.
+ *
+ * The modelled eyes came 8% taller than wide (their pupils 17%), so on the orange monster
+ * they read as ovals beside the round eyes of every other option; and the eyebrows were
+ * dark orange where the drawing has them purple. Each eye is pressed back to a circle about
+ * its own middle, and the eyebrows come down by what the tops of the eyes moved, so they
+ * still rest on them.
+ */
+function drawnEyes(root: Group, materials: Material[]) {
+  let lowered = 0;
+  for (const name of ["Olho_E", "Olho_D"]) {
+    const eye = root.getObjectByName(name);
+    const white = boxOf(meshesIn(eye, "Olhos_branco"));
+    if (white.isEmpty()) continue;
+    const size = white.getSize(new Vector3()),
+      c = white.getCenter(new Vector3());
+    const k = size.x / size.y;
+    for (const m of meshesIn(eye)) stretch(m.geometry, c, new Vector3(1, k, 1));
+    lowered = Math.max(lowered, ((1 - k) * size.y) / 2);
+  }
+  for (const m of meshesIn(root.getObjectByName("Sobrancelhas")))
+    m.geometry.translate(0, -lowered, 0);
+  for (const m of materials)
+    if (m.name.startsWith("Sobrancelhas") && "color" in m)
+      (m as Material & { color: { set: (c: string) => void } }).color.set(BROW_PURPLE);
+}
+
+/**
+ * The 2D "tongue" mouth has two teeth; the model was made with one.
+ *
+ * The second is the first one mirrored across the mouth, then set as it is drawn: a little
+ * narrower and shorter, and further from the middle. It hangs from the upper lip at its own
+ * place, so it is lifted and brought forward by however much the lip is there.
+ */
+function secondTooth(root: Group, owned: BufferGeometry[]) {
+  const tooth = root.getObjectByName("Dente");
+  const lip = meshesIn(root.getObjectByName("Boca"), "Boca_amora")[0];
+  const parts = meshesIn(tooth);
+  if (!tooth || !lip || !parts.length) return;
+  const mouth = boxOf([lip]),
+    first = boxOf(parts);
+  const mx = (mouth.min.x + mouth.max.x) / 2,
+    tx = (first.min.x + first.max.x) / 2,
+    top = first.max.y;
+  const mirrored = 2 * mx - tx;
+  // drawn: the left tooth 29 units from the middle, 32 wide and 23 tall; the right one 39, 22 and 19
+  const target = mx + (mx - tx) * (39 / 29);
+  const p = lip.geometry.attributes.position;
+  /** The top edge of the mouth at a place across it, and how far forward it is there. */
+  const edge = (x: number) => {
+    let best = { y: -Infinity, z: 0 };
+    for (let band = 0.006; best.y === -Infinity && band < 0.1; band *= 2)
+      for (let i = 0; i < p.count; i++)
+        if (Math.abs(p.getX(i) - x) < band && p.getY(i) > best.y)
+          best = { y: p.getY(i), z: p.getZ(i) };
+    return best;
+  };
+  const from = edge(mirrored),
+    to = edge(target);
+  for (const m of parts) {
+    const geo = m.geometry.clone();
+    stretch(geo, new Vector3(mx, top, 0), new Vector3(1, 1, 1), true);
+    stretch(geo, new Vector3(mirrored, top, 0), new Vector3(22 / 32, 19 / 23, 1));
+    geo.translate(target - mirrored, to.y - from.y, to.z - from.z);
+    owned.push(geo);
+    const copy = new Mesh(geo, m.material);
+    copy.name = m.name.replace("Dente__", "Dente_D__");
+    m.parent!.add(copy);
+  }
+}
+
+/**
+ * Where the stalk eyes stand on each body: how far the middle of the eyes is above the top
+ * of the head, in eye widths.
+ *
+ * Measured off Clara's 2D pictures: held up above the head, on stalks that come out of the
+ * top of it. On the orange one the head they stand on is his beige face, not his mane — she
+ * asked for them "no topo do bege" after seeing them hang down his face from the top of the
+ * mane, far bigger than on the others.
+ */
+const STALKS_ABOVE: Record<string, number> = {
+  round: 0.9,
+  egg: 1.2,
+  square: 0.95,
+  hourglass: 0.88,
+};
+
+/**
+ * How far forward the stalks stand, in eye widths, beyond where they meet the front of the
+ * head. Clara asked for the egg's and the hourglass's a little further forward.
+ */
+const STALKS_FORWARD: Record<string, number> = {
+  egg: 0.25,
+  hourglass: 0.25,
+};
+
+/**
+ * Eye options made smaller than the room the sheet gives them, on the bodies where Clara
+ * found them too big: the single eye covered most of every face and ran into the mouth, the
+ * three eyes did the same on the hourglass, whose head is small for its body, and the stalk
+ * eyes on the orange one came out a third bigger than on the other bodies.
+ */
+const EYE_SIZE: Record<string, Record<string, number>> = {
+  one: { round: 0.75, egg: 0.75, square: 0.75, hourglass: 0.75 },
+  multiple: { hourglass: 0.78 },
+  stalks: { round: 0.76 },
+};
+
+/**
+ * Eye options lifted on the bodies where they still ran into the mouth, as a share of their
+ * own height. The hourglass has a small head with its mouth high on it: even made smaller,
+ * the single eye and the three eyes overlapped the mouth by a sixth of their height.
+ */
+const EYE_LIFT: Record<string, Record<string, number>> = {
+  one: { hourglass: 0.24 },
+  multiple: { hourglass: 0.24 },
+};
+
+interface Head {
+  /** The highest point of the head, in the scene's units. */
+  top: number;
+  /** The top of the head straight above a place across it. */
+  topAt: (x: number) => number;
+}
+
+/**
+ * The top of a body's head — the head itself, not the horns or antennae on it.
+ *
+ * On the orange monster that is his beige face, inside the mane; on the others it is the
+ * widest solid piece that reaches highest (the egg is one piece; the square and the hourglass
+ * have a separate head).
+ */
+function headOf(body: string, scene: Group): Head {
+  scene.updateMatrixWorld(true);
+  const all: Mesh[] = [];
+  scene.traverse((o) => {
+    if (o instanceof Mesh) all.push(o);
+  });
+  let pieces: Mesh[];
+  if (body === "round") pieces = all.filter((m) => m.name.startsWith("Rosto__"));
+  else {
+    const asset = library[body];
+    const wide = all.filter((m) => {
+      if (!m.name.endsWith("_solid")) return false;
+      const b = new Box3().setFromObject(m);
+      return b.max.x - b.min.x >= 0.4 * (asset.max[0] - asset.min[0]);
+    });
+    const tops = wide.map((m) => new Box3().setFromObject(m).max.y);
+    pieces = wide.length ? [wide[tops.indexOf(Math.max(...tops))]] : all;
+  }
+  // from the model's own metres to the scene, the way the body row is placed
+  let toScene: (v: Vector3) => Vector3;
+  if (body === "round") {
+    const s = stand();
+    toScene = (v) => new Vector3(v.x * s.scale, v.y * s.scale + s.floor, v.z * s.scale);
+  } else {
+    const slot = MONSTER_BODY_LAYOUT[body].body,
+      f = fit(library[body].min, library[body].max, slot);
+    const px = (slot.cx - 300) * WORLD,
+      py = (360 - slot.cy) * WORLD;
+    toScene = (v) =>
+      new Vector3(
+        (v.x - f.center[0]) * f.scale + px,
+        (v.y - f.center[1]) * f.scale + py,
+        (v.z - f.center[2]) * f.scale,
+      );
+  }
+  const points: Vector3[] = [];
+  for (const m of pieces) {
+    const p = m.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++)
+      points.push(toScene(new Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld)));
+  }
+  const top = Math.max(...points.map((v) => v.y));
+  const width = Math.max(...points.map((v) => v.x)) - Math.min(...points.map((v) => v.x));
+  return {
+    top,
+    topAt: (x) => {
+      let best = -Infinity;
+      for (const v of points) if (Math.abs(v.x - x) < width * 0.03 && v.y > best) best = v.y;
+      return best === -Infinity ? top : best;
+    },
+  };
+}
+
 function fit(min: number[], max: number[], slot: SlotRect) {
   const w = max[0] - min[0],
     h = max[1] - min[1];
@@ -156,11 +409,18 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
   const asset = library[id];
   const url = native ? originalUrl : `${import.meta.env.BASE_URL}${asset.url}`;
   const { scene } = useGLTF(url);
+  // the body this piece is worn on, already loaded for the body row: stalk eyes stand on its head
+  const bodyUrl =
+    body === "round" ? originalUrl : `${import.meta.env.BASE_URL}${library[body].url}`;
+  const { scene: bodyScene } = useGLTF(bodyUrl);
   const owned = useMemo(() => {
     const r = MONSTRINHO_ROWS[row];
     const names = native ? r.groups : [asset.group];
     const own = clonePart(scene, names);
     own.root.name = `monster-${row}-${id}`;
+    // the original pieces, made to match their drawings on every body
+    if (native && row === "eyes") drawnEyes(own.root, own.materials);
+    if (native && row === "mouth") secondTooth(own.root, own.geometries);
     // Keep the approved original pose exactly as supplied, without re-fitting each row.
     if (body === "round" && native) {
       const s = stand();
@@ -188,9 +448,26 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
     if (row === "eyes" && id === "stalks") slot.w *= 0.9;
     const min = native ? r.min : asset.min,
       max = native ? r.max : asset.max;
-    const f = fit(min, max, slot),
-      px = (slot.cx - 300) * WORLD,
-      py = (360 - slot.cy) * WORLD;
+    const f = fit(min, max, slot);
+    if (row === "eyes") f.scale *= EYE_SIZE[id]?.[body] ?? 1;
+    const px = (slot.cx - 300) * WORLD;
+    let py = (360 - slot.cy) * WORLD;
+    if (row === "eyes") py += (EYE_LIFT[id]?.[body] ?? 0) * (max[1] - min[1]) * f.scale;
+    /** Stalk eyes: the head they stand on, and how wide one eye is in the scene. */
+    let stalks: { head: Head; d: number } | null = null;
+    if (row === "eyes" && id === "stalks") {
+      const balls = ["Olho_1", "Olho_2"]
+        .map((n) => boxOf(meshesIn(own.root.getObjectByName(n))))
+        .filter((b) => !b.isEmpty());
+      if (balls.length) {
+        const eyeY = balls.reduce((a, b) => a + (b.min.y + b.max.y) / 2, 0) / balls.length;
+        const d = (balls.reduce((a, b) => a + b.max.x - b.min.x, 0) / balls.length) * f.scale;
+        const head = headOf(body, bodyScene);
+        const now = (eyeY - f.center[1]) * f.scale + py;
+        py += head.top + STALKS_ABOVE[body] * d - now;
+        stalks = { head, d };
+      }
+    }
     const inner = new Group();
     inner.add(...[...own.root.children]);
     inner.position.set(-f.center[0], -f.center[1], -f.center[2]);
@@ -207,17 +484,12 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       if (native && row === "eyes") {
         // The supplied eyes contain a shear tailored to the original face. Undo it before
         // fitting each eye to the new surface; copying the shear makes square faces squint.
-        for (const name of ["Olho_E", "Olho_D", "Sobrancelhas"]) {
+        /** How far forward each eye is carried, at any point of it. */
+        const seat = new Map<string, { cx: number; lift: (x: number, y: number) => number }>();
+        for (const name of ["Olho_E", "Olho_D"]) {
           const part = inner.getObjectByName(name);
           if (!part) continue;
-          const bounds = new Box3();
-          part.traverse((o) => {
-            if (o instanceof Mesh) {
-              o.geometry.computeBoundingBox();
-              bounds.union(o.geometry.boundingBox!);
-            }
-          });
-          const c = bounds.getCenter(new Vector3());
+          const c = boxOf(meshesIn(part)).getCenter(new Vector3());
           const step = 0.006;
           const dx = Math.max(
             -0.35,
@@ -233,31 +505,30 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
               (at(c.x, c.y + step) - at(c.x, c.y - step)) / (2 * step),
             ),
           );
-          part.traverse((o) => {
-            if (!(o instanceof Mesh)) return;
-            const p = o.geometry.attributes.position;
-            for (let i = 0; i < p.count; i++) {
-              const x = p.getX(i),
-                y = p.getY(i),
-                z = p.getZ(i);
-              p.setZ(
-                i,
-                name === "Sobrancelhas"
-                  ? at(x, y) + (z - c.z) * 0.35 + f.center[2] + 0.012
-                  : z -
-                      c.z +
-                      0.68 * (y - c.y) +
-                      0.22 * Math.sign(c.x) * (x - c.x) +
-                      at(c.x, c.y) +
-                      dx * (x - c.x) +
-                      dy * (y - c.y) +
-                      f.center[2] +
-                      0.02,
-              );
-            }
-            p.needsUpdate = true;
-            o.geometry.computeVertexNormals();
-          });
+          const lift = (x: number, y: number) =>
+            -c.z +
+            0.68 * (y - c.y) +
+            0.22 * Math.sign(c.x) * (x - c.x) +
+            at(c.x, c.y) +
+            dx * (x - c.x) +
+            dy * (y - c.y) +
+            f.center[2] +
+            0.02;
+          seat.set(name, { cx: c.x, lift });
+          raise(part, lift);
+        }
+        /*
+         * The eyebrows go with the eyes, each half with the eye under it — the way they sit on
+         * the orange monster, standing out over the top of each eye. Pressed onto the skin of
+         * the forehead instead, they ended up behind the eyeballs on every other body, and only
+         * a thin line showed, high above.
+         */
+        const left = seat.get("Olho_E"),
+          right = seat.get("Olho_D");
+        const brows = inner.getObjectByName("Sobrancelhas");
+        if (brows && left && right) {
+          const mid = (left.cx + right.cx) / 2;
+          raise(brows, (x, y) => (x < mid ? left : right).lift(x, y));
         }
       } else if (native) {
         // Remove the curvature of the original host before seating the part on its new host.
@@ -267,13 +538,57 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           skin("round", x * s.scale, y * s.scale + s.floor) / s.scale +
           f.center[2];
         bendObject(inner, transfer, own.geometries);
+      } else if (row === "eyes" && stalks) {
+        /*
+         * Held up above the head: the stalks stand straight and go into the top of it, the way
+         * Clara drew them. Each stalk reaches at least a quarter of an eye into the head where
+         * it meets it — a domed head is lower to the sides of its top — and the pair stands
+         * where the stalks meet the front of the head, a little sunk into it, or as far
+         * forward of that as she asked for on each body.
+         */
+        const into = 0.25 * stalks.d;
+        const forward = (STALKS_FORWARD[body] ?? 0) * stalks.d;
+        const toScene = (v: number, i: 0 | 1) =>
+          (v - f.center[i]) * f.scale + (i === 0 ? px : py);
+        let depth = 0,
+          count = 0,
+          lineZ = 0;
+        for (const line of meshesIn(inner, "_line")) {
+          const b = boxOf([line]);
+          const x = toScene((b.min.x + b.max.x) / 2, 0);
+          const want = stalks.head.topAt(x) - into;
+          if (toScene(b.min.y, 1) > want) {
+            const wantLocal = (want - py) / f.scale + f.center[1];
+            const k = (b.max.y - wantLocal) / (b.max.y - b.min.y);
+            stretch(line.geometry, new Vector3(0, b.max.y, 0), new Vector3(1, k, 1));
+          }
+          depth += skin(body, x, want);
+          lineZ += (b.min.z + b.max.z) / 2;
+          count++;
+        }
+        if (count)
+          own.root.position.z =
+            depth / count - into + forward - (lineZ / count - f.center[2]) * f.scale;
       } else if (row === "eyes") {
         const holder = inner.children[0];
         // Seat each eye independently. The small forehead eye must not inherit the large eye's depth.
         for (const eye of holder.children) {
           if (eye.userData.attachment) {
+            /*
+             * Seated on the fullest bit of skin under it, not on the skin at its very middle.
+             * An eye right at an edge — the top eye of three, at the top of the square head —
+             * has its middle where the face turns back into the top of the head, and seated
+             * there it sank behind the edge with half of it hidden.
+             */
             const a = eye.userData.attachment as number[];
-            eye.position.z += at(a[0], a[1]);
+            const r = boxOf(meshesIn(eye)).getSize(new Vector3()).x / 2;
+            const under = [
+              [0, 0],
+              [0, -0.6],
+              [-0.5, -0.3],
+              [0.5, -0.3],
+            ].map(([u, v]) => at(a[0] + u * r, a[1] + v * r));
+            eye.position.z += Math.max(...under);
           } else {
             // stalks/eyebrows follow the local skin, without changing their own thickness
             bendObject(eye, at, own.geometries);
@@ -290,7 +605,7 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       }
     }
     return own;
-  }, [scene, row, id, body, native, asset]);
+  }, [scene, bodyScene, row, id, body, native, asset]);
   useEffect(
     () => () => {
       owned.materials.forEach((m) => m.dispose());
@@ -299,6 +614,16 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
     [owned],
   );
   return <primitive object={owned.root} dispose={null} />;
+}
+
+/** Moves every point of a piece forward by an amount that depends on where it is. */
+function raise(node: Object3D, by: (x: number, y: number) => number) {
+  for (const m of meshesIn(node)) {
+    const p = m.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + by(p.getX(i), p.getY(i)));
+    p.needsUpdate = true;
+    m.geometry.computeVertexNormals();
+  }
 }
 
 function bendObject(
