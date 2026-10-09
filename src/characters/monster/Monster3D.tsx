@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import {
   Box3,
   BufferGeometry,
@@ -36,14 +37,14 @@ interface Asset {
 const library: Record<string, Asset> = rawLibrary;
 const WORLD = 4.4 / 720;
 /**
- * The pieces taken from the orange monster's own model. His paws used to be among them; at
- * Clara's asking the paws are now modelled from their drawing, in green, like the other legs.
+ * The pieces taken from the orange monster's own model. His paws and his fuzzy arms used to
+ * be among them; at Clara's asking both are now modelled from their drawings, like the other
+ * legs and arms — the paws in green, the fuzzy arms furry and dark blue.
  */
 const original: Partial<Record<Row, string>> = {
   body: "round",
   eyes: "angry",
   mouth: "tongue",
-  arms: "fuzzy",
 };
 const rows: Row[] = ["body", "legs", "arms", "eyes", "mouth"];
 const originalUrl = `${import.meta.env.BASE_URL}models/monstrinho.glb`;
@@ -388,6 +389,7 @@ const ARM_FIT: Record<string, Record<string, number>> = {
   tentacle: { round: 1.1, egg: 1.15, square: 1.2, hourglass: 1.4 },
   // on the hourglass the pincher sat inside the body and did not show at all
   pincher: { round: 1, egg: 1.4, square: 1, hourglass: 1.4 },
+  fuzzy: { round: 1, egg: 1.15, square: 1, hourglass: 1.4 },
 };
 
 /**
@@ -397,15 +399,21 @@ const ARM_FIT: Record<string, Record<string, number>> = {
 const ARM_LOWER: Record<string, Record<string, number>> = {
   claw: { square: 0.07 },
   pincher: { square: 0.07, egg: 0.06 },
+  // Clara: the fuzzy arms a little higher on the egg, a little lower on the square
+  fuzzy: { egg: -0.04, square: 0.04 },
 };
 
 /**
- * How far the hanging claw arm is opened out from the body, turning at the shoulder. On the
- * hourglass it hung down past a waist narrower than the hips below, and the hand went behind
- * the hips.
+ * How far an arm is turned up and away from the body at the shoulder. On the hourglass the
+ * hanging claw arm hung down past a waist narrower than the hips below, and the hand went
+ * behind the hips; the pincher, pointing a little down, lay flat along the hips, stuck to
+ * them — Clara wanted it off the body. Only the claw's hanging arm turns; both pinchers and both fuzzy arms do.
  */
-const CLAW_OPEN: Record<string, number> = {
-  hourglass: (28 * Math.PI) / 180,
+const ARM_OPEN: Record<string, Record<string, number>> = {
+  claw: { hourglass: (28 * Math.PI) / 180 },
+  pincher: { hourglass: (15 * Math.PI) / 180 },
+  // the fuzzy arm with its hand down lay along the hourglass's hips too
+  fuzzy: { hourglass: (15 * Math.PI) / 180 },
 };
 
 /**
@@ -427,7 +435,7 @@ const ARM_DROP: Record<string, number> = {
  * cream of his face, and Clara did not like it at all: they go in the middle of his orange.
  */
 const IN_FRONT: Record<string, string[]> = {
-  egg: ["claw", "tentacle", "pincher"],
+  egg: ["claw", "tentacle", "pincher", "fuzzy"],
 };
 
 /**
@@ -464,11 +472,71 @@ function earsOf(body: string, scene: Group) {
   return points;
 }
 
+/**
+ * How much of the way to level each arm is turned at its shoulder, in 3D. The fuzzy arms are
+ * drawn one waving up and one hanging down; in 3D both are brought most of the way to level,
+ * and their shoulders to one height (`EVEN_SHOULDERS`). The drawing keeps its pose.
+ */
+const ARM_LEVEL: Record<string, number> = {
+  fuzzy: 0.85,
+};
+const EVEN_SHOULDERS = new Set(["fuzzy"]);
+
+/**
+ * How far into the body the end of an arm goes, as a share of how thick that end is. Half is
+ * enough for most; the plump fuzzy arms, set in that far, stood off the body when it turned.
+ */
+const ARM_INTO: Record<string, Record<string, number>> = {
+  // on the round one and the hourglass that far in left only a stub of the lower arm showing
+  fuzzy: { round: 0.6, egg: 1.1, square: 1.1, hourglass: 0.6 },
+};
+
+/**
+ * The 2D monster's arms wiggle (rotating from -6° to 8° and back every 2.4 s) and his eyes
+ * blink (squashed to an eighth of their height near the end of every 4.5 s). Clara asked for
+ * the 3D one to do the same: the arms swing at their shoulders, the eyes squash about their
+ * middle, on the same beat as the drawing.
+ */
+const WIGGLE = { period: 2.4, from: -6, to: 8 };
+const BLINK = { period: 4.5, start: 0.92, shut: 0.95, squash: 0.12 };
+
+/** Remembers where a row of eyes is, so it can blink about its own middle. */
+function blinkAbout(root: Object3D) {
+  root.updateMatrixWorld(true);
+  const b = new Box3().setFromObject(root);
+  root.userData.blink = {
+    y: root.position.y,
+    scale: root.scale.y,
+    middle: (b.min.y + b.max.y) / 2,
+  };
+}
+
+/** How open the eyes are, 1 to BLINK.squash, at a time in seconds. */
+function eyesOpen(t: number) {
+  const phase = (t % BLINK.period) / BLINK.period;
+  if (phase < BLINK.start) return 1;
+  const closing = phase < BLINK.shut;
+  const k = closing
+    ? (phase - BLINK.start) / (BLINK.shut - BLINK.start)
+    : (1 - phase) / (1 - BLINK.shut);
+  return 1 - k * (1 - BLINK.squash);
+}
+
+/**
+ * How much wider the orange one's orange is made, so that it is round. His model's mane is
+ * 0.85 wide and 0.96 tall; in the drawing he is a circle, and Clara asked for the 3D one
+ * round too. His cream face is round already and stays as it is; the horns and the tuft of
+ * hair on top move out with the mane.
+ */
+const ROUND_WIDEN = 0.96 / 0.85;
+
 /** From a body model's own metres to the scene, the way the body row is placed. */
 function bodyToScene(body: string): (v: Vector3) => Vector3 {
   if (body === "round") {
     const s = stand();
-    return (v) => new Vector3(v.x * s.scale, v.y * s.scale + s.floor, v.z * s.scale);
+    // only his orange is measured through here, and it is made wider
+    return (v) =>
+      new Vector3(v.x * s.scale * ROUND_WIDEN, v.y * s.scale + s.floor, v.z * s.scale);
   }
   const slot = MONSTER_BODY_LAYOUT[body].body,
     f = fit(library[body].min, library[body].max, slot);
@@ -633,6 +701,15 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       const s = stand();
       own.root.scale.setScalar(s.scale);
       own.root.position.y = s.floor;
+      if (row === "body")
+        for (const m of meshesIn(own.root)) {
+          if (/^(Corpo|Juba)__/.test(m.name))
+            stretch(m.geometry, new Vector3(), new Vector3(ROUND_WIDEN, 1, 1));
+          else if (/^(Chifre|Topete)/.test(m.name)) {
+            const x = boxOf([m]).getCenter(new Vector3()).x;
+            m.geometry.translate(x * (ROUND_WIDEN - 1), 0, 0);
+          }
+        }
       if (row === "eyes")
         for (const node of own.root.children) {
           const mid = [
@@ -647,6 +724,7 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           );
           node.scale.multiplyScalar(0.82);
         }
+      if (row === "eyes") blinkAbout(own.root);
       return own;
     }
     const slot = { ...slotFor(body, row) };
@@ -700,12 +778,14 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       const meshes = meshesIn(inner);
       const mid = boxOf(meshes).getCenter(new Vector3()).x;
       const k = ARM_FIT[id][body];
+      const joints: Group[] = [];
       const cover = IN_FRONT[body]?.includes(id) ? earsOf(body, bodyScene) : null;
-      for (const side of [-1, 1]) {
+      // each arm, and the end of it that meets the body
+      const found = ([-1, 1] as const).map((side) => {
         const arm = meshes.filter(
           (m) => (boxOf([m]).getCenter(new Vector3()).x - mid) * side > 0,
         );
-        if (!arm.length) continue;
+        if (!arm.length) return null;
         const box = boxOf(arm);
         const endX = side < 0 ? box.max.x : box.min.x;
         const reach = (box.max.x - box.min.x) * 0.12;
@@ -719,12 +799,44 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
               hi = Math.max(hi, q.getY(i));
             }
         }
-        if (lo === Infinity) continue;
+        return lo === Infinity ? null : { side, arm, box, endX, lo, hi };
+      });
+      /*
+       * Arms whose shoulders go at one height: the fuzzy arms are drawn with one shoulder high
+       * on the body and the other down by the legs, and in 3D Clara found one arm far too high
+       * and the other far too low. Both go halfway between.
+       */
+      const even =
+        EVEN_SHOULDERS.has(id) && found.every(Boolean)
+          ? found.reduce((sum, one) => sum + (one!.lo + one!.hi) / 2, 0) / found.length
+          : null;
+      for (const one of found) {
+        if (!one) continue;
+        const { side, arm, box, endX } = one;
+        let { lo, hi } = one;
+        if (even !== null) {
+          const dy = even - (lo + hi) / 2;
+          for (const m of arm) m.geometry.translate(0, dy, 0);
+          box.translate(new Vector3(0, dy, 0));
+          lo += dy;
+          hi += dy;
+        }
         const end = new Vector3(endX, (lo + hi) / 2, 0);
         for (const m of arm) stretch(m.geometry, end, new Vector3(k, k, k));
-        // an arm whose hand hangs below its shoulder is opened out, turning about the shoulder
-        const open = id === "claw" ? (CLAW_OPEN[body] ?? 0) : 0;
-        if (open && box.getCenter(new Vector3()).y < end.y)
+        const level = ARM_LEVEL[id] ?? 0;
+        if (level) {
+          // turned at the shoulder towards level, by that share of the way
+          const c = boxOf(arm).getCenter(new Vector3());
+          const rise = Math.atan2(c.y - end.y, Math.abs(c.x - end.x));
+          for (const m of arm)
+            m.geometry
+              .translate(-end.x, -end.y, 0)
+              .rotateZ(-side * rise * level)
+              .translate(end.x, end.y, 0);
+        }
+        // then opened out, turning about the shoulder (after the levelling, which would undo it)
+        const open = ARM_OPEN[id]?.[body] ?? 0;
+        if (open && (id !== "claw" || box.getCenter(new Vector3()).y < end.y))
           for (const m of arm)
             m.geometry
               .translate(-end.x, -end.y, 0)
@@ -741,7 +853,7 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           left: Math.max(...across.map((e) => e.left)),
           right: Math.min(...across.map((e) => e.right)),
         };
-        const into = 0.5 * (hi - lo) * k * f.scale;
+        const into = (ARM_INTO[id]?.[body] ?? 0.5) * (hi - lo) * k * f.scale;
         const target = side < 0 ? edge.left + into : edge.right - into;
         // and halfway through the body from front to back, so the body cuts neither the front
         // nor the back of it — on the orange one the mane came across the tentacles' roots
@@ -760,7 +872,16 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           const forward = clearOf(cover, toScene(b.min), toScene(b.max));
           for (const m of arm) m.geometry.translate(0, 0, forward / f.scale);
         }
+        // hung from a joint at the shoulder, so the arm can swing there
+        const joint = new Group();
+        joint.name = `arm-joint-${side < 0 ? "right" : "left"}`;
+        joint.position.set(end.x + (target - x) / f.scale, end.y, 0);
+        arm[0].parent!.add(joint);
+        own.root.updateMatrixWorld(true);
+        for (const m of arm) joint.attach(m);
+        joints.push(joint);
       }
+      own.root.userData.joints = joints;
     }
     if (row === "legs" && body === "round") {
       /*
@@ -907,8 +1028,29 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           (row === "mouth" ? (max[2] - min[2]) * 0.22 * f.scale : 0);
       }
     }
+    if (row === "eyes") blinkAbout(own.root);
     return own;
   }, [scene, bodyScene, row, id, body, native, asset]);
+  // Written straight onto the objects every frame, never into React state.
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const joints = owned.root.userData.joints as Group[] | undefined;
+    if (joints) {
+      const swing =
+        (WIGGLE.from + WIGGLE.to) / 2 -
+        ((WIGGLE.to - WIGGLE.from) / 2) * Math.cos((t / WIGGLE.period) * Math.PI * 2);
+      // CSS turns clockwise for a positive angle, three.js the other way
+      for (const joint of joints) joint.rotation.z = (-swing * Math.PI) / 180;
+    }
+    const blink = owned.root.userData.blink as
+      | { y: number; scale: number; middle: number }
+      | undefined;
+    if (blink) {
+      const open = eyesOpen(t);
+      owned.root.scale.y = blink.scale * open;
+      owned.root.position.y = blink.y + (blink.middle - blink.y) * (1 - open);
+    }
+  });
   useEffect(
     () => () => {
       owned.materials.forEach((m) => m.dispose());

@@ -144,6 +144,18 @@
     "warnings": 0
   },
   {
+    "id": "fuzzy",
+    "bytes": 2473560,
+    "triangles": 137316,
+    "dimensions": [
+      0.8253217935562134,
+      0.7104698419570923,
+      0.10259552299976349
+    ],
+    "errors": 0,
+    "warnings": 0
+  },
+  {
     "id": "paws",
     "bytes": 1025108,
     "triangles": 51376,

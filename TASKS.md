@@ -1040,3 +1040,193 @@ Conferido:
   braços.
 - *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
 - **Build:** `npm run build` passa.
+
+## Monstro: pincher do hourglass descolada do corpo — 9 de outubro de 2026
+
+Clara mandou uma foto: na ampulheta, o braço da pincher ficava deitado, colado no quadril.
+Ela quer o braço descolado do corpo.
+
+- [x] **Braço girado no ombro:** o braço apontava um pouco para baixo, e o quadril alarga
+      embaixo da cintura. Agora os dois braços giram 15° para cima no ombro.
+      - `CLAW_OPEN` virou `ARM_OPEN`, por tipo de braço e corpo.
+      - Na claw continua girando só o braço pendurado.
+      - Com 22° os braços apontavam para cima demais; ficaram 15°, quase retos como no 2D.
+
+Conferido:
+- **Monster review:** ampulheta com pincher de frente e de três quartos.
+- *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **Build:** `npm run build` passa.
+
+## Monstro: braço fuzzy peludo como o desenho, em azul-escuro — 9 de outubro de 2026
+
+Clara: "o 3d não tem nada a ver com a imagem e nem com o 2d! Tem que ser ondulado igual o
+que fizemos com a claw... e vamos alterar a cor no 2d e no 3d para um azul escuro".
+
+- [x] **Cor no 2D:** em `fuzzy-arm.cjs`, o laranja do braço virou `#2349A8` e o laranja
+      claro (a luva), `#3563C9`. Depois rodei `gen.cjs` e `genpaths.cjs`; só essas quatro
+      cores mudaram em `parts.tsx`, `paths3d.ts` e `extras.json`. A figura das opções mudou
+      junto.
+- [x] **3D feito do desenho:** o braço fuzzy era o do modelo laranja original, liso e
+      laranja.
+      - Agora o gerador faz o `fuzzy.glb` do desenho peludo, como a claw (`rows.arms` e
+        `solids.fuzzy` em `model-library.mjs`). A borda ondulada vira volume.
+      - Tamanho: 2,05 MB e 113.840 triângulos, um pouco acima da meta de 2 MB. O relatório
+        glTF não mostrou erros nem avisos. Os outros modelos não mudaram.
+      - O `Monster3D.tsx` não usa mais o braço do GLB laranja: tirei `arms` de `original`.
+- [x] **Encaixe:** o fuzzy entrou no `ARM_FIT` (preso na lateral, no meio da profundidade).
+      - Tamanho: 1× no round e no square, 1,15× no egg e 1,4× na ampulheta.
+      - No egg ele fica por cima das orelhas (`IN_FRONT`).
+
+Conferido:
+- **Monster review:** fuzzy nos quatro corpos, comparado com o 2D, de frente e de três
+  quartos; matriz de braços.
+- *Check model instances*: 16 personagens, 0 coordenadas inválidas e 0 materiais
+  compartilhados.
+- **Falha simulada do `fuzzy.glb`:** só os braços usaram o fallback; arquivo restaurado.
+- **No jogo:** round com fuzzy, alternando 2D e 3D.
+- **Build:** `npm run build` passa.
+
+Limitações: o `fuzzy.glb` passa um pouco de 2 MB; não há LOD.
+
+## Monstro: fuzzy sem ponta cortada, ombros na mesma altura; braços balançam e olhos piscam no 3D — 9 de outubro de 2026
+
+Clara: a pontinha da mão do fuzzy está cortada; um braço está muito para cima e o outro
+muito para baixo; no 3D, os bracinhos devem balançar igual no 2D e os olhinhos devem piscar.
+
+- [x] **Ponta da mão:**
+      - **Causa:** no desenho, a luva é pintada por cima do fim reto do braço. No 3D o braço
+        era mais grosso que a luva, e esse fim reto aparecia na frente da mão, parecendo um
+        corte.
+      - **Correção:** as luvas (`FUZZY_MITTENS`) agora são mais cheias que o braço (1,25 ×
+        0,85).
+      - `fuzzy.glb` passou para 2,26 MB e 125.440 triângulos. O relatório glTF não mostrou
+        erros nem avisos.
+- [x] **Altura dos braços:** medido no jogo, os dois braços já estavam quase retos. O
+      problema eram os ombros: um no alto do corpo, o outro perto das pernas, como no desenho
+      do Fuzzbop.
+      - No 3D os dois ombros agora ficam na altura média (`EVEN_SHOULDERS`).
+      - Cada braço gira no ombro 85% do caminho até ficar reto (`ARM_LEVEL`).
+      - O 2D continua com a pose desenhada.
+- [x] **Balanço (todos os braços):** cada braço fica pendurado numa junta no ombro
+      (`arm-joint-*`).
+      - O `useFrame` gira as juntas como o `wiggle` do 2D: de -6° a 8°, a cada 2,4 s.
+      - O ângulo é escrito direto no objeto, nunca em estado do React.
+- [x] **Piscar:** os olhos se achatam em volta do próprio meio, como o `blink` do 2D (até
+      12% da altura, perto do fim de cada 4,5 s). Isso vale também para os olhos originais
+      do round (`blinkAbout`).
+
+Conferido:
+- **No jogo:** round com fuzzy. Medi as juntas (braços quase retos, mesma altura) e vi o
+  balanço e a piscada acontecendo.
+- **Monster review:** matriz de braços.
+- *Check model instances*: 16 personagens, 0 coordenadas inválidas e 0 materiais
+  compartilhados.
+- **Build:** `npm run build` passa.
+
+Limitações: o `fuzzy.glb` passa de 2 MB, e o desempenho no celular com a animação não foi
+medido.
+
+## Monstro: fuzzy encostado no corpo e sem ponta cortada, no 2D e no 3D — 9 de outubro de 2026
+
+Clara mandou quatro fotos: "fuzzy descolado do corpo em todos 3d e com a pontinha cortada!
+No 2d e 3d".
+
+- [x] **2D, ponta cortada:**
+      - **Causa:** a caixa do desenho (`fuzzy-arm.cjs`) tinha só 2 unidades de folga além
+        dos tufos. O contorno da ponta das luvas ficava para fora e o cartão de escolha
+        (`ws-card-art`, com `overflow: hidden`) cortava.
+      - **Correção:** a folga agora é 8. Medido no navegador, as luvas encostavam na borda
+        da caixa (0 e 108 de 108 px).
+      - Os braços mudaram de lugar só 1–2 px no palco, porque o deslize até o corpo (`HOLE`)
+        é calculado pela caixa.
+- [x] **3D, placa reta:**
+      - **Causa:** o `roundedSolid` arredonda só a borda e deixa a frente e as costas planas.
+        Num braço fino isso vira uma placa, e o topo reto dela parecia cortado.
+      - **Correção:** o gerador ganhou a opção `plump`, que arredonda até o meio, como um
+        travesseiro. O fuzzy usa essa opção, com as luvas mais cheias que o braço (1 × 0,8).
+      - `fuzzy.glb` ficou com 2,46 MB e 136.736 triângulos, sem erros nem avisos no
+        relatório glTF.
+- [x] **3D, solto do corpo:** a ponta do braço fuzzy entra 1,1× a própria grossura no corpo
+      (`ARM_INTO`); antes entrava metade.
+
+Conferido:
+- **Monster review:** egg de frente, três quartos e lado; matriz de braços nos quatro corpos
+  em três quartos.
+- *Check model instances*: 16 personagens, 0 coordenadas inválidas e 0 materiais
+  compartilhados.
+- **No jogo:** 2D do round com fuzzy.
+- **Build:** `npm run build` passa.
+- O arquivo temporário `public/tmp-fuzzy.svg`, usado para olhar o desenho, foi apagado.
+
+Limitações: o `fuzzy.glb` passa de 2 MB.
+
+## Monstro: a voltinha que faltava no topo da mãozinha do fuzzy — 9 de outubro de 2026
+
+Clara: "a mãozinha do fuzzy está cortada no topo", no 2D, no 3D e no botão de escolha.
+
+- **O que estava errado:** a luva do Fuzzbop é uma nuvenzinha de gomos, com um vão fundo
+  entre dois gomos no topo. O `furred()` pôs os tufos direto sobre esse contorno. No vão, as
+  normais apontavam para todo lado, e o topo da luva saiu como uma linha reta, sem nenhum
+  tufo. Como 2D, 3D e botão saem do mesmo desenho, os três mostravam o corte.
+- **Primeira tentativa, desfeita:** troquei a luva pela nuvem original, sem tufos. Clara:
+  "não era pra mudar a mão, era só fazer a voltinha que tava faltando". Voltou a luva
+  peluda.
+- [x] **Correção:** antes de pôr os tufos, o contorno das luvas é suavizado (`eased`, média
+      dos vizinhos a 14 unidades). Assim os tufos se espalham por igual e o topo ganha a
+      voltinha como o resto da mão. O braço não mudou.
+- `fuzzy.glb` foi regerado: 2,49 MB e 138.292 triângulos, sem erros nem avisos no relatório
+  glTF.
+
+Conferido:
+- **Desenho:** a luva ampliada, por cima do contorno original.
+- **No jogo:** o botão de escolha e o palco em 2D e em 3D (de frente e de três quartos).
+- **Build:** `npm run build` passa.
+- O arquivo temporário `public/tmp-fuzzy.svg` foi apagado.
+
+## Monstro: mãozinhas do fuzzy do mesmo tamanho; round redondo no 3D — 9 de outubro de 2026
+
+Clara: "uma mãozinha tá menor que a outra, coloque as duas com o mesmo tamanho da menor!" e
+"no round, o 3d não tá round... coloca redondo no round 3D!".
+
+- [x] **Mãozinhas:** no desenho do Fuzzbop, a luva levantada era maior (100 × 89 contra
+      78 × 79).
+      - Em `fuzzy-arm.cjs`, a luva maior agora diminui em volta do próprio meio até ter a
+        área da menor, antes de ganhar os tufos. As duas ficam com cerca de 80 × 79.
+      - 2D, botão e 3D saem desse desenho. O `fuzzy.glb` ficou com 2,47 MB, sem erros nem
+        avisos.
+- [x] **Round redondo:** a juba do modelo laranja é mais alta que larga (0,85 × 0,96).
+      - No 3D, o pelo e a juba ficam 0,96/0,85 mais largos (`ROUND_WIDEN`), e os chifres e
+        o topete se afastam junto. O rosto bege já era redondo e não mudou.
+      - O `bodyToScene` do round leva a mesma largura, então braços e pernas continuam
+        encostados.
+      - Medido no jogo, a juba ficou com 1,92 × 1,90.
+
+Conferido:
+- **No jogo:** round com fuzzy e paws, em 2D e 3D, de frente e de três quartos.
+- **Monster review:** matrizes de braços e pernas.
+- *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **Build:** `npm run build` passa.
+
+## Monstro: ajustes da fuzzy em cada corpo, no 3D — 9 de outubro de 2026
+
+Clara:
+- **round:** o braço com a mão para baixo ficou muito para dentro do corpo, e aparecia só um
+  pedacinho;
+- **egg:** subir um pouquinho;
+- **square:** descer um pouquinho;
+- **hourglass:** revisão geral; o braço com a mão para baixo ficava colado no corpo.
+
+- [x] `ARM_INTO` agora vale por corpo: o fuzzy entra 0,6 da própria grossura no round e na
+      ampulheta, e continua 1,1 no egg e no quadrado.
+- [x] `ARM_LOWER` do fuzzy: -4% da altura do corpo no egg (sobe) e +4% no quadrado (desce).
+- [x] **Ampulheta:** os dois braços giram 15° para cima no ombro (`ARM_OPEN`), como a
+      pincher.
+      - A abertura agora é aplicada depois do nivelamento (`ARM_LEVEL`), que antes a
+        desfazia.
+      - Claw e pincher não têm nivelamento, então para eles nada muda.
+
+Conferido:
+- **Monster review:** a fuzzy nos quatro corpos, de frente, e o round e a ampulheta também em
+  três quartos.
+- *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **Build:** `npm run build` passa.

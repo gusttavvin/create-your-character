@@ -217,36 +217,92 @@ function furred(ring, { chord, sag, rake }) {
  * A tuft a third as proud as it is long is his; a tuft raked to 0.38 of its period is hers.
  * The mittens get a shorter tuft because their outline is shorter and a fat bump on a small
  * hand reads as a lump rather than as fur.
+ *
+ * A mitten is a little cloud of lobes, with a sharp dent between two of them on top. Fur laid
+ * straight over that dent pushed its tufts every which way, and the top of the hand came out
+ * a flat line with no tuft at all: Clara saw it cut off, in the flat monster, the 3D one and
+ * on the button alike. So the mittens are furred over their outline with its dents eased out
+ * (`smooth`), and the top gets its tuft like the rest of the hand.
  */
 const PIECES = [
   { i: 9, chord: 40, sag: 12 },
   { i: 11, chord: 40, sag: 12 },
-  { i: 10, chord: 30, sag: 8 },
-  { i: 12, chord: 30, sag: 8 },
+  { i: 10, chord: 30, sag: 8, smooth: 14 },
+  { i: 12, chord: 30, sag: 8, smooth: 14 },
 ];
-const RAKE = 0.38;
 
-const add2 = [];
-const box = { x: Infinity, y: Infinity, X: -Infinity, Y: -Infinity };
-for (const { i, chord, sag } of PIECES) {
+/** A ring with its sharp dents eased out: each point averaged with its neighbours within
+ *  `reach` along the ring. */
+function eased(ring, reach) {
+  const n = ring.length;
+  const k = Math.max(1, Math.round(reach / 1.2));
+  return ring.map((_, i) => {
+    let x = 0;
+    let y = 0;
+    for (let j = -k; j <= k; j++) {
+      const q = ring[(i + j + n) % n];
+      x += q[0];
+      y += q[1];
+    }
+    return [x / (2 * k + 1), y / (2 * k + 1)];
+  });
+}
+const RAKE = 0.38;
+/**
+ * The fuzzy arms went dark blue at Clara's asking, in the 2D and the 3D alike: his orange
+ * becomes this blue, and his lighter orange a lighter blue, so the two tones keep apart.
+ */
+const RECOLOR = { '#FF8A47': '#2349A8', '#FFA45C': '#3563C9' };
+
+/** Each piece's outline, where it is drawn. */
+function ringOf(i) {
   const s = FLAT[i];
   if (!s || !s.d) throw new Error(`shape ${i} is not a path`);
   // every one of these four carries the same translate, which the flattener left on them
   const shift = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)\s*\)/.exec(s.transform || '');
   const dx = shift ? parseFloat(shift[1]) : 0;
   const dy = shift ? parseFloat(shift[2]) : 0;
-  const ring = polygonOf(s.d).map((p) => [p[0] + dx, p[1] + dy]);
-  const d = furred(ring, { chord, sag, rake: RAKE });
+  return polygonOf(s.d).map((p) => [p[0] + dx, p[1] + dy]);
+}
+/** How much a ring covers. */
+function areaOf(ring) {
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++)
+    a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+  return Math.abs(a) / 2;
+}
+/**
+ * The two mittens are drawn at different sizes, the waving one bigger; Clara asked for both
+ * the size of the smaller one. The bigger one shrinks about its own middle, so it stays on
+ * the end of its arm.
+ */
+const MITTENS = PIECES.filter((piece) => piece.smooth).map((piece) => piece.i);
+const smallest = Math.min(...MITTENS.map((i) => areaOf(ringOf(i))));
+
+const add2 = [];
+const box = { x: Infinity, y: Infinity, X: -Infinity, Y: -Infinity };
+for (const { i, chord, sag, smooth } of PIECES) {
+  const s = FLAT[i];
+  let ring = ringOf(i);
+  if (MITTENS.includes(i)) {
+    const k = Math.sqrt(smallest / areaOf(ring));
+    const xs = ring.map((q) => q[0]);
+    const ys = ring.map((q) => q[1]);
+    const c = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+    ring = ring.map((q) => add(c, mul(sub(q, c), k)));
+  }
+  const d = furred(smooth ? eased(ring, smooth) : ring, { chord, sag, rake: RAKE });
   for (const p of ring) {
     box.x = Math.min(box.x, p[0] - sag);
     box.y = Math.min(box.y, p[1] - sag);
     box.X = Math.max(box.X, p[0] + sag);
     box.Y = Math.max(box.Y, p[1] + sag);
   }
-  add2.push({ d, fill: s.fill, stroke: s.stroke, sw: parseFloat(s['stroke-width'] || 3.5) });
+  add2.push({ d, fill: RECOLOR[s.fill] ?? s.fill, stroke: s.stroke, sw: parseFloat(s['stroke-width'] || 3.5) });
 }
 
-const pad = 2;
+// room for the outline round the tips of the fur: with 2 the tips of the mittens lost theirs
+const pad = 8;
 const out = {
   fuzzy: {
     /** His own four arm shapes, which these replace, fur and all. */

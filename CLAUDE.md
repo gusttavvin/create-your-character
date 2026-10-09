@@ -101,8 +101,8 @@ pronto: se não existe um GLB para aquela opção, ele precisa ser construído e
 - Faça boca pintada acompanhar a superfície do corpo; bico, dente e outras formas salientes
   mantêm volume próprio. Marcas, barriga e bochechas devem seguir a pele sem disputar a
   mesma profundidade.
-- O GLB laranja contém somente `round`, `angry`, `tongue`, `fuzzy` e `paws` (as `paws` dele não são
-  mais usadas: as do jogo vêm de `public/models/monster/paws.glb`, verdes). Essas peças
+- O GLB laranja contém somente `round`, `angry`, `tongue`, `fuzzy` e `paws` (as `paws` e os braços `fuzzy` dele não
+  são mais usados: os do jogo vêm de `public/models/monster/paws.glb` e `fuzzy.glb`). Essas peças
   podem ser encaixadas em outros corpos, mas o arquivo não contém versões das outras opções.
 
 ### Gerar e integrar

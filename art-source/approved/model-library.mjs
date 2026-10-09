@@ -51,7 +51,9 @@ const rows = {
   body: ["egg", "square", "hourglass"],
   eyes: ["stalks", "multiple", "one"],
   mouth: ["smile", "fangs", "beak"],
-  arms: ["claw", "tentacle", "pincher"],
+  // fuzzy arms were the orange model's own until Clara found them nothing like the drawing:
+  // now they are modelled from it, furry outline and all, like the claw
+  arms: ["claw", "tentacle", "pincher", "fuzzy"],
   // paws were the orange model's own feet until Clara asked for them to look like the
   // drawing in the options, and green: now they are modelled from it like the others
   legs: ["paws", "bird", "long", "snake"],
@@ -66,7 +68,10 @@ const solids = {
   paws: [-100, -101],
   // the four octopus tentacles; their suckers are marks on them
   tentacle: [-100, -101, -102, -103],
+  // the two furry arms, each an upper arm and a mitten
+  fuzzy: [-100, -101, -102, -103],
 };
+const FUZZY_MITTENS = [-102, -103];
 // Painted lighting in the flat art is replaced by real lighting. Freckles, cheeks and bellies remain.
 const skip = {
   egg: [22, 23, 24],
@@ -249,13 +254,29 @@ function ball(p) {
   };
 }
 /** Closed branched solids, retaining the measured four-finger silhouette and open gaps. */
-function roundedSolid(p, ratio = 1) {
+/**
+ * A solid of a flat shape, rounded at its edge.
+ *
+ * Its edge is rounded over `depth`, a share of its narrower side; inside that it is flat
+ * front and back. A `plump` one is rounded all the way to its middle instead, like a
+ * pillow — the fuzzy arms were flat slabs whose square top edge looked cut off.
+ */
+function roundedSolid(p, ratio = 1, plump = false) {
   const { pts, box } = outline(p);
   const sz = box.getSize(new T.Vector2());
-  const depth = Math.min(sz.x, sz.y) * 0.26 * ratio;
-  const span = Math.max(sz.x, sz.y, depth * 2) * 1.12,
-    center = box.getCenter(new T.Vector2()),
+  const center = box.getCenter(new T.Vector2()),
     res = 86;
+  // the grid is laid out over the flat shape first, to find how far in its middle is
+  const flatSpan = Math.max(sz.x, sz.y) * 1.12;
+  let deepest = 0;
+  for (let iy = 0; iy < res; iy++)
+    for (let ix = 0; ix < res; ix++) {
+      const x = center.x + (ix / res - 0.5) * flatSpan,
+        y = center.y + (iy / res - 0.5) * flatSpan;
+      if (inside(x, y, pts)) deepest = Math.max(deepest, distance(x, y, pts));
+    }
+  const depth = plump ? deepest * ratio : Math.min(sz.x, sz.y) * 0.26 * ratio;
+  const span = Math.max(sz.x, sz.y, depth * 2) * 1.12;
   const mc = new MarchingCubes(res, material(p.fill), false, false, 120000);
   mc.isolation = 0;
   const dist = new Float32Array(res * res);
@@ -587,7 +608,11 @@ for (const [row, ids] of Object.entries(rows))
           (row === "body" && [1, 2, 3, 12].includes(p.i) && p.d.includes(" a "))
             ? ball(p)
             : row === "arms"
-              ? roundedSolid(p, 0.85)
+              ? id === "fuzzy"
+                ? // furry arms are plump all through; the mittens, painted over the ends of
+                  // their arms, are plumper still, so the arm's end does not show across them
+                  roundedSolid(p, FUZZY_MITTENS.includes(p.i) ? 1 : 0.8, true)
+                : roundedSolid(p, 0.85)
               : id === "paws"
                 ? pawBody(p)
                 : loft(
