@@ -83,9 +83,10 @@ function deal(decks: Pack[], deckId: string, pairs: number, mode: Mode): Card[] 
  * turns back. "Picture & word" deals one picture and one word per pair, which asks the
  * child to read as well as remember.
  *
- * "Play" deals a new game and shows nothing but the cards, as big as the screen allows and
- * full screen where the browser lets it, so the class looks at the game only. Clara asked
- * for it; the ✕ in the corner, or Esc, brings the page back.
+ * "Play" deals a new game and shows nothing but the cards, as big as the page allows, so the
+ * class looks at the game only. Clara asked for it; the ✕ in the corner, or Esc, brings the
+ * page back. It stays inside the site's page: she did not want the computer's whole screen
+ * taken over (full screen), which it first did.
  */
 export default function MemoryGame() {
   // the packs the game ships with, plus anything the teacher wrote in the words page
@@ -142,22 +143,17 @@ export default function MemoryGame() {
     burstConfetti();
   }, [won]);
 
-  // while only the cards show: follow the size of the screen, and leave on Esc or when the
-  // browser leaves full screen
+  // while only the cards show: follow the size of the page, and leave on Esc
   useEffect(() => {
     if (!focus) return;
     const resize = () => setScreen({ width: window.innerWidth, height: window.innerHeight });
     const key = (e: KeyboardEvent) => e.key === 'Escape' && setFocus(false);
-    const left = () => !document.fullscreenElement && setFocus(false);
     resize();
     window.addEventListener('resize', resize);
     window.addEventListener('keydown', key);
-    document.addEventListener('fullscreenchange', left);
     return () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('keydown', key);
-      document.removeEventListener('fullscreenchange', left);
-      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     };
   }, [focus]);
 
@@ -165,8 +161,6 @@ export default function MemoryGame() {
     playClick();
     start();
     setFocus(true);
-    // full screen where the browser allows it; the cards fill the page either way
-    void document.documentElement.requestFullscreen?.().catch(() => {});
   };
 
   const flip = (card: Card) => {

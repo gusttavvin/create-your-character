@@ -1283,3 +1283,13 @@ Conferido:
 - **Build:** `npm run build` passa.
 - A tela cheia de verdade não pôde ser vista no painel do app, que não permite; num
   navegador normal ela é pedida ao apertar Play.
+
+## Jogo da memória: Play sem tela cheia — 9 de outubro de 2026
+
+Clara: o Play não deve ocupar a tela do computador, só a tela do site.
+
+- [x] Saíram o `requestFullscreen` e o `fullscreenchange`. As cartas continuam ocupando só a
+      página do site, por cima do menu; o ✕ e o Esc voltam à página normal.
+
+Conferido: no Play aparecem só as 12 cartas e `document.fullscreenElement` fica vazio; o Esc
+volta à página normal; sem erros no console. `npm run build` passa.
