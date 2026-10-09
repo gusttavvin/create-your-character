@@ -423,30 +423,12 @@ const ARM_DROP: Record<string, number> = {
  * the body, the arms went behind them and only the tip of a tentacle or the fingers of a claw
  * showed below an ear. In the drawing the arms are over the ears.
  *
- * On the orange one the mane came across the roots of the tentacles and of the snake legs.
- * Clara wants them to come out of the cream of his face, over the mane.
+ * The orange one's tentacles and snake legs were brought over his mane, coming out of the
+ * cream of his face, and Clara did not like it at all: they go in the middle of his orange.
  */
 const IN_FRONT: Record<string, string[]> = {
   egg: ["claw", "tentacle", "pincher"],
-  round: ["tentacle", "snake"],
 };
-
-/** What hangs round a body, in the scene: the orange one's mane, or the egg's ears. */
-function coverOf(body: string, scene: Group) {
-  scene.updateMatrixWorld(true);
-  if (body === "round") {
-    const points: Vector3[] = [];
-    const toScene = bodyToScene(body);
-    scene.traverse((o) => {
-      if (!(o instanceof Mesh) || !/^(Juba|Corpo)__/.test(o.name)) return;
-      const q = o.geometry.attributes.position;
-      for (let i = 0; i < q.count; i++)
-        points.push(toScene(new Vector3().fromBufferAttribute(q, i).applyMatrix4(o.matrixWorld)));
-    });
-    return points;
-  }
-  return earsOf(body, scene);
-}
 
 /**
  * How far forward a piece must come to be clear of what hangs round the body, where they
@@ -506,7 +488,7 @@ function bodyToScene(body: string): (v: Vector3) => Vector3 {
  * Only the body itself counts — the torso and the head, or on the orange one his body and
  * mane — not the horns, antennae or ears.
  */
-function sidesOf(body: string, scene: Group, only = /^(Corpo|Juba)__/) {
+function sidesOf(body: string, scene: Group) {
   scene.updateMatrixWorld(true);
   const all: Mesh[] = [];
   scene.traverse((o) => {
@@ -514,7 +496,7 @@ function sidesOf(body: string, scene: Group, only = /^(Corpo|Juba)__/) {
   });
   const pieces =
     body === "round"
-      ? all.filter((m) => only.test(m.name))
+      ? all.filter((m) => /^(Corpo|Juba)__/.test(m.name))
       : all.filter((m) => {
           if (!m.name.endsWith("_solid")) return false;
           const w = new Box3().setFromObject(m);
@@ -531,17 +513,11 @@ function sidesOf(body: string, scene: Group, only = /^(Corpo|Juba)__/) {
   const ys = points.map((v) => v.y);
   const tall = Math.max(...ys) - Math.min(...ys);
   /*
-   * Halfway between the front and the back of the whole body, as it looks from the side — on
-   * the orange one with his face, which stands in front of his body. Taken at one height only,
-   * or without the face, it came out behind the middle: his mane goes far back.
+   * Halfway between the front and the back of the whole body, as it looks from the side. On
+   * the orange one that is the middle of his orange, without the cream face in front of it:
+   * with the face, Clara found his tentacles and snake legs too far forward.
    */
   const zs = points.map((v) => v.z);
-  if (body === "round")
-    for (const m of all.filter((m) => m.name.startsWith("Rosto__"))) {
-      const p = m.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++)
-        zs.push(toScene(new Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld)).z);
-    }
   const middle = (zs.reduce((a, b) => Math.min(a, b)) + zs.reduce((a, b) => Math.max(a, b))) / 2;
   /*
    * A thin slice at that very height. A thick one took in the widest part of the body nearby
@@ -724,9 +700,7 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       const meshes = meshesIn(inner);
       const mid = boxOf(meshes).getCenter(new Vector3()).x;
       const k = ARM_FIT[id][body];
-      const cover = IN_FRONT[body]?.includes(id) ? coverOf(body, bodyScene) : null;
-      // over the mane, the orange one's arms come out of the side of his face
-      const face = cover && body === "round" ? sidesOf(body, bodyScene, /^Rosto__/) : null;
+      const cover = IN_FRONT[body]?.includes(id) ? earsOf(body, bodyScene) : null;
       for (const side of [-1, 1]) {
         const arm = meshes.filter(
           (m) => (boxOf([m]).getCenter(new Vector3()).x - mid) * side > 0,
@@ -768,17 +742,14 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
           right: Math.min(...across.map((e) => e.right)),
         };
         const into = 0.5 * (hi - lo) * k * f.scale;
-        let target = side < 0 ? edge.left + into : edge.right - into;
-        const cream = face?.(y);
-        if (cream && Number.isFinite(cream.left))
-          target = side < 0 ? cream.left + into * 0.5 : cream.right - into * 0.5;
+        const target = side < 0 ? edge.left + into : edge.right - into;
         // and halfway through the body from front to back, so the body cuts neither the front
         // nor the back of it — on the orange one the mane came across the tentacles' roots
         const depth = across[2].middle;
         const z = (boxOf(arm).getCenter(new Vector3()).z - f.center[2]) * f.scale;
         for (const m of arm) m.geometry.translate((target - x) / f.scale, 0, (depth - z) / f.scale);
         if (cover) {
-          // in front of any ear or mane the arm crosses, just clear of it
+          // in front of any ear the arm crosses, just clear of it
           const b = boxOf(arm);
           const toScene = (v: Vector3) =>
             new Vector3(
@@ -795,24 +766,13 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
       /*
        * The orange one is much deeper behind his face than in front of it, with the mane
        * round his back: legs under the middle of the model stood under his face. They go
-       * halfway between the front and the back of his body instead, and halfway between
+       * halfway between the front and the back of his orange instead, and halfway between
        * the sides of it just above them: their place on the sheet is a little to his left.
        */
       const top = py + (max[1] - f.center[1]) * f.scale;
       const above = sidesOf(body, bodyScene)(top);
       own.root.position.x = (above.left + above.right) / 2;
       own.root.position.z = above.middle;
-      if (IN_FRONT[body]?.includes(id)) {
-        // over the mane, clear of it where they cross
-        const b = boxOf(meshesIn(inner));
-        const toScene = (v: Vector3) =>
-          new Vector3(
-            (v.x - f.center[0]) * f.scale + own.root.position.x,
-            (v.y - f.center[1]) * f.scale + py,
-            (v.z - f.center[2]) * f.scale + own.root.position.z,
-          );
-        own.root.position.z += clearOf(coverOf(body, bodyScene), toScene(b.min), toScene(b.max));
-      }
     }
     if (row === "eyes" || row === "mouth") {
       const at = (x: number, y: number) =>

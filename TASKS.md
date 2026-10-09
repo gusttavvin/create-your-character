@@ -1020,3 +1020,23 @@ Conferido:
   erros no console.
 - **Build:** `npm run build` passa.
 - Nenhum GLB mudou.
+
+## Monstro: tentáculo e snake no meio da parte laranja do round — 9 de outubro de 2026
+
+Publicado (9c4da3f), o tentáculo do round saindo da parte bege, por cima da juba, ficou
+estranho: "que isso???? você vai centralizar na parte laranja do corpinho".
+
+O que ela pedia desde o começo era o meio da parte laranja, vista de lado. Eu tinha incluído
+o rosto bege nessa conta, o que puxou tudo para a frente. Depois, sem entender, levei
+tentáculo e snake para a frente da juba.
+
+- [x] **Meio do corpo, no round:** agora é a metade entre a frente e as costas da parte
+      laranja (`Corpo`/`Juba`), sem o rosto. Isso vale para braços e pernas.
+- [x] **Por cima da juba:** saiu do round (`IN_FRONT` agora só tem o egg, e foi removido o
+      `coverOf`). O tentáculo volta a sair da lateral da bola laranja.
+
+Conferido:
+- **Monster review:** round com tentáculo e snake de frente, três quartos e lado; matriz de
+  braços.
+- *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **Build:** `npm run build` passa.
