@@ -1232,10 +1232,6 @@ body.is-dragging {
   background: linear-gradient(180deg, #fff 0%, var(--rose-soft) 100%);
 }
 
-
-
-
-
 .pick-art {
   width: 78%;
   max-width: 260px;
@@ -1501,12 +1497,6 @@ body.is-dragging {
 }
 
 /* --------------------------------------------------------------- teacher */
-
-.class-create {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-}
 
 .class-panel {
   background: #fff;
@@ -2228,6 +2218,84 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   text-align: center;
 }
 
+/* "Play": nothing on the screen but the cards, over the whole page and its menu. */
+.memory-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: auto;
+  background: var(--bg);
+  background-image: radial-gradient(circle at 8% 8%, rgba(79, 195, 255, 0.3), transparent 34%),
+    radial-gradient(circle at 92% 14%, rgba(255, 143, 200, 0.28), transparent 32%);
+}
+
+/* the cards are as big as the screen allows, so what is on them grows with the card */
+.memory-focus .mcard {
+  container-type: inline-size;
+}
+
+.memory-focus .mcard-num {
+  font-size: 34cqw;
+}
+
+.memory-focus .mcard-emoji {
+  font-size: 48cqw;
+}
+
+.memory-focus .mcard-word {
+  font-size: 11cqw;
+}
+
+.memory-focus .mcard-only-word {
+  font-size: 17cqw;
+}
+
+.memory-focus-exit {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.memory-focus-exit:hover,
+.memory-focus-exit:focus-visible {
+  opacity: 1;
+}
+
+.memory-focus-win {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--rose-soft);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.memory-focus-win p {
+  margin: 0;
+}
+
 /*
  * Rows that wrap and centre, rather than a grid: with an odd number of pairs the last row
  * is short, and in a grid it sat against the left edge. Each card is still one column wide.
@@ -2595,16 +2663,6 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .words-pic-add {
   font-size: 1.1rem;
   opacity: 0.6;
-}
-
-.words-pack-tag {
-  margin-left: 8px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--yellow);
-  border: 2px solid var(--ink);
-  font-size: 0.75rem;
-  vertical-align: middle;
 }
 
 /* ------------------------------------------------------ the picture chooser */

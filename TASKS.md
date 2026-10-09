@@ -1230,3 +1230,56 @@ Conferido:
   três quartos.
 - *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
 - **Build:** `npm run build` passa.
+
+## Professora: palavras do jogo da memória e painel sem salas — 9 de outubro de 2026
+
+Clara: na parte de professora do jogo da memória não precisa aparecer "changed" nem a opção
+de voltar ao original; os nomes das peças sempre com maiúscula lá também; e ela não vai criar
+salas, então a opção sai do painel da professora.
+
+- [x] **`MemoryWords.tsx`:**
+      - Saíram a etiqueta "changed" e o botão "↩ Original", com a função `restore`.
+      - Os pacotes continuam editáveis, e o que ela mudar continua valendo.
+- [x] **Maiúscula:** as palavras nas linhas do editor aparecem com a primeira letra
+      maiúscula (`caps`), como nas cartas do jogo. O texto guardado não muda; só a forma de
+      mostrar.
+- [x] **`TeacherPage.tsx`:**
+      - Saíram o formulário "Create class", o `makeCode`, o `createClass` e a frase "Create
+        your first class…".
+      - Salas criadas antes continuam aparecendo, com o que foi salvo nelas. Nada foi
+        apagado no Supabase.
+- Saíram os estilos sem uso: `.class-create` e `.words-pack-tag`.
+
+Conferido:
+- **Memory words:** sem "changed" e sem "Original"; o pacote Sea animals mostra Fish,
+  Dolphin…
+- **`/teacher`:** abre sem erro no console.
+- **Build:** `npm run build` passa.
+
+Limitação: o painel de quem já entrou como professora não foi visto, porque eu não posso
+entrar com a senha. A Clara confere depois de entrar.
+
+## Jogo da memória: botão Play só com as cartas — 9 de outubro de 2026
+
+Clara: apertar um botão "play" e aparecer somente as cartinhas, sem textos nem opções, para a
+turma ficar com o foco só no jogo.
+
+- [x] **Botão "▶ Play"** ao lado do "New game". Ele dá cartas novas e mostra só o tabuleiro,
+      numa camada que cobre a página inteira, inclusive o menu do site (`.memory-focus`).
+      - Também pede tela cheia ao navegador. Se o navegador não deixar, as cartas ocupam a
+        página do mesmo jeito.
+- [x] **Tamanho das cartas:** são as maiores que cabem na tela. O `focusFit` testa de 2 a 10
+      colunas, com cartas 3:4; numa tela larga de projetor, 12 cartas ficam em 6 × 2.
+      - O número, a figura e a palavra crescem com a carta (`cqw`, só nesse modo).
+- [x] **Sair:** "✕" discreto no canto, a tecla Esc ou sair da tela cheia.
+- [x] **Fim do jogo:** aparece embaixo "You found them all in N tries!" e o botão
+      "▶ Play again".
+
+Conferido:
+- **No navegador:** tela estreita (3 × 4) e 1280 × 720 (6 × 2, tabuleiro de 1232 × 530).
+- **Jogo inteiro resolvido no modo Play:** aparecem a mensagem e o "Play again".
+- **Saída:** o ✕ e o Esc voltam à página normal.
+- **Console:** sem erros.
+- **Build:** `npm run build` passa.
+- A tela cheia de verdade não pôde ser vista no painel do app, que não permite; num
+  navegador normal ela é pedida ao apertar Play.

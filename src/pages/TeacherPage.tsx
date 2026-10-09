@@ -5,14 +5,7 @@ import { supabase } from '../lib/supabase';
 import { listClassCharacters } from '../lib/storage';
 import type { SavedCharacter } from '../characters/types';
 import CharacterCard from '../components/CharacterCard';
-import { playClick, playTada } from '../lib/sounds';
-
-function makeCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 5; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return s;
-}
+import { playClick } from '../lib/sounds';
 
 function AuthForms() {
   const { signInTeacher, signUpTeacher } = useAuth();
@@ -151,7 +144,6 @@ function ClassPanel({ cls }: { cls: ClassRoom }) {
 function Dashboard() {
   const { user, displayName, signOut } = useAuth();
   const [classes, setClasses] = useState<ClassRoom[] | null>(null);
-  const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -164,27 +156,6 @@ function Dashboard() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const createClass = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!supabase || !user) return;
-    setError(null);
-    const name = newName.trim() || 'My class';
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const { error: err } = await supabase.from('classes').insert({ name, code: makeCode(), teacher_id: user.id });
-      if (!err) {
-        setNewName('');
-        playTada();
-        await load();
-        return;
-      }
-      if (!/duplicate|unique/i.test(err.message)) {
-        setError(err.message);
-        return;
-      }
-    }
-    setError('Could not generate a class code, please try again.');
-  };
 
   return (
     <div className="teacher">
@@ -203,20 +174,14 @@ function Dashboard() {
         </div>
       </div>
 
-      <form className="class-create" onSubmit={createClass}>
-        <input className="input" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Class name, e.g. 3rd grade – Tuesday" maxLength={40} />
-        <button type="submit" className="btn btn-primary">
-          ➕ Create class
-        </button>
-      </form>
+      {/* Clara does not make classes, so there is no way to create one here; any made
+          before still show, with what was saved in them. */}
       {error && <p className="note note-error">{error}</p>}
 
       {classes === null ? (
         <div className="center-msg">
           <span className="spinner" />
         </div>
-      ) : classes.length === 0 ? (
-        <p className="note">Create your first class to get a code for your students.</p>
       ) : (
         classes.map((c) => <ClassPanel key={c.id} cls={c} />)
       )}

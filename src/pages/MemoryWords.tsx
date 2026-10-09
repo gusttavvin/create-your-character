@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { DECK_BY_ID, type MemoryItem } from '../games/memory/decks';
 import PictureCredits from '../games/memory/Credits';
 import ItemPicture from '../games/memory/ItemPicture';
-import { allPacks, centreSavedPictures, hasPicture, isCustom, isShipped, MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack, type Pack } from '../games/memory/packs';
+import { allPacks, centreSavedPictures, hasPicture, isShipped, MIN_ITEMS, newPackId, readPacks, writePacks, type CustomPack, type Pack } from '../games/memory/packs';
 import { fromCollection } from '../games/memory/images';
 import { fullSize } from '../games/memory/library';
 import PicturePicker, { type Picked } from '../games/memory/PicturePicker';
@@ -11,6 +11,11 @@ import WordPictures from '../games/memory/WordPictures';
 import { playClick, playPop } from '../lib/sounds';
 
 const EMPTY_ROW: MemoryItem = { emoji: '', word: '' };
+
+/** A word with a capital, the way the cards in the game show it. */
+function caps(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
 
 function blankPack(): CustomPack {
   return {
@@ -36,9 +41,10 @@ type Choosing = { kind: 'icon' } | { kind: 'card'; row: number };
  *
  * Clara asked to be able to change the words, add her own and throw some out — and then
  * to change the packs themselves instead of copies of them. Every pack, the ones the game
- * comes with included, opens straight into the editor; a changed pack keeps its place in
- * the game, and can be put back as it came. No sign-in: the words live on the computer she
- * teaches from, like her class list for the wheel.
+ * comes with included, opens straight into the editor, and a changed pack keeps its place
+ * in the game. She asked not to be shown which packs she changed nor offered to put them
+ * back. No sign-in: the words live on the computer she teaches from, like her class list for
+ * the wheel.
  */
 export default function MemoryWords() {
   const [packs, setPacks] = useState<Pack[]>(allPacks);
@@ -97,13 +103,6 @@ export default function MemoryWords() {
 
   const remove = (pack: Pack) => {
     if (!window.confirm(`Delete "${pack.label}"? This cannot be undone.`)) return;
-    keep(readPacks().filter((p) => p.id !== pack.id));
-    playClick();
-  };
-
-  const restore = (pack: Pack) => {
-    const original = DECK_BY_ID[pack.id];
-    if (!window.confirm(`Put "${original.label}" back the way it came? Your changes to it will be lost.`)) return;
     keep(readPacks().filter((p) => p.id !== pack.id));
     playClick();
   };
@@ -200,7 +199,7 @@ export default function MemoryWords() {
                 </button>
                 <input
                   className="input"
-                  value={item.word}
+                  value={caps(item.word)}
                   maxLength={22}
                   placeholder="fish"
                   aria-label={`Word ${i + 1}`}
@@ -280,12 +279,10 @@ export default function MemoryWords() {
         <ul className="words-packs">
           {packs.map((p) => {
             const shipped = isShipped(p.id);
-            const changed = shipped && isCustom(p);
             return (
               <li key={p.id} className="words-pack">
                 <span className="words-pack-name">
                   <span aria-hidden>{p.emoji}</span> {p.label}
-                  {changed && <span className="words-pack-tag">changed</span>}
                 </span>
                 <span className="words-pack-count">{p.items.length} words</span>
                 <button
@@ -298,11 +295,6 @@ export default function MemoryWords() {
                 >
                   ✏️ Edit
                 </button>
-                {changed && (
-                  <button type="button" className="btn btn-ghost" onClick={() => restore(p)}>
-                    ↩ Original
-                  </button>
-                )}
                 {!shipped && (
                   <button type="button" className="btn btn-ghost" onClick={() => remove(p)}>
                     🗑 Delete

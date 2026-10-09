@@ -19,6 +19,27 @@ function caps(word: string) {
 
 type Mode = 'pictures' | 'words';
 
+/** Room left round the board when only the cards are on the screen, and between cards. */
+const FOCUS_EDGE = 24;
+const FOCUS_GAP = 14;
+
+/**
+ * How many columns make the cards biggest on a screen of that size, and how wide the board
+ * is then. Cards are three wide to four tall; a projector screen is wide, so it often takes
+ * more columns than the page does.
+ */
+function focusFit(count: number, width: number, height: number) {
+  const w = width - FOCUS_EDGE * 2,
+    h = height - FOCUS_EDGE * 2;
+  let best = { cols: 4, card: 0 };
+  for (let cols = 2; cols <= 10; cols++) {
+    const rows = Math.ceil(count / cols);
+    const card = Math.min((w - (cols - 1) * FOCUS_GAP) / cols, ((h - (rows - 1) * FOCUS_GAP) / rows) * 0.75);
+    if (card > best.card) best = { cols, card };
+  }
+  return { cols: best.cols, width: best.cols * best.card + (best.cols - 1) * FOCUS_GAP };
+}
+
 interface Card {
   /** Unique per card. */
   key: string;
@@ -61,6 +82,10 @@ function deal(decks: Pack[], deckId: string, pairs: number, mode: Mode): Card[] 
  * read aloud, so the class hears it each time it is found; a pair that does not match
  * turns back. "Picture & word" deals one picture and one word per pair, which asks the
  * child to read as well as remember.
+ *
+ * "Play" deals a new game and shows nothing but the cards, as big as the screen allows and
+ * full screen where the browser lets it, so the class looks at the game only. Clara asked
+ * for it; the ✕ in the corner, or Esc, brings the page back.
  */
 export default function MemoryGame() {
   // the packs the game ships with, plus anything the teacher wrote in the words page
@@ -74,6 +99,9 @@ export default function MemoryGame() {
   const [moves, setMoves] = useState(0);
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | undefined>(undefined);
+  /** Only the cards on the screen. */
+  const [focus, setFocus] = useState(false);
+  const [screen, setScreen] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   const deck = decks.find((d) => d.id === deckId) ?? decks[0];
   const won = found.length > 0 && found.length === cards.length / 2;
@@ -114,6 +142,33 @@ export default function MemoryGame() {
     burstConfetti();
   }, [won]);
 
+  // while only the cards show: follow the size of the screen, and leave on Esc or when the
+  // browser leaves full screen
+  useEffect(() => {
+    if (!focus) return;
+    const resize = () => setScreen({ width: window.innerWidth, height: window.innerHeight });
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setFocus(false);
+    const left = () => !document.fullscreenElement && setFocus(false);
+    resize();
+    window.addEventListener('resize', resize);
+    window.addEventListener('keydown', key);
+    document.addEventListener('fullscreenchange', left);
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('keydown', key);
+      document.removeEventListener('fullscreenchange', left);
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, [focus]);
+
+  const play = () => {
+    playClick();
+    start();
+    setFocus(true);
+    // full screen where the browser allows it; the cards fill the page either way
+    void document.documentElement.requestFullscreen?.().catch(() => {});
+  };
+
   const flip = (card: Card) => {
     if (busy || up.includes(card.key) || found.includes(card.pair)) return;
     playClick();
@@ -139,6 +194,81 @@ export default function MemoryGame() {
   };
 
   const columns = useMemo(() => (cards.length <= 12 ? 4 : cards.length <= 16 ? 4 : 5), [cards.length]);
+  const fit = useMemo(
+    () => (focus ? focusFit(cards.length, screen.width, screen.height) : null),
+    [focus, cards.length, screen],
+  );
+
+  const board = (
+    <div
+      className="memory-board"
+      style={
+        fit
+          ? { ['--cols' as string]: fit.cols, ['--gap' as string]: `${FOCUS_GAP}px`, maxWidth: fit.width }
+          : { ['--cols' as string]: columns }
+      }
+    >
+      {cards.map((card, place) => {
+        const isUp = up.includes(card.key) || found.includes(card.pair);
+        const isFound = found.includes(card.pair);
+        // the pack as it is now, so a picture changed or centred since the deal shows up
+        const item = deck.items.find((i) => i.word === card.item.word) ?? card.item;
+        return (
+          <button
+            key={card.key}
+            type="button"
+            className={`mcard${isUp ? ' is-up' : ''}${isFound ? ' is-found' : ''}`}
+            onClick={() => flip(card)}
+            aria-label={isUp ? caps(item.word) : `Card ${place + 1}`}
+          >
+            <span className="mcard-inner">
+              {/* a number, so the class can call out which two cards to turn */}
+              <span className="mcard-back" aria-hidden>
+                <span className="mcard-num">{place + 1}</span>
+              </span>
+              <span className="mcard-front">
+                {card.face === 'picture' ? (
+                  <>
+                    <ItemPicture item={item} className="mcard-emoji" />
+                    {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
+                  </>
+                ) : (
+                  <span className="mcard-only-word">{caps(card.item.word)}</span>
+                )}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  if (focus)
+    return (
+      <div className="memory-focus">
+        <button
+          type="button"
+          className="memory-focus-exit"
+          aria-label="Exit"
+          title="Exit"
+          onClick={() => {
+            playClick();
+            setFocus(false);
+          }}
+        >
+          ✕
+        </button>
+        {board}
+        {won && (
+          <div className="memory-focus-win" role="status">
+            <p>🎉 You found them all in {moves} tries!</p>
+            <button type="button" className="btn btn-fun" onClick={play}>
+              ▶ Play again
+            </button>
+          </div>
+        )}
+      </div>
+    );
 
   return (
     <div className="memory">
@@ -225,6 +355,9 @@ export default function MemoryGame() {
           <button type="button" className="btn btn-fun" onClick={() => start()}>
             🔀 New game
           </button>
+          <button type="button" className="btn btn-primary" onClick={play}>
+            ▶ Play
+          </button>
         </div>
       </div>
 
@@ -243,40 +376,7 @@ export default function MemoryGame() {
         </p>
       )}
 
-      <div className="memory-board" style={{ ['--cols' as string]: columns }}>
-        {cards.map((card, place) => {
-          const isUp = up.includes(card.key) || found.includes(card.pair);
-          const isFound = found.includes(card.pair);
-          // the pack as it is now, so a picture changed or centred since the deal shows up
-          const item = deck.items.find((i) => i.word === card.item.word) ?? card.item;
-          return (
-            <button
-              key={card.key}
-              type="button"
-              className={`mcard${isUp ? ' is-up' : ''}${isFound ? ' is-found' : ''}`}
-              onClick={() => flip(card)}
-              aria-label={isUp ? caps(item.word) : `Card ${place + 1}`}
-            >
-              <span className="mcard-inner">
-                {/* a number, so the class can call out which two cards to turn */}
-                <span className="mcard-back" aria-hidden>
-                  <span className="mcard-num">{place + 1}</span>
-                </span>
-                <span className="mcard-front">
-                  {card.face === 'picture' ? (
-                    <>
-                      <ItemPicture item={item} className="mcard-emoji" />
-                      {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
-                    </>
-                  ) : (
-                    <span className="mcard-only-word">{caps(card.item.word)}</span>
-                  )}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {board}
 
       <PictureCredits />
     </div>
