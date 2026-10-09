@@ -52,7 +52,9 @@ const rows = {
   eyes: ["stalks", "multiple", "one"],
   mouth: ["smile", "fangs", "beak"],
   arms: ["claw", "tentacle", "pincher"],
-  legs: ["bird", "long", "snake"],
+  // paws were the orange model's own feet until Clara asked for them to look like the
+  // drawing in the options, and green: now they are modelled from it like the others
+  legs: ["paws", "bird", "long", "snake"],
 };
 const solids = {
   egg: [0, 1, 2, 4, 16],
@@ -60,6 +62,10 @@ const solids = {
   hourglass: [2, 3, 16, 25],
   claw: [0, 1, -100, -104],
   long: [-100, -101, -102, -103],
+  // the two furry paws; their pale soles are marks on them and their toes are lines
+  paws: [-100, -101],
+  // the four octopus tentacles; their suckers are marks on them
+  tentacle: [-100, -101, -102, -103],
 };
 // Painted lighting in the flat art is replaced by real lighting. Freckles, cheeks and bellies remain.
 const skip = {
@@ -405,6 +411,133 @@ function line(p, front = () => 0, radius = p.sw / 2) {
   }
   return mergeGeometries(groups);
 }
+/*
+ * The paws, as in the picture Clara sent: a soft, thick paw whose edge is a ring of round
+ * lobes; on its front a pale pad that stands out from it and runs down past its foot into a
+ * rounded tip; and three raised dark-green toes running down the pad to that tip.
+ *
+ * Lofted slice by slice, the lobes survived only at the sides; inflated from the outline,
+ * every valley between two lobes became a sharp crease. So the paw is built the way it looks:
+ * a flattened round core with a ring of balls melted into it.
+ */
+const PAW_TOE = "#2E9A28";
+/** Distance to an ellipsoid, near enough for blending. */
+function ellipsoid(x, y, z, c, r) {
+  const k = Math.hypot((x - c[0]) / r[0], (y - c[1]) / r[1], (z - c[2]) / r[2]);
+  return (k - 1) * Math.min(...r);
+}
+/** Two shapes melted together, with a soft fillet of width k where they meet. */
+function blend(a, b, k) {
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k * 0.25;
+}
+function pawBody(p) {
+  const { box, pts } = outline(p);
+  const sz = box.getSize(new T.Vector2()),
+    c = box.getCenter(new T.Vector2());
+  const rx = sz.x / 2,
+    ry = sz.y / 2,
+    rz = Math.min(rx, ry) * 0.62;
+  const lobe = Math.min(rx, ry) * 0.34;
+  const ring = [];
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.PI / 2;
+    ring.push([c.x + Math.cos(a) * (rx - lobe * 0.95), c.y + Math.sin(a) * (ry - lobe * 0.95)]);
+  }
+  const sdf = (x, y, z) => {
+    let d = ellipsoid(x, y, z, [c.x, c.y, 0], [rx - lobe * 1.0, ry - lobe * 1.0, rz]);
+    for (const [lx, ly] of ring)
+      d = blend(d, ellipsoid(x, y, z, [lx, ly, 0], [lobe, lobe, rz * 0.5]), lobe * 0.7);
+    return d;
+  };
+  const res = 64,
+    span = Math.max(sz.x, sz.y) * 1.15;
+  const mc = new MarchingCubes(res, material(p.fill), false, false, 200000);
+  mc.isolation = 0;
+  for (let iz = 0; iz < res; iz++)
+    for (let iy = 0; iy < res; iy++)
+      for (let ix = 0; ix < res; ix++) {
+        const x = c.x + (ix / res - 0.5) * span,
+          y = c.y + (iy / res - 0.5) * span,
+          z = (iz / res - 0.5) * span;
+        mc.field[iz * res * res + iy * res + ix] = -sdf(x, y, z);
+      }
+  mc.update();
+  const count = mc.geometry.drawRange.count;
+  const arr = mc.geometry.attributes.position.array.slice(0, count * 3);
+  for (let i = 0; i < arr.length; i += 3) {
+    arr[i] = c.x + (arr[i] * span) / 2;
+    arr[i + 1] = -c.y - (arr[i + 1] * span) / 2;
+    arr[i + 2] *= span / 2;
+  }
+  // y is inverted from SVG space, so reverse the triangle winding
+  for (let i = 0; i < arr.length; i += 9)
+    for (let j = 0; j < 3; j++) {
+      const t = arr[i + 3 + j];
+      arr[i + 3 + j] = arr[i + 6 + j];
+      arr[i + 6 + j] = t;
+    }
+  const g = new T.BufferGeometry();
+  g.setAttribute("position", new T.Float32BufferAttribute(arr, 3));
+  const welded = mergeVertices(g, 0.01);
+  welded.computeVertexNormals();
+  mc.geometry.dispose();
+  // how far forward the paw's surface is, found by walking in from the front
+  const front = (x, y) => {
+    for (let z = rz * 1.4; z > -rz; z -= rz / 40) if (sdf(x, y, z) <= 0) return z;
+    return -Infinity;
+  };
+  return { geo: welded, front, pts, box };
+}
+/** The pale pad: a lens of its own, sitting a little into the paw and a little below it. */
+function pawPad(p, hostFront) {
+  const { box, pts } = outline(p),
+    sz = box.getSize(new T.Vector2()),
+    c = box.getCenter(new T.Vector2());
+  const rx = (sz.x / 2) * 1.12,
+    ry = (sz.y / 2) * 1.3,
+    cx = c.x,
+    cy = c.y + ry * 0.36,
+    rz = Math.min(rx, ry) * 0.55;
+  const host = hostFront(cx, cy - ry * 0.3);
+  const cz = (Number.isFinite(host) ? host : 0) - rz * 0.55;
+  const g = new T.SphereGeometry(1, 48, 32);
+  g.scale(rx, ry, rz);
+  g.translate(cx, -cy, cz);
+  const front = (x, y) => {
+    const f = 1 - ((x - cx) / rx) ** 2 - ((y - cy) / ry) ** 2;
+    return f >= 0 ? cz + rz * Math.sqrt(f) : -Infinity;
+  };
+  return { geo: g, pts, box, front, pad: { cx, cy, rx, ry, cz, rz } };
+}
+/** Three raised toes running down the pad, round at both ends, following its curve. */
+function pawToes(pad) {
+  const { cx, cy, rx, ry, cz, rz } = pad;
+  const r = rx * 0.105;
+  const parts = [];
+  for (const k of [-0.36, 0, 0.36]) {
+    const x = cx + k * rx;
+    const pts = [];
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      // from a little above the middle of the pad, down and round under its tip
+      const y = cy - ry * 0.12 + t * ry * 1.02;
+      const f = 1 - ((x - cx) / rx) ** 2 - ((y - cy) / ry) ** 2;
+      if (f <= 0.02) break;
+      pts.push(new T.Vector3(x, -y, cz + rz * Math.sqrt(f) + r * 0.25));
+    }
+    if (pts.length < 3) continue;
+    parts.push(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 40, r, 14, false));
+    for (const q of [pts[0], pts.at(-1)]) {
+      const cap = new T.SphereGeometry(r, 14, 10);
+      cap.translate(q.x, q.y, q.z);
+      parts.push(cap);
+    }
+  }
+  // tubes and caps are all indexed, with the same attributes, so they join as they are
+  return mergeGeometries(parts);
+}
+
 const catalogue = {};
 const reports = [];
 for (const [row, ids] of Object.entries(rows))
@@ -455,7 +588,9 @@ for (const [row, ids] of Object.entries(rows))
             ? ball(p)
             : row === "arms"
               ? roundedSolid(p, 0.85)
-              : loft(
+              : id === "paws"
+                ? pawBody(p)
+                : loft(
                   p,
                   bodyMain
                     ? 0.85
@@ -471,6 +606,17 @@ for (const [row, ids] of Object.entries(rows))
         if (isEye) {
           group.userData.attachment = [p.cx, p.cy, 0];
         }
+      } else if (p.fill && id === "paws") {
+        // found by the middle of its own outline: the measured cx/cy of a shape drawn with arcs
+        // is off, and put the right paw's pad inside the left paw
+        const mid = outline(p).box.getCenter(new T.Vector2());
+        const host = hosts.filter((h) => inside(mid.x, mid.y, h.pts)).at(-1);
+        const pad = pawPad(p, host?.front ?? overallFront);
+        mesh(group, pad.geo, p.fill, `${id}_${p.i}_pad`);
+        mesh(group, pawToes(pad.pad), PAW_TOE, `${id}_${p.i}_toes`);
+        hosts.push({ ...pad, p, group });
+      } else if (p.stroke && id === "paws") {
+        // the toes are built with their pad, following its curve
       } else if (p.fill) {
         const candidates = hosts.filter((h) => inside(p.cx, p.cy, h.pts));
         const host = candidates.at(-1);

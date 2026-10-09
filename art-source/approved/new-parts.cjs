@@ -20,7 +20,9 @@
  *   fangs   a closed mouth with two teeth hanging OUTSIDE it
  *   beak    not a mouth shape at all: a hard yellow beak
  *   long    legs with a leg — a shaft and a foot, where every other pair is two lumps
- *   paws    round and furry, the same fur the body wears
+ *   paws    round and furry, green since Clara asked for them green
+ *   tentacle two octopus tentacles to a side, curling at the tip, with suckers underneath —
+ *            "isso não parece um tentacle", she said of the pink arms cut from Bubblegoo
  */
 const fs = require('fs');
 const path = require('path');
@@ -43,6 +45,11 @@ const PURPLE = '#9B5DE5';
 const PURPLE_DARK = '#7A43C9';
 const ORANGE = '#FF8A47';
 const ORANGE_LIGHT = '#FFA45C';
+const TENTACLE = '#FF9BC9';
+const SUCKER = '#FFD6EA';
+/** The paws went green at Clara's asking, in the 2D and the 3D alike. */
+const GREEN = '#6FD14A';
+const GREEN_LIGHT = '#A8EC86';
 
 /** A rounded blob as a path, so everything downstream deals with one kind of outline. */
 function blob(cx, cy, rx, ry) {
@@ -85,6 +92,82 @@ function furryBlob(cx, cy, rx, ry, chord, sag) {
     d += ` C ${P(add(crest, mul(along, ease)))} ${P(add(b, mul(norm(sub(crest, b)), len(sub(crest, b)) * 0.45)))} ${P(b)}`;
   }
   return `${d} Z`;
+}
+
+/** A closed outline through a ring of points, smoothed into curves (Catmull-Rom). */
+function smoothRing(pts) {
+  const n = pts.length;
+  let d = `M ${P(pts[0])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1 = add(p1, mul(sub(p2, p0), 1 / 6));
+    const c2 = sub(p2, mul(sub(p3, p1), 1 / 6));
+    d += ` C ${P(c1)} ${P(c2)} ${P(p2)}`;
+  }
+  return `${d} Z`;
+}
+
+/** A point on a cubic curve. */
+function bez(a, b, c, d, t) {
+  const u = 1 - t;
+  return add(add(mul(a, u * u * u), mul(b, 3 * u * u * t)), add(mul(c, 3 * u * t * t), mul(d, t * t * t)));
+}
+
+/**
+ * One octopus tentacle: thick where it leaves the body, thin and curled at the tip, with a
+ * row of suckers down the side that faces into the curl.
+ *
+ * The middle of it runs along a wave (a cubic curve) and then winds into a little spiral,
+ * and the outline is that middle line widened — by a lot at the root, by almost nothing at
+ * the tip. `curl` is +1 or -1, the way the tip winds. Returns the tentacle and its suckers.
+ */
+function tentacle(root, c1, c2, tip, curl, rootWidth) {
+  const mid = [];
+  const N = 36;
+  for (let i = 0; i <= N; i++) mid.push(bez(root, c1, c2, tip, i / N));
+  // the curl: a spiral that starts along the direction the wave arrives in
+  const along = norm(sub(mid[N], mid[N - 2]));
+  const side = mul([-along[1], along[0]], curl);
+  const r0 = rootWidth * 0.55;
+  const centre = add(tip, mul(side, r0));
+  const start = Math.atan2(tip[1] - centre[1], tip[0] - centre[0]);
+  const M = 14;
+  for (let i = 1; i <= M; i++) {
+    const t = i / M;
+    const a = start + curl * t * Math.PI * 1.35;
+    const r = r0 * (1 - 0.55 * t);
+    mid.push(add(centre, [Math.cos(a) * r, Math.sin(a) * r]));
+  }
+  const count = mid.length;
+  const width = (i) => {
+    const t = i / (count - 1);
+    return rootWidth * (1 - 0.86 * Math.pow(t, 0.8)) + 0.6;
+  };
+  const normalAt = (i) => {
+    const a = mid[Math.max(0, i - 1)];
+    const b = mid[Math.min(count - 1, i + 1)];
+    const u = norm(sub(b, a));
+    return [-u[1], u[0]];
+  };
+  const left = [];
+  const right = [];
+  for (let i = 0; i < count; i++) {
+    const n = normalAt(i);
+    left.push(add(mid[i], mul(n, width(i))));
+    right.push(sub(mid[i], mul(n, width(i))));
+  }
+  const body = smoothRing([...left, ...right.reverse()]);
+  // suckers on the side that faces into the curl, smaller towards the tip
+  const suckers = [];
+  for (let i = 5; i < count - 8; i += 6) {
+    const n = mul(normalAt(i), -curl);
+    const w = width(i);
+    suckers.push(blob(...add(mid[i], mul(n, w * 0.42)), w * 0.36, w * 0.33));
+  }
+  return { body, suckers };
 }
 
 /* ------------------------------------------------------------------ the mouths */
@@ -140,14 +223,14 @@ const long = {
   ],
 };
 
-/** Furry paws, wearing the same fur as the body. */
+/** Furry green paws. */
 const paws = {
   box: { x: 0, y: 0, w: 240, h: 150 },
   add: [
-    { d: furryBlob(62, 74, 50, 44, 30, 9), fill: ORANGE, stroke: INK, sw: 5 },
-    { d: furryBlob(178, 74, 50, 44, 30, 9), fill: ORANGE, stroke: INK, sw: 5 },
-    { d: blob(62, 92, 30, 20), fill: ORANGE_LIGHT },
-    { d: blob(178, 92, 30, 20), fill: ORANGE_LIGHT },
+    { d: furryBlob(62, 74, 50, 44, 30, 9), fill: GREEN, stroke: INK, sw: 5 },
+    { d: furryBlob(178, 74, 50, 44, 30, 9), fill: GREEN, stroke: INK, sw: 5 },
+    { d: blob(62, 92, 30, 20), fill: GREEN_LIGHT },
+    { d: blob(178, 92, 30, 20), fill: GREEN_LIGHT },
     { d: 'M 44 96 L 44 112', stroke: INK, sw: 4 },
     { d: 'M 62 98 L 62 116', stroke: INK, sw: 4 },
     { d: 'M 80 96 L 80 112', stroke: INK, sw: 4 },
@@ -156,6 +239,31 @@ const paws = {
     { d: 'M 196 96 L 196 112', stroke: INK, sw: 4 },
   ],
 };
+
+/* -------------------------------------------------------------------- the arms */
+
+/**
+ * Tentacle arms: two to a side, one waving up and one hanging down, mirrored left and right.
+ * The roots meet the body side by side; everything else is the tentacle's own.
+ */
+const tentacleArms = (() => {
+  const W = 320;
+  const flip = ([x, y]) => [W - x, y];
+  // the roots leave the same hole for the body as every other pair (gen.cjs HOLE = 0.4), so
+  // nothing is slid and the tentacles keep the size they are drawn at
+  const up = [[100, 92], [70, 56], [46, 98], [22, 40]];
+  const down = [[98, 124], [68, 146], [56, 110], [26, 176]];
+  const left = [tentacle(...up, -1, 22), tentacle(...down, 1, 21)];
+  const right = [tentacle(...up.map(flip), 1, 22), tentacle(...down.map(flip), -1, 21)];
+  const all = [...left, ...right];
+  return {
+    box: { x: 0, y: 0, w: W, h: 200 },
+    add: [
+      ...all.map((t) => ({ d: t.body, fill: TENTACLE, stroke: INK, sw: 5 })),
+      ...all.flatMap((t) => t.suckers.map((d) => ({ d, fill: SUCKER, stroke: INK, sw: 2.5 }))),
+    ],
+  };
+})();
 
 /* ------------------------------------------------------- which cut each replaces */
 /**
@@ -169,8 +277,9 @@ const FROM = {
   beak: ['2-Fuzzbop', 'mouth'],
   long: ['1-Bricky', 'legs'],
   paws: ['2-Fuzzbop', 'legs'],
+  tentacle: ['5-Bubblegoo', 'arms'],
 };
-const SHAPES = { smile, fangs, beak, long, paws };
+const SHAPES = { smile, fangs, beak, long, paws, tentacle: tentacleArms };
 
 const file = path.join(__dirname, 'extras.json');
 const all = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};

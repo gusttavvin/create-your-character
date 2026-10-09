@@ -35,12 +35,15 @@ interface Asset {
 }
 const library: Record<string, Asset> = rawLibrary;
 const WORLD = 4.4 / 720;
-const original: Record<Row, string> = {
+/**
+ * The pieces taken from the orange monster's own model. His paws used to be among them; at
+ * Clara's asking the paws are now modelled from their drawing, in green, like the other legs.
+ */
+const original: Partial<Record<Row, string>> = {
   body: "round",
   eyes: "angry",
   mouth: "tongue",
   arms: "fuzzy",
-  legs: "paws",
 };
 const rows: Row[] = ["body", "legs", "arms", "eyes", "mouth"];
 const originalUrl = `${import.meta.env.BASE_URL}models/monstrinho.glb`;
@@ -267,6 +270,33 @@ const EYE_LIFT: Record<string, Record<string, number>> = {
   multiple: { hourglass: 0.24 },
 };
 
+/**
+ * Legs made bigger or smaller than the room the sheet gives them, keeping the feet on the
+ * ground: the paws came out far too big on the egg and the round one and tiny on the
+ * hourglass. The long legs fitted to each body's room came out of a different thickness on
+ * each — much thicker on the egg, tiny on the hourglass — so they are brought to one
+ * thickness on every body, a pair about 1.3 wide in the scene.
+ */
+const LEG_SIZE: Record<string, Record<string, number>> = {
+  paws: { round: 0.8, egg: 0.8, hourglass: 1.55 },
+  long: { round: 0.69, egg: 0.77, square: 1.53, hourglass: 2.6 },
+  snake: { hourglass: 1.6 },
+};
+
+/**
+ * How far the whole monster but his legs is lifted, as a share of the body's height, for a
+ * body and the legs under it. The hourglass stands low over his legs: the long ones showed
+ * only their feet, and Clara asked for him to be raised until the legs show.
+ */
+const LIFT_FOR_LEGS: Record<string, Record<string, number>> = {
+  hourglass: { long: 0.13 },
+};
+
+/** How far legs come down below their place, as a share of the body's height. */
+const LEG_DROP: Record<string, Record<string, number>> = {
+  paws: { hourglass: 0.05 },
+};
+
 interface Head {
   /** The highest point of the head, in the scene's units. */
   top: number;
@@ -331,6 +361,203 @@ function headOf(body: string, scene: Group): Head {
       for (const v of points) if (Math.abs(v.x - x) < width * 0.03 && v.y > best) best = v.y;
       return best === -Infinity ? top : best;
     },
+  };
+}
+
+/**
+ * The claw arms: each one set against the side of the body, and made bigger about the end
+ * that meets it where Clara found them small. Fitted by the gap between the two arms, most of
+ * each arm sat inside the orange and the purple body with only the hand showing, and on the
+ * hourglass the hands were tiny and did not reach the body. At 1.25 the orange one's came out
+ * out of proportion; set against his mane, his own size is enough.
+ */
+const CLAW_FIT: Record<string, number> = {
+  round: 1,
+  egg: 1,
+  square: 1.3,
+  hourglass: 1.7,
+};
+
+/**
+ * The arms that are set against the side of the body, and how much bigger each is made about
+ * the end that meets it. The octopus tentacles get the same treatment as the claw, so they
+ * touch the body whatever its shape; drawn thin, they are made a little bigger in 3D.
+ */
+const ARM_FIT: Record<string, Record<string, number>> = {
+  claw: CLAW_FIT,
+  tentacle: { round: 1.1, egg: 1.15, square: 1.2, hourglass: 1.4 },
+  // on the hourglass the pincher sat inside the body and did not show at all
+  pincher: { round: 1, egg: 1.4, square: 1, hourglass: 1.4 },
+};
+
+/**
+ * How far one kind of arm comes down the body, as a share of the body's height. On the square
+ * the claw and the pincher met it high on the head; Clara asked for them a little lower.
+ */
+const ARM_LOWER: Record<string, Record<string, number>> = {
+  claw: { square: 0.07 },
+  pincher: { square: 0.07, egg: 0.06 },
+};
+
+/**
+ * How far the hanging claw arm is opened out from the body, turning at the shoulder. On the
+ * hourglass it hung down past a waist narrower than the hips below, and the hand went behind
+ * the hips.
+ */
+const CLAW_OPEN: Record<string, number> = {
+  hourglass: (28 * Math.PI) / 180,
+};
+
+/**
+ * How far every arm comes down the body, as a share of the body's height. On the hourglass all
+ * of them met it too high; Clara asked for them lower.
+ */
+const ARM_DROP: Record<string, number> = {
+  hourglass: 0.1,
+};
+
+/**
+ * The pieces that go in front of what hangs round a body rather than behind it, on each body.
+ *
+ * The egg's ears hang down the sides of his head to where the arms are; set in the middle of
+ * the body, the arms went behind them and only the tip of a tentacle or the fingers of a claw
+ * showed below an ear. In the drawing the arms are over the ears.
+ *
+ * On the orange one the mane came across the roots of the tentacles and of the snake legs.
+ * Clara wants them to come out of the cream of his face, over the mane.
+ */
+const IN_FRONT: Record<string, string[]> = {
+  egg: ["claw", "tentacle", "pincher"],
+  round: ["tentacle", "snake"],
+};
+
+/** What hangs round a body, in the scene: the orange one's mane, or the egg's ears. */
+function coverOf(body: string, scene: Group) {
+  scene.updateMatrixWorld(true);
+  if (body === "round") {
+    const points: Vector3[] = [];
+    const toScene = bodyToScene(body);
+    scene.traverse((o) => {
+      if (!(o instanceof Mesh) || !/^(Juba|Corpo)__/.test(o.name)) return;
+      const q = o.geometry.attributes.position;
+      for (let i = 0; i < q.count; i++)
+        points.push(toScene(new Vector3().fromBufferAttribute(q, i).applyMatrix4(o.matrixWorld)));
+    });
+    return points;
+  }
+  return earsOf(body, scene);
+}
+
+/**
+ * How far forward a piece must come to be clear of what hangs round the body, where they
+ * cross: `lo` and `hi` are the corners of the piece in the scene.
+ */
+function clearOf(cover: Vector3[], lo: Vector3, hi: Vector3) {
+  let front = -Infinity;
+  for (const v of cover)
+    if (v.x > lo.x && v.x < hi.x && v.y > lo.y && v.y < hi.y) front = Math.max(front, v.z);
+  return Math.max(0, front + 0.01 - lo.z);
+}
+
+/**
+ * The ears of a body, in the scene: the pieces that hang beside the head, narrow and well to
+ * one side of the middle.
+ */
+function earsOf(body: string, scene: Group) {
+  scene.updateMatrixWorld(true);
+  const asset = library[body];
+  const half = (asset.max[0] - asset.min[0]) / 2,
+    mid = (asset.max[0] + asset.min[0]) / 2;
+  const toScene = bodyToScene(body);
+  const points: Vector3[] = [];
+  scene.traverse((o) => {
+    if (!(o instanceof Mesh) || !/_solid$/.test(o.name)) return;
+    const w = new Box3().setFromObject(o);
+    if (w.max.x - w.min.x >= 0.6 * half) return;
+    if (Math.abs((w.min.x + w.max.x) / 2 - mid) < 0.5 * half) return;
+    const q = o.geometry.attributes.position;
+    for (let i = 0; i < q.count; i++)
+      points.push(toScene(new Vector3().fromBufferAttribute(q, i).applyMatrix4(o.matrixWorld)));
+  });
+  return points;
+}
+
+/** From a body model's own metres to the scene, the way the body row is placed. */
+function bodyToScene(body: string): (v: Vector3) => Vector3 {
+  if (body === "round") {
+    const s = stand();
+    return (v) => new Vector3(v.x * s.scale, v.y * s.scale + s.floor, v.z * s.scale);
+  }
+  const slot = MONSTER_BODY_LAYOUT[body].body,
+    f = fit(library[body].min, library[body].max, slot);
+  const px = (slot.cx - 300) * WORLD,
+    py = (360 - slot.cy) * WORLD;
+  return (v) =>
+    new Vector3(
+      (v.x - f.center[0]) * f.scale + px,
+      (v.y - f.center[1]) * f.scale + py,
+      (v.z - f.center[2]) * f.scale,
+    );
+}
+
+/**
+ * How far the body reaches to each side at a given height, in the scene.
+ *
+ * Only the body itself counts — the torso and the head, or on the orange one his body and
+ * mane — not the horns, antennae or ears.
+ */
+function sidesOf(body: string, scene: Group, only = /^(Corpo|Juba)__/) {
+  scene.updateMatrixWorld(true);
+  const all: Mesh[] = [];
+  scene.traverse((o) => {
+    if (o instanceof Mesh) all.push(o);
+  });
+  const pieces =
+    body === "round"
+      ? all.filter((m) => only.test(m.name))
+      : all.filter((m) => {
+          if (!m.name.endsWith("_solid")) return false;
+          const w = new Box3().setFromObject(m);
+          const asset = library[body];
+          return w.max.x - w.min.x >= 0.3 * (asset.max[0] - asset.min[0]);
+        });
+  const toScene = bodyToScene(body);
+  const points: Vector3[] = [];
+  for (const m of pieces) {
+    const p = m.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++)
+      points.push(toScene(new Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld)));
+  }
+  const ys = points.map((v) => v.y);
+  const tall = Math.max(...ys) - Math.min(...ys);
+  /*
+   * Halfway between the front and the back of the whole body, as it looks from the side — on
+   * the orange one with his face, which stands in front of his body. Taken at one height only,
+   * or without the face, it came out behind the middle: his mane goes far back.
+   */
+  const zs = points.map((v) => v.z);
+  if (body === "round")
+    for (const m of all.filter((m) => m.name.startsWith("Rosto__"))) {
+      const p = m.geometry.attributes.position;
+      for (let i = 0; i < p.count; i++)
+        zs.push(toScene(new Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld)).z);
+    }
+  const middle = (zs.reduce((a, b) => Math.min(a, b)) + zs.reduce((a, b) => Math.max(a, b))) / 2;
+  /*
+   * A thin slice at that very height. A thick one took in the widest part of the body nearby
+   * — on the hourglass, its head — and an arm set against that floated beside the narrower
+   * waist it was really at.
+   */
+  return (y: number) => {
+    let left = Infinity,
+      right = -Infinity;
+    for (let band = tall * 0.006; left === Infinity && band < tall * 0.1; band *= 2)
+      for (const v of points)
+        if (Math.abs(v.y - y) < band) {
+          left = Math.min(left, v.x);
+          right = Math.max(right, v.x);
+        }
+    return { left, right, middle };
   };
 }
 
@@ -421,6 +648,10 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
     // the original pieces, made to match their drawings on every body
     if (native && row === "eyes") drawnEyes(own.root, own.materials);
     if (native && row === "mouth") secondTooth(own.root, own.geometries);
+    if (row === "arms" && id === "claw")
+      // the black outline round each hand; the little lines between the fingers stay
+      for (const line of meshesIn(own.root, "_line"))
+        if (boxOf([line]).getSize(new Vector3()).x > 0.1) line.removeFromParent();
     // Keep the approved original pose exactly as supplied, without re-fitting each row.
     if (body === "round" && native) {
       const s = stand();
@@ -453,6 +684,12 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
     const px = (slot.cx - 300) * WORLD;
     let py = (360 - slot.cy) * WORLD;
     if (row === "eyes") py += (EYE_LIFT[id]?.[body] ?? 0) * (max[1] - min[1]) * f.scale;
+    const legSize = row === "legs" ? (LEG_SIZE[id]?.[body] ?? 1) : 1;
+    if (legSize !== 1) {
+      // resized about the soles, so the feet stay where the floor is
+      py += (min[1] - f.center[1]) * f.scale * (1 - legSize);
+      f.scale *= legSize;
+    }
     /** Stalk eyes: the head they stand on, and how wide one eye is in the scene. */
     let stalks: { head: Head; d: number } | null = null;
     if (row === "eyes" && id === "stalks") {
@@ -473,7 +710,110 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
     inner.position.set(-f.center[0], -f.center[1], -f.center[2]);
     own.root.add(inner);
     own.root.scale.setScalar(f.scale);
+    const bodyH = MONSTER_BODY_LAYOUT[body].body.h * WORLD;
+    if (row === "arms") py -= ((ARM_DROP[body] ?? 0) + (ARM_LOWER[id]?.[body] ?? 0)) * bodyH;
+    if (row === "legs") py -= (LEG_DROP[id]?.[body] ?? 0) * bodyH;
     own.root.position.set(px, py, 0);
+    if (row === "arms" && ARM_FIT[id]?.[body]) {
+      /*
+       * Each arm is made bigger about the end that meets the body, and that end is set just
+       * inside the side of the body at its own height — so the whole arm shows, and both
+       * arms touch the body whatever its shape.
+       */
+      const sides = sidesOf(body, bodyScene);
+      const meshes = meshesIn(inner);
+      const mid = boxOf(meshes).getCenter(new Vector3()).x;
+      const k = ARM_FIT[id][body];
+      const cover = IN_FRONT[body]?.includes(id) ? coverOf(body, bodyScene) : null;
+      // over the mane, the orange one's arms come out of the side of his face
+      const face = cover && body === "round" ? sidesOf(body, bodyScene, /^Rosto__/) : null;
+      for (const side of [-1, 1]) {
+        const arm = meshes.filter(
+          (m) => (boxOf([m]).getCenter(new Vector3()).x - mid) * side > 0,
+        );
+        if (!arm.length) continue;
+        const box = boxOf(arm);
+        const endX = side < 0 ? box.max.x : box.min.x;
+        const reach = (box.max.x - box.min.x) * 0.12;
+        let lo = Infinity,
+          hi = -Infinity;
+        for (const m of arm) {
+          const q = m.geometry.attributes.position;
+          for (let i = 0; i < q.count; i++)
+            if (Math.abs(q.getX(i) - endX) < reach) {
+              lo = Math.min(lo, q.getY(i));
+              hi = Math.max(hi, q.getY(i));
+            }
+        }
+        if (lo === Infinity) continue;
+        const end = new Vector3(endX, (lo + hi) / 2, 0);
+        for (const m of arm) stretch(m.geometry, end, new Vector3(k, k, k));
+        // an arm whose hand hangs below its shoulder is opened out, turning about the shoulder
+        const open = id === "claw" ? (CLAW_OPEN[body] ?? 0) : 0;
+        if (open && box.getCenter(new Vector3()).y < end.y)
+          for (const m of arm)
+            m.geometry
+              .translate(-end.x, -end.y, 0)
+              .rotateZ(side * open)
+              .translate(end.x, end.y, 0);
+        const y = (end.y - f.center[1]) * f.scale + py;
+        const x = (end.x - f.center[0]) * f.scale + px;
+        // the side of the body where it is narrowest across the end of the arm, so the whole
+        // of that end goes into it and no gap shows above or below
+        const half = ((hi - lo) / 2) * k * f.scale;
+        const across = [-1, -0.5, 0, 0.5, 1].map((t) => sides(y + t * half));
+        if (across.some((e) => !Number.isFinite(e.left))) continue;
+        const edge = {
+          left: Math.max(...across.map((e) => e.left)),
+          right: Math.min(...across.map((e) => e.right)),
+        };
+        const into = 0.5 * (hi - lo) * k * f.scale;
+        let target = side < 0 ? edge.left + into : edge.right - into;
+        const cream = face?.(y);
+        if (cream && Number.isFinite(cream.left))
+          target = side < 0 ? cream.left + into * 0.5 : cream.right - into * 0.5;
+        // and halfway through the body from front to back, so the body cuts neither the front
+        // nor the back of it — on the orange one the mane came across the tentacles' roots
+        const depth = across[2].middle;
+        const z = (boxOf(arm).getCenter(new Vector3()).z - f.center[2]) * f.scale;
+        for (const m of arm) m.geometry.translate((target - x) / f.scale, 0, (depth - z) / f.scale);
+        if (cover) {
+          // in front of any ear or mane the arm crosses, just clear of it
+          const b = boxOf(arm);
+          const toScene = (v: Vector3) =>
+            new Vector3(
+              (v.x - f.center[0]) * f.scale + px,
+              (v.y - f.center[1]) * f.scale + py,
+              (v.z - f.center[2]) * f.scale,
+            );
+          const forward = clearOf(cover, toScene(b.min), toScene(b.max));
+          for (const m of arm) m.geometry.translate(0, 0, forward / f.scale);
+        }
+      }
+    }
+    if (row === "legs" && body === "round") {
+      /*
+       * The orange one is much deeper behind his face than in front of it, with the mane
+       * round his back: legs under the middle of the model stood under his face. They go
+       * halfway between the front and the back of his body instead, and halfway between
+       * the sides of it just above them: their place on the sheet is a little to his left.
+       */
+      const top = py + (max[1] - f.center[1]) * f.scale;
+      const above = sidesOf(body, bodyScene)(top);
+      own.root.position.x = (above.left + above.right) / 2;
+      own.root.position.z = above.middle;
+      if (IN_FRONT[body]?.includes(id)) {
+        // over the mane, clear of it where they cross
+        const b = boxOf(meshesIn(inner));
+        const toScene = (v: Vector3) =>
+          new Vector3(
+            (v.x - f.center[0]) * f.scale + own.root.position.x,
+            (v.y - f.center[1]) * f.scale + py,
+            (v.z - f.center[2]) * f.scale + own.root.position.z,
+          );
+        own.root.position.z += clearOf(coverOf(body, bodyScene), toScene(b.min), toScene(b.max));
+      }
+    }
     if (row === "eyes" || row === "mouth") {
       const at = (x: number, y: number) =>
         skin(
@@ -598,6 +938,9 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
         // A smile is a surface detail; conform it to the new host rather than floating a flat panel.
         bendObject(inner, at, own.geometries);
         inner.position.z = 0;
+        // the pink of the smile is a flat shape with no depth of its own: bent onto the skin it
+        // lay exactly in it, and the face hid it on every body
+        for (const mark of meshesIn(inner, "_mark")) mark.geometry.translate(0, 0, 0.004);
       } else {
         own.root.position.z =
           skin(body, px, py) +
@@ -663,6 +1006,8 @@ class IfModelLoads extends Component<
 export default function Monster3D({ parts }: { parts: PartMap }) {
   const body =
     parts.body && MONSTER_BODY_LAYOUT[parts.body] ? parts.body : "round";
+  const lift =
+    (LIFT_FOR_LEGS[body]?.[parts.legs ?? ""] ?? 0) * MONSTER_BODY_LAYOUT[body].body.h * WORLD;
   return (
     <group name="monster-model-library">
       {rows.map((row) => {
@@ -676,13 +1021,15 @@ export default function Monster3D({ parts }: { parts: PartMap }) {
           </Suspense>
         );
         return (
-          <Part3D key={row} id={row}>
-            <IfModelLoads key={`${body}-${id}`} fallback={fallback}>
-              <Suspense fallback={null}>
-                <ModelPart row={row} id={id} body={body} />
-              </Suspense>
-            </IfModelLoads>
-          </Part3D>
+          <group key={row} position={[0, row === "legs" ? 0 : lift, 0]}>
+            <Part3D id={row}>
+              <IfModelLoads key={`${body}-${id}`} fallback={fallback}>
+                <Suspense fallback={null}>
+                  <ModelPart row={row} id={id} body={body} />
+                </Suspense>
+              </IfModelLoads>
+            </Part3D>
+          </group>
         );
       })}
     </group>

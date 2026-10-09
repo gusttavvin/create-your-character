@@ -12,9 +12,13 @@ O arquivo original `public/models/monstrinho.glb` não foi alterado.
 | eyes    | angry           | stalks.glb, multiple.glb, one.glb          |
 | mouth   | tongue          | smile.glb, fangs.glb, beak.glb             |
 | arms    | fuzzy           | claw.glb, tentacle.glb, pincher.glb        |
-| legs    | paws            | bird.glb, long.glb, snake.glb              |
+| legs    | —               | paws.glb, bird.glb, long.glb, snake.glb    |
 
-São peças individuais, não quinze personagens completos. Cada GLB usa metros, Y para
+As patas (*paws*) eram as do modelo laranja; desde 9 de outubro de 2026 são modeladas a partir
+do desenho, em verde, como as outras pernas, a pedido da Clara. O GLB laranja ainda tem as
+patas dele, mas o jogo não as usa mais.
+
+São peças individuais, não dezesseis personagens completos. Cada GLB usa metros, Y para
 cima, frente em +Z, base em Y=0 e centro X/Z na origem. O grupo raiz se chama
 `<fileira>_<id>`; as submalhas e os materiais de cada região têm nomes. Não há rig,
 animação, Draco, KTX2 ou arquivos externos. As cores são fatores PBR dos materiais,

@@ -839,3 +839,184 @@ o olho de cima ficava metade tampado.
 
 Conferido de frente, três quartos e lado; *Check model instances* com 16 personagens, 0
 coordenadas inválidas e 0 materiais compartilhados. `npm run build` passa.
+
+## Monstro 3D: rosa da *smile*, braços *claw*, patas verdes — 9 de outubro de 2026
+
+Clara: o oval rosa da *smile* não aparecia em nenhum 3D; a *claw* tinha contorno preto, estava
+curta no laranja e no roxo, pequena demais na ampulheta, e longe do corpo; as *paws* deviam
+ficar fofinhas e verdes. Na primeira volta cobri as patas de tufinhos de pelo: "eu odiei essa
+pelúcia — tem que ser algo parecido com o que está nas opções de escolha, inclusive muda lá
+para verde e o 2D também". Também disse que a *claw* ficou desproporcional no laranja, os
+braços continuavam longe do corpo, e as patas grandes demais no ovo e pequenas na ampulheta.
+
+- [x] **Rosa da smile:** no `smile.glb` o oval é uma folha sem espessura (`smile_-103_mark`);
+      dobrada sobre a pele ficava exatamente nela e o rosto a cobria. Agora fica um fio à
+      frente (0,004 m no modelo).
+- [x] **Contorno da claw:** saíram os dois contornos pretos grandes, um em volta de cada mão
+      (`claw_-103_line`, `claw_-107_line`); os risquinhos entre os dedos ficam.
+- [x] **Claw presa ao corpo (`CLAW_FIT`, `sidesOf`):** encaixada pelo vão entre os braços,
+      no laranja e no roxo quase todo o braço ficava dentro do corpo. Agora a ponta de cada
+      braço fica logo dentro da lateral do corpo, medida numa fatia fina na altura exata do
+      braço e no ponto mais estreito da base dele — uma fatia grossa pegava a cabeça da
+      ampulheta e o braço boiava ao lado da cintura. Tamanho: laranja e ovo como são, roxo
+      1,3×, ampulheta 1,7× (crescem em volta da ponta que encosta). No laranja, 1,25× tinha
+      ficado desproporcional.
+- [x] **Paws verdes, no 2D e no 3D:** no 2D, `new-parts.cjs` pinta as patas de `#6FD14A` e as
+      solas de `#A8EC86` (regerados `parts.tsx` e `paths3d.ts`; só as cores das patas mudaram).
+      No 3D as patas deixaram de ser as do modelo laranja: entraram na lista de pernas do
+      gerador oficial (`model-library.mjs`), que faz `paws.glb` do próprio desenho — as duas
+      patas peludas viram volume, as solas viram marca e os dedinhos, traços —, igual à figura
+      das opções. 457 KB, 22.480 triângulos, 0 erros e 0 avisos no glTF; os outros quinze
+      modelos saíram idênticos. A pelúcia saiu inteira do código.
+- [x] **Tamanho das paws (`LEG_SIZE`):** ovo 0,8×, ampulheta 1,55×, mudando em volta da sola
+      para os pés ficarem no chão; continuam encostadas no corpo.
+
+Conferido: frente, três quartos e matrizes de braços e pernas no `monster-review.html`;
+*Check model instances* com 16 personagens, 0 coordenadas inválidas e 0 materiais
+compartilhados. Falha simulada do `paws.glb`: só a fileira das pernas usou o fallback (que
+também ficou verde) e o resto continuou em 3D; arquivo restaurado. No jogo, 2D/3D mantém
+escolhas e frase, sem erro no console. `npm run build` passa. Documentação
+(`docs/monster-model-library.md`, `CLAUDE.md`) diz agora que as *paws* vêm do `paws.glb`.
+- [x] **Depois:** no quadrado os braços *claw* descem um pouco (`CLAW_DROP`, 7% da altura do
+      corpo). Na ampulheta o braço pendurado descia rente a uma cintura mais fina que o quadril
+      e a mão sumia atrás dele; agora ele abre 28° para fora, girando no ombro (`CLAW_OPEN`).
+      Conferido de frente e três quartos; *Check model instances* sem problemas.
+
+## Monstro: tentáculos de polvo, no 2D e no 3D — 9 de outubro de 2026
+
+Clara: "isso não parece um tentacle, coloque dois braços". Perguntei e ela escolheu: dois
+tentáculos de cada lado, de polvo (grossos no corpo, afinando até a ponta enrolada, com
+ventosas, sem mão), e o 2D igual ao 3D.
+
+- [x] **2D:** o tentáculo deixou de ser recortado da Bubblegoo e passou a ser desenhado em
+      `new-parts.cjs` (`tentacle()`): o meio de cada um segue uma onda e termina numa espiral, e
+      o contorno é esse meio alargado (22 na raiz, quase nada na ponta). Ventosas rosa-claro
+      (`#FFD6EA`) do lado de dentro da curva, menores perto da ponta. Um sobe e um desce de cada
+      lado, espelhados, rosa `#FF9BC9` como antes. As raízes deixam o mesmo vão para o corpo
+      que os outros pares (`HOLE` 0,4), então nada é deslizado. A figura das opções mudou junto.
+- [x] **3D:** `tentacle.glb` regerado pelo gerador oficial a partir desse desenho (os quatro
+      tentáculos viram volume, as ventosas viram marca): 1,19 MB, 63.481 triângulos, 0 erros e
+      0 avisos; os outros modelos não mudaram. No jogo, os tentáculos são presos na lateral do
+      corpo com a mesma regra da *claw* (`ARM_FIT`), um pouco maiores que o desenho (1,1× a
+      1,4×), porque saíam mais finos que no 2D.
+
+Conferido: 2D e 3D nos quatro corpos, frente e três quartos; *Check model instances* com 16
+personagens, 0 coordenadas inválidas e 0 materiais compartilhados; falha simulada do
+`tentacle.glb` só troca os braços pelo fallback (que já mostra os quatro tentáculos), arquivo
+restaurado; 2D/3D mantém escolhas e frase, sem erro no console. `npm run build` passa.
+
+## Monstro: paws iguais à imagem da Clara, tentáculo no meio do corpo, braços mais baixos na ampulheta — 9 de outubro de 2026
+
+Clara mandou uma imagem das patinhas como ela quer: verdes, com a borda toda em gomos macios,
+uma almofada clara saliente que desce até uma ponta abaixo da pata, e três dedinhos
+verde-escuros em relevo. Também pediu duas coisas:
+- no redondo, o tentáculo estava "cortado na frente" e deveria ficar no meio do corpo;
+- na ampulheta, todos os braços estavam "muito pra cima". A mensagem veio cortada em "des…";
+  entendi como descer.
+
+- [x] **Paws em 3D:** não são mais esticadas do desenho.
+      - **Pata:** um miolo achatado com um anel de oito bolas derretidas nele (campo de
+        distância com mistura suave, malha por *marching cubes*). Assim os gomos aparecem a
+        volta toda, sem vincos.
+      - **Almofada:** uma lente própria, meio afundada na pata e descida até formar a ponta.
+      - **Dedos:** três tubos arredondados que seguem a curva da almofada até a ponta.
+      - O código fica em `pawBody`, `pawPad` e `pawToes`, em `model-library.mjs`.
+      - Para achar a pata de cada almofada usa-se o centro do contorno, porque o centro
+        guardado em `paths3d.ts` erra em formas feitas de arcos.
+      - `paws.glb`: 1,03 MB, 51.376 triângulos, 0 erros e 0 avisos. Os outros modelos não
+        mudaram.
+- [x] **Braços no meio do corpo:** os braços presos na lateral pelo `ARM_FIT` (claw e
+      tentáculo) agora também ficam na metade entre a frente e as costas do corpo, naquela
+      altura (`sidesOf` devolve `middle`). No redondo os tentáculos saem de dentro da juba,
+      sem ela atravessar a frente deles.
+- [x] **Ampulheta:** todos os braços descem 10% da altura do corpo (`ARM_DROP`).
+
+Conferido:
+- **Monster review:**
+  - Matrizes de braços e pernas no `monster-review.html`, de frente e três quartos.
+  - No redondo, também de lado e de costas.
+  - *Check model instances*: 16 personagens, 0 coordenadas inválidas e 0 materiais
+    compartilhados.
+- **Falha simulada do `paws.glb`:** só as pernas usaram o fallback; arquivo restaurado.
+- **No jogo (3D):** ampulheta e redondo com paws, tentáculo e claw.
+- **Build:** `npm run build` passa.
+
+Limitações: sem LOD, e o desempenho no celular não foi medido.
+
+## Monstro: pernas e pincher no lugar certo em cada corpo — 9 de outubro de 2026
+
+Clara pediu, para o 3D:
+- **round:** paws muito grandes; paws, long e snake centralizadas no corpo; pincher
+  centralizada no corpo;
+- **hourglass:** paws um pouco mais para baixo; a long estava minúscula e a pincher não
+  aparecia;
+- **square:** pincher mais para baixo;
+- **egg:** a long estava bem mais grossa que nos outros corpos. Ela quer a long igual em
+  todos.
+
+- [x] **Pernas no round:** ficam no meio do corpo dele, de frente para trás e de lado a
+      lado, em vez de embaixo do rosto e um pouco para a esquerda dele. As paws ficaram 0,8×
+      menores.
+- [x] **Meio do corpo:** agora é a metade entre a frente e as costas do corpo inteiro, visto
+      de lado. No round, isso inclui o rosto. Medido só na altura da peça, o meio caía atrás
+      do meio de verdade, porque a juba dele vai bem para trás. Vale para pernas no round e
+      para claw, tentáculo e pincher em todos os corpos.
+- [x] **Pincher:** passou a ser presa na lateral do corpo como a claw e o tentáculo
+      (`ARM_FIT`). Na ampulheta ela aparece, 1,4× maior; antes ficava dentro do corpo.
+- [x] **Braços mais baixos:** no quadrado a pincher desce 7% da altura do corpo, como a claw.
+      `CLAW_DROP` virou `ARM_LOWER`, por tipo de braço e corpo.
+- [x] **Long com a mesma grossura em todos os corpos:** medida no jogo, a largura do par de
+      pernas era 1,88 no redondo, 1,69 no ovo, 0,85 no quadrado e 0,50 na ampulheta. Agora
+      fica perto de 1,3 em todos (`LEG_SIZE.long`: 0,69, 0,77, 1,53 e 2,6), mudando em volta
+      da sola, para os pés continuarem no chão.
+- [x] **Paws na ampulheta:** descem 5% da altura do corpo (`LEG_DROP`).
+
+Conferido:
+- **Monster review:**
+  - Matrizes de braços e pernas no `monster-review.html`, de frente, três quartos, lado e
+    costas.
+  - Vistas individuais da ampulheta, quadrado, ovo e redondo, comparando com o 2D.
+  - *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados, nas duas
+    matrizes.
+- **No jogo:** o redondo de frente e de lado.
+- **Build:** `npm run build` passa.
+- Nenhum GLB mudou, então não houve teste de falha.
+
+## Monstro: braços por cima da juba e das orelhas, hourglass mais alto com a long — 9 de outubro de 2026
+
+Clara mandou fotos do egg e pediu, para o 3D:
+- **round:** o tentáculo e a snake "não estão no meio do corpo". Perguntei, e o problema era
+  que a juba cobre o começo deles; ela quer que saiam da parte bege, por cima da juba;
+- **egg:**
+  - a pincher fica tampada (mudar só nele);
+  - o tentáculo some atrás da orelha e só a ponta aparece;
+  - a mão da claw sai de trás da orelha;
+- **hourglass:**
+  - a long só mostra o pé; ela pediu para subir o corpo até a perna aparecer;
+  - a snake está muito pequena.
+
+- [x] **Por cima do que fica em volta do corpo (`IN_FRONT`):**
+      - **egg:** claw, tentáculo e pincher vêm para a frente das orelhas onde cruzam com elas,
+        como no desenho, em que os braços ficam sobre as orelhas.
+      - **round:** o tentáculo vem para a frente da juba (e do pelo laranja), e a ponta presa
+        ao corpo vai até a beira da parte bege (`sidesOf` com `Rosto__`). A snake também vem
+        para a frente da juba.
+      - Funções `coverOf`, `earsOf` e `clearOf`. As orelhas são as peças sólidas estreitas e
+        bem para o lado.
+- [x] **Pincher no egg:** 1,4× maior e 6% da altura do corpo mais baixa, para sair por baixo
+      das orelhas como no 2D.
+- [x] **Hourglass com long:** tudo, menos as pernas, sobe 13% da altura do corpo
+      (`LIFT_FOR_LEGS`, aplicado num grupo em volta de cada fileira em `Monster3D`). Isso só
+      acontece com essa combinação.
+- [x] **Snake no hourglass:** 1,6× maior.
+
+Conferido:
+- **Monster review:**
+  - Vistas individuais do egg (claw, tentáculo e pincher), do round (tentáculo e snake) e do
+    hourglass (long e snake), de frente, três quartos e lado.
+  - Matrizes de braços e pernas.
+  - *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **No jogo:** hourglass com long, alternando 2D e 3D. Nada fica cortado no quadro e não há
+  erros no console.
+- **Build:** `npm run build` passa.
+- Nenhum GLB mudou.
