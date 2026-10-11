@@ -6,8 +6,9 @@ import * as P from './parts';
  * Blaze red, Splash blue and Pip purple.
  *
  * The child does not choose colours any more. Each body is one of the four dragons and
- * brings its own colour, as the monster's bodies do; the tail is skin too, so it wears the
- * body's colour, while wings, flames, fins and hearts keep the colours they were drawn in.
+ * brings its own colour, as the monster's bodies do; only the lids of the sleepy eyes wear
+ * the body's colour. Each tail keeps the colour it was drawn in, on any body, as do the
+ * wings, flames, fins and hearts.
  */
 const SKIN: Record<string, [string, string, string]> = {
   classic: ['#A4EE78', '#6FD14A', '#3FA62B'],

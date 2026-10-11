@@ -23,8 +23,8 @@ import rawLibrary from './model-library.json';
  *   the eyes blink, as the flat dragon's do.
  *
  * Nothing here is dragged: like the monster, the 3D dragon is the finished creature the class
- * built on the sheet (see movable3d). The tail and the lids of the sleepy eyes are skin, and
- * are painted the colour of the body.
+ * built on the sheet (see movable3d). The lids of the sleepy eyes are skin, and are painted
+ * the colour of the body; a tail keeps its own colour on any body.
  */
 interface PieceMeta {
   url: string;
@@ -83,7 +83,7 @@ function own(scene: Group) {
   return { root, materials: [...materials.values()], geometries };
 }
 
-/** Paints the skin of a piece (a tail, an eyelid) the colour of the body. */
+/** Paints the skin of a piece (an eyelid) the colour of the body. */
 function tint(root: Group, colour: string) {
   root.traverse((o) => {
     if (o instanceof Mesh && o.material instanceof MeshStandardMaterial && o.material.name === 'Skin') o.material.color.set(colour);
@@ -240,15 +240,14 @@ function Wings({ id, body, left, right }: { id: string; body: string; left: Drag
 }
 
 /** The tail, from behind the body, wagging. */
-function Tail({ id, body, move, skin }: { id: string; body: string; move: DragonMove; skin: string }) {
+function Tail({ id, body, move }: { id: string; body: string; move: DragonMove }) {
   const { scene } = useGLTF(urlOf('tail', id));
   const made = useMemo(() => {
     const made = own(scene);
-    tint(made.root, skin);
     const depth = LIB.pieces[`body:${body}`].depth ?? 100;
     const pivot = hinge(made.root, move, DRAGON_PIECES[`tail:${id}`].root!, -0.25 * depth * U);
     return { ...made, pivot };
-  }, [scene, body, id, move, skin]);
+  }, [scene, body, id, move]);
   useDispose(made);
   useFrame(({ clock }) => {
     made.pivot.rotation.y = -0.35 + Math.sin((clock.getElapsedTime() / 1.8) * Math.PI * 2) * 0.15;
@@ -297,7 +296,7 @@ export default function Dragon3D({ parts }: { parts: PartMap; colors?: ColorMap 
       )}
       {parts.tail && moves.tail && (
         <Piece id={`tail-${parts.tail}-${body}`}>
-          <Tail id={parts.tail} body={body} move={moves.tail} skin={skin} />
+          <Tail id={parts.tail} body={body} move={moves.tail} />
         </Piece>
       )}
       {parts.eyes && moves.eyes && (

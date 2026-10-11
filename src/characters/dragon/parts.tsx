@@ -315,16 +315,16 @@ export const DRAGON_OWN: Record<string, Record<string, string>> = {
   }
 };
 
-export function Tail1({ className, colors = {}, view }: DragonPartProps) {
+export function Tail1({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `tail-skin-${k}`;
   return (
     <Part box={view ?? '312 324 174.17 177.22'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor={colors.skinTop ?? '#A4EE78'} />
-          <stop offset="0.55" stopColor={colors.skin ?? '#6FD14A'} />
-          <stop offset="1" stopColor={colors.skinDark ?? '#3FA62B'} />
+          <stop offset="0" stopColor="#A4EE78" />
+          <stop offset="0.55" stopColor="#6FD14A" />
+          <stop offset="1" stopColor="#3FA62B" />
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
@@ -442,7 +442,7 @@ export function Mouth1({ className, view }: DragonPartProps) {
   );
 }
 
-export function Tail2({ className, colors = {}, view }: DragonPartProps) {
+export function Tail2({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `tail-skin-${k}`;
   const flameId = `tail-flame-${k}`;
@@ -450,9 +450,9 @@ export function Tail2({ className, colors = {}, view }: DragonPartProps) {
     <Part box={view ?? '324 300 179.75 210.08'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor={colors.skinTop ?? '#FF9A7E'} />
-          <stop offset="0.55" stopColor={colors.skin ?? '#FF5A4E'} />
-          <stop offset="1" stopColor={colors.skinDark ?? '#D9342F'} />
+          <stop offset="0" stopColor="#FF9A7E" />
+          <stop offset="0.55" stopColor="#FF5A4E" />
+          <stop offset="1" stopColor="#D9342F" />
         </linearGradient>
         <linearGradient id={flameId} x1="0" y1="1" x2="0.4" y2="0">
           <stop offset="0" stopColor="#FF5A1F" />
@@ -588,7 +588,7 @@ export function Mouth2({ className, view }: DragonPartProps) {
   );
 }
 
-export function Tail3({ className, colors = {}, view }: DragonPartProps) {
+export function Tail3({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `tail-skin-${k}`;
   const finId = `tail-fin-${k}`;
@@ -596,9 +596,9 @@ export function Tail3({ className, colors = {}, view }: DragonPartProps) {
     <Part box={view ?? '324 328 178.21 178.1'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor={colors.skinTop ?? '#9ADFFF'} />
-          <stop offset="0.55" stopColor={colors.skin ?? '#4FB3F5'} />
-          <stop offset="1" stopColor={colors.skinDark ?? '#2E86D9'} />
+          <stop offset="0" stopColor="#9ADFFF" />
+          <stop offset="0.55" stopColor="#4FB3F5" />
+          <stop offset="1" stopColor="#2E86D9" />
         </linearGradient>
         <linearGradient id={finId} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0" stopColor="#B6F7EF" />
@@ -727,16 +727,16 @@ export function Mouth3({ className, view }: DragonPartProps) {
   );
 }
 
-export function Tail4({ className, colors = {}, view }: DragonPartProps) {
+export function Tail4({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `tail-skin-${k}`;
   return (
     <Part box={view ?? '344 354.13 128.69 149.71'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor={colors.skinTop ?? '#D2B4FF'} />
-          <stop offset="0.55" stopColor={colors.skin ?? '#A77BFF'} />
-          <stop offset="1" stopColor={colors.skinDark ?? '#7C4FE0'} />
+          <stop offset="0" stopColor="#D2B4FF" />
+          <stop offset="0.55" stopColor="#A77BFF" />
+          <stop offset="1" stopColor="#7C4FE0" />
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">

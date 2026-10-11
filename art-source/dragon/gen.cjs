@@ -237,11 +237,12 @@ const JSX_NAME = {
 };
 
 /**
- * Skin is the colour of the body it is worn by: a tail's, and the lids of the sleepy eyes,
- * which were blue on every dragon. Their skin follows the body's colours.
+ * Skin is the colour of the body it is worn by: the lids of the sleepy eyes, which were blue
+ * on every dragon, follow the body's colours. A tail keeps its own colour on any body, as
+ * Clara asked.
  */
 const SKIN_STOPS = ['skinTop', 'skin', 'skinDark'];
-const TINTED = ['tail', 'eyes'];
+const TINTED = ['eyes'];
 
 function element(el, idOf) {
   const parts = Object.entries(el.attrs).map(([k, v]) => {

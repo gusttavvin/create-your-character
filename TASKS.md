@@ -1481,3 +1481,16 @@ Limitações reais:
   triângulos e o corpo verde passava de 2,5 MB.
 - De três quartos a asa de trás fica escondida pelo corpo redondo.
 - Não salvei personagem no teste (o formato salvo não mudou: mesmos IDs).
+
+## Dragão: cada rabo com a sua cor — 11 de outubro de 2026
+
+Pedido: "Eu não quero que a cor da cauda mude de acordo com o corpo, cada cauda pode ter uma
+cor!"
+
+- [x] O rabo não pega mais a cor do corpo, nem no 2D nem no 3D: Arrow é sempre verde, Fire
+      vermelho, Fish azul e Heart roxo, como foram desenhados.
+      - 2D: `art-source/dragon/gen.cjs` só pinta com a cor do corpo as pálpebras do Sleepy
+        (`TINTED = ['eyes']`); `parts.tsx` foi gerado de novo.
+      - 3D: `Dragon3D.tsx` não pinta mais o material "Skin" do rabo.
+- Conferido em `dragon-review.html?row=tail` e `dragon-review-3d.html?row=tail` (os quatro
+  rabos nos quatro corpos). `npm run build` passa.
