@@ -1056,6 +1056,35 @@ body.is-dragging {
   animation: wag 1.8s ease-in-out infinite;
 }
 
+/* the dragon's wings beat at the shoulder, each wing the mirror of the other */
+@keyframes wingbeat-left {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: 7deg;
+  }
+}
+
+@keyframes wingbeat-right {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: -7deg;
+  }
+}
+
+.char2d.is-animated .wing-beat-left {
+  animation: wingbeat-left 1.6s ease-in-out infinite;
+}
+
+.char2d.is-animated .wing-beat-right {
+  animation: wingbeat-right 1.6s ease-in-out infinite;
+}
+
 .char2d.is-animated .dress-sway {
   animation: sway 3.6s ease-in-out infinite;
 }

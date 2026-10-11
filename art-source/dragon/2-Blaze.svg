@@ -1,0 +1,95 @@
+<svg viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skin" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#FF9A7E"/>
+      <stop offset="0.55" stop-color="#FF5A4E"/>
+      <stop offset="1" stop-color="#D9342F"/>
+    </linearGradient>
+    <linearGradient id="belly" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFF4C8"/>
+      <stop offset="1" stop-color="#FFD36B"/>
+    </linearGradient>
+    <linearGradient id="horn" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFF6E4"/>
+      <stop offset="1" stop-color="#FFD9A6"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFC27A"/>
+      <stop offset="1" stop-color="#FF7A2A"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="1" x2="0.4" y2="0">
+      <stop offset="0" stop-color="#FF5A1F"/>
+      <stop offset="0.6" stop-color="#FFB02E"/>
+      <stop offset="1" stop-color="#FFE45C"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- tail, with a flame for a tip -->
+    <path fill="url(#skin)" d="M330 462 C388 482 428 466 444 424 C448 410 450 398 448 388 L466 390 C470 412 464 438 452 458 C426 502 368 516 326 504 Z"/>
+    <path fill="url(#flame)" d="M456 398 C434 386 426 362 436 340 C440 352 448 356 452 350 C448 332 454 312 470 302 C468 320 478 330 484 344 C492 336 492 324 490 314 C506 336 506 370 488 390 C480 398 468 402 456 398 Z"/>
+    <path fill="#FFE45C" stroke="none" d="M460 388 C450 378 450 366 458 356 C462 366 470 364 472 356 C480 368 478 382 468 390 Z"/>
+
+    <!-- pointed dragon wings: a long bony arm, three fingers and a little thumb claw -->
+    <path fill="url(#wing)" d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62 C40 100 36 142 10 176 C48 176 66 208 44 258 C82 252 104 282 96 326 C132 318 164 326 196 350 Z"/>
+    <path fill="none" stroke-width="3" d="M108 110 C80 132 46 154 10 176"/>
+    <path fill="none" stroke-width="3" d="M108 110 C92 158 70 208 44 258"/>
+    <path fill="none" stroke-width="3" d="M108 110 C104 182 100 254 96 326"/>
+    <path fill="none" stroke="#B8232A" stroke-width="9" d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62"/>
+    <path fill="none" stroke-width="2" d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62"/>
+    <path fill="#FFF6E4" stroke-width="3" d="M106 108 L100 88 L116 100 Z"/>
+    <path fill="url(#wing)" d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62 C480 100 484 142 510 176 C472 176 454 208 476 258 C438 252 416 282 424 326 C388 318 356 326 324 350 Z"/>
+    <path fill="none" stroke-width="3" d="M412 110 C440 132 474 154 510 176"/>
+    <path fill="none" stroke-width="3" d="M412 110 C428 158 450 208 476 258"/>
+    <path fill="none" stroke-width="3" d="M412 110 C416 182 420 254 424 326"/>
+    <path fill="none" stroke="#B8232A" stroke-width="9" d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62"/>
+    <path fill="none" stroke-width="2" d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62"/>
+    <path fill="#FFF6E4" stroke-width="3" d="M414 108 L420 88 L404 100 Z"/>
+
+    <!-- big stompy feet: three round toes with cream claws -->
+    <path fill="url(#skin)" d="M142 548 C142 524 168 512 196 512 C224 512 250 524 250 548 C252 562 244 572 232 570 C226 578 214 578 210 570 C204 578 188 578 182 570 C178 578 166 578 160 570 C148 572 140 562 142 548 Z"/>
+    <path fill="url(#skin)" d="M270 548 C270 524 296 512 324 512 C352 512 378 524 378 548 C380 562 372 572 360 570 C354 578 342 578 338 570 C332 578 316 578 310 570 C306 578 294 578 288 570 C276 572 268 562 270 548 Z"/>
+    <path fill="#FFF6E4" stroke-width="3" d="M166 574 L171 586 L177 574 Z M191 576 L196 588 L202 576 Z M215 574 L221 586 L226 574 Z"/>
+    <path fill="#FFF6E4" stroke-width="3" d="M294 574 L299 586 L305 574 Z M319 576 L324 588 L330 576 Z M343 574 L349 586 L354 574 Z"/>
+
+    <!-- crest and horns -->
+    <path fill="#FFD93D" d="M236 104 L246 74 L258 100 Z"/>
+    <path fill="#FFD93D" d="M252 100 L262 66 L274 100 Z"/>
+    <path fill="#FFD93D" d="M268 102 L280 76 L288 106 Z"/>
+    <path fill="url(#horn)" d="M192 132 C160 112 148 76 164 44 C176 76 198 98 224 108 Z"/>
+    <path fill="url(#horn)" d="M328 132 C360 112 372 76 356 44 C344 76 322 98 296 108 Z"/>
+
+    <!-- one gourd of a body: a smaller head on a big, wide bottom -->
+    <path fill="url(#skin)" d="M260 96 C334 96 374 142 374 200 C374 238 364 262 352 280 C410 318 434 396 434 452 C434 514 358 540 260 540 C162 540 86 514 86 452 C86 396 110 318 168 280 C156 262 146 238 146 200 C146 142 186 96 260 96 Z"/>
+    <path fill="#FFE2D6" stroke="none" d="M170 160 C176 132 200 112 226 108 C238 108 240 120 228 124 C208 130 194 144 188 166 C184 176 168 172 170 160 Z"/>
+    <path fill="url(#belly)" d="M260 360 C330 360 376 398 376 448 C376 494 330 520 260 520 C190 520 144 494 144 448 C144 398 190 360 260 360 Z"/>
+    <path fill="none" stroke="#E0A93A" stroke-width="3" d="M196 398 Q260 410 324 398 M166 432 Q260 448 354 432 M162 466 Q260 482 358 466 M178 498 Q260 512 342 498"/>
+
+    <!-- a long snout -->
+    <ellipse fill="#FFB49A" stroke="none" cx="260" cy="244" rx="66" ry="34"/>
+    <ellipse fill="#9E2324" stroke="none" cx="242" cy="230" rx="6" ry="4"/>
+    <ellipse fill="#9E2324" stroke="none" cx="278" cy="230" rx="6" ry="4"/>
+
+    <!-- brave eyes, brows down in the middle -->
+    <circle fill="#FFFFFF" cx="218" cy="182" r="32"/>
+    <circle fill="#12224A" stroke="none" cx="224" cy="188" r="19"/>
+    <circle fill="#FFFFFF" stroke="none" cx="216" cy="178" r="7"/>
+    <circle fill="#FFFFFF" stroke="none" cx="231" cy="196" r="3"/>
+    <circle fill="#FFFFFF" cx="302" cy="182" r="32"/>
+    <circle fill="#12224A" stroke="none" cx="296" cy="188" r="19"/>
+    <circle fill="#FFFFFF" stroke="none" cx="288" cy="178" r="7"/>
+    <circle fill="#FFFFFF" stroke="none" cx="303" cy="196" r="3"/>
+    <path fill="#9E2324" d="M184 142 C204 134 228 140 248 156 C230 152 206 150 186 154 Z"/>
+    <path fill="#9E2324" d="M336 142 C316 134 292 140 272 156 C290 152 314 150 334 154 Z"/>
+
+    <!-- mouth: open wide, a puff of fire coming out -->
+    <path fill="#A8355A" d="M228 252 C244 262 276 262 292 252 C290 272 278 282 260 282 C242 282 230 272 228 252 Z"/>
+    <path fill="#FFFFFF" stroke-width="3" d="M238 256 L244 268 L250 258 Z"/>
+    <path fill="#FFFFFF" stroke-width="3" d="M270 258 L276 268 L282 256 Z"/>
+    <path fill="url(#flame)" d="M288 270 C308 280 330 276 342 262 C340 274 346 280 356 276 C352 290 362 298 374 296 C360 312 334 316 314 306 C302 300 292 288 288 270 Z"/>
+    <path fill="#FFE45C" stroke="none" d="M300 280 C314 286 326 284 334 276 C334 288 342 294 350 294 C338 304 320 304 308 296 Z"/>
+
+    <!-- cheeks -->
+    <ellipse fill="#FF9BB8" stroke="none" cx="182" cy="232" rx="16" ry="10"/>
+    <ellipse fill="#FF9BB8" stroke="none" cx="338" cy="232" rx="16" ry="10"/>
+  </g>
+</svg>

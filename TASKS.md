@@ -1371,3 +1371,65 @@ Conferido:
       - **Letra mais fina:** os nomes nos cartões deixaram a fonte de título (Lilita One)
         e passaram para a fonte do texto do site (Baloo 2, peso 700), ainda em maiúsculas e
         no mesmo tamanho. Na outra, Clara achou a letra grossa e embolada.
+
+## Dragão: quatro dragões novos, desenhados como os monstros — 11 de outubro de 2026
+
+Clara: refazer o dragão no padrão do monstro, com opções diferentes. Ela não gostava do 2º
+corpo (Chubby), as asas não pareciam de dragão, o 3D não estava bom, e cada dragão deve ter
+a sua cor, sem escolha de cor.
+
+- [x] **Quatro dragões desenhados e aprovados** ("eu ameeeei"), em `art-source/dragon/`, no
+      estilo dos monstros aprovados (contorno azul-marinho, degradê, olhos com brilho,
+      bochechas). Cada um tem corpo, asas, olhos, boca, rabo e pés diferentes:
+
+      | | 1 Sparky (verde) | 2 Blaze (vermelho) | 3 Splash (azul) | 4 Pip (roxo) |
+      |---|---|---|---|---|
+      | corpo | cabeça grande, corpo pequeno | cabeça pequena, corpo grande | ovo alto | bolinha |
+      | asas | de morcego, 2 dedos | pontudas, 3 dedos e unha | de barbatana | de bebê |
+      | olhos | redondos | de corajoso | de soninho | brilhantes, com cílios |
+      | boca | sorriso e dentinho | cuspindo fogo | bolhinhas | língua de fora |
+      | rabo | ponta de lança | chama | de peixe | coração |
+      | pés | três unhas | pezões de três dedos | nadadeiras | almofadinhas |
+
+      - **Rodadas de desenho:**
+        - O vermelho foi redesenhado porque ficou parecido com o verde.
+        - As patinhas eram iguais nos quatro; só a do verde ficou.
+- [x] **Recorte:** `art-source/dragon/gen.cjs` lê os desenhos e escreve
+      `src/characters/dragon/parts.tsx`. Cada seção do desenho começa com um comentário, e é
+      ele que diz a fileira: tail, wings, eyes, mouth; o resto é o corpo.
+      - Mede cada peça (caixa, contorno incluído), o "miolo" dos olhos e da boca (os globos;
+        a boca sem o fogo e as bolhas) e a raiz das asas e do rabo.
+      - Um tropeço: "blowing" contém "wing"; agora procura a palavra inteira.
+- [x] **2D (`Dragon2D.tsx`):** cada corpo guarda o lugar das suas peças.
+      - **Olhos:** centralizados pelos globos, na largura dos olhos do próprio corpo.
+      - **Boca:** centralizada pela boca, no tamanho desenhado. Medida pela boquinha do azul,
+        as outras ficavam minúsculas nele.
+      - **Asas:** cada asa (metade do par) fica presa pela raiz no ombro do corpo, no
+        tamanho desenhado. Medidas pela largura do corpo, as barbatanas da orelha do azul
+        deixavam as asas grandes demais.
+      - **Rabo:** na altura da raiz do rabo do corpo e chegando até onde o rabo dele chegava.
+        Emprestado, sai pelo menos metade para fora do corpo; antes sumia atrás da barriga
+        do vermelho e do roxo.
+      - **Cores:** o rabo e as pálpebras do soninho pegam a cor do corpo.
+      - **Animação:** cada asa bate a partir do ombro (`wing-beat-left` / `-right`).
+- [x] **Configuração:** sem escolha de cor (`colorSlots: []`, `colorsFor: dragonColors`),
+      com cartões numerados e nomes para crianças.
+      - Body: Green, Red, Blue, Purple.
+      - Wings: Bat, Spiky, Fin, Baby.
+      - Eyes: Happy, Brave, Sleepy, Sparkly.
+      - Mouth: Smile, Fire, Bubbles, Silly.
+      - Tail: Arrow, Fire, Fish, Heart.
+      - As frases mudaram junto. Os IDs antigos continuam, então os dragões salvos abrem.
+- [x] **`dragon-review.html`:** mostra cada fileira nos quatro corpos (`?row=wings`, `eyes`,
+      `mouth`, `tail`).
+
+Conferido:
+- **Revisão:** as quatro fileiras nos quatro corpos.
+- **No jogo:** cartões e frase ("My dragon has a red body, fin wings, sparkly eyes, a mouth
+  blowing bubbles and a heart tail.").
+- **3D:** abre sem erro.
+- **Build:** `npm run build` passa.
+
+Falta:
+- [ ] **3D novo**, feito a partir desses desenhos. O 3D atual ainda é o antigo (formas
+      simples, com manchas) e só ganhou as cores novas.

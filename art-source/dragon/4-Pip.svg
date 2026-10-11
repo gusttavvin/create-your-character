@@ -1,0 +1,84 @@
+<svg viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skin" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#D2B4FF"/>
+      <stop offset="0.55" stop-color="#A77BFF"/>
+      <stop offset="1" stop-color="#7C4FE0"/>
+    </linearGradient>
+    <linearGradient id="belly" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFF2FB"/>
+      <stop offset="1" stop-color="#FFD0EE"/>
+    </linearGradient>
+    <linearGradient id="horn" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFF6E4"/>
+      <stop offset="1" stop-color="#FFD9A6"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFD1EA"/>
+      <stop offset="1" stop-color="#FF7FC4"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- a thin tail curling up to a heart -->
+    <path fill="url(#skin)" d="M352 474 C394 490 430 474 438 438 C440 426 440 416 436 406 L452 402 C458 416 458 434 454 448 C442 494 392 510 346 498 Z"/>
+    <path fill="#FF7FC4" d="M444 410 C428 400 414 384 418 368 C422 356 436 354 444 364 C452 352 468 354 470 368 C474 384 460 400 444 410 Z"/>
+    <path fill="#FFD1EA" stroke="none" d="M426 372 C428 364 434 362 438 366 C434 370 430 374 426 372 Z"/>
+
+    <!-- tiny baby wings: two little scallops -->
+    <path fill="url(#wing)" d="M150 232 C126 206 100 190 70 186 C76 204 70 220 56 230 C76 238 82 256 74 274 C100 270 126 278 146 296 Z"/>
+    <path fill="none" stroke-width="3" d="M112 200 C96 214 80 224 56 230 M112 200 C104 226 92 250 74 274"/>
+    <path fill="none" stroke="#7C4FE0" stroke-width="8" d="M150 232 C126 206 100 190 70 186"/>
+    <path fill="none" stroke-width="2" d="M150 232 C126 206 100 190 70 186"/>
+    <path fill="url(#wing)" d="M370 232 C394 206 420 190 450 186 C444 204 450 220 464 230 C444 238 438 256 446 274 C420 270 394 278 374 296 Z"/>
+    <path fill="none" stroke-width="3" d="M408 200 C424 214 440 224 464 230 M408 200 C416 226 428 250 446 274"/>
+    <path fill="none" stroke="#7C4FE0" stroke-width="8" d="M370 232 C394 206 420 190 450 186"/>
+    <path fill="none" stroke-width="2" d="M370 232 C394 206 420 190 450 186"/>
+
+    <!-- little baby feet with pink toe beans -->
+    <ellipse fill="url(#skin)" cx="208" cy="530" rx="42" ry="26"/>
+    <ellipse fill="url(#skin)" cx="312" cy="530" rx="42" ry="26"/>
+    <circle fill="#FF9BB8" stroke="none" cx="190" cy="542" r="6"/>
+    <circle fill="#FF9BB8" stroke="none" cx="208" cy="547" r="6"/>
+    <circle fill="#FF9BB8" stroke="none" cx="226" cy="542" r="6"/>
+    <circle fill="#FF9BB8" stroke="none" cx="294" cy="542" r="6"/>
+    <circle fill="#FF9BB8" stroke="none" cx="312" cy="547" r="6"/>
+    <circle fill="#FF9BB8" stroke="none" cx="330" cy="542" r="6"/>
+
+    <!-- little horns and a curl of hair, then one round ball of a body -->
+    <path fill="url(#horn)" d="M188 156 C176 132 176 108 188 90 C204 106 214 128 216 148 Z"/>
+    <path fill="url(#horn)" d="M332 156 C344 132 344 108 332 90 C316 106 306 128 304 148 Z"/>
+    <path fill="#A77BFF" d="M252 128 C240 104 252 84 274 88 C262 96 260 108 270 120 Z"/>
+    <path fill="url(#skin)" d="M140 410 C114 418 102 440 112 456 C124 468 144 458 152 440 Z"/>
+    <path fill="url(#skin)" d="M380 410 C406 418 418 440 408 456 C396 468 376 458 368 440 Z"/>
+    <path fill="url(#skin)" d="M260 120 C372 120 432 204 432 320 C432 448 362 530 260 530 C158 530 88 448 88 320 C88 204 148 120 260 120 Z"/>
+    <path fill="#F3EAFF" stroke="none" d="M138 214 C148 176 178 146 214 138 C228 136 230 150 214 156 C188 166 168 188 158 220 C152 232 136 228 138 214 Z"/>
+    <path fill="url(#belly)" d="M260 384 C318 384 352 418 352 456 C352 494 316 514 260 514 C204 514 168 494 168 456 C168 418 202 384 260 384 Z"/>
+    <circle fill="#8E62EE" stroke="none" cx="356" cy="214" r="12"/>
+    <circle fill="#8E62EE" stroke="none" cx="380" cy="244" r="7"/>
+    <circle fill="#8E62EE" stroke="none" cx="146" cy="380" r="9"/>
+    <circle fill="#8E62EE" stroke="none" cx="378" cy="384" r="10"/>
+
+    <!-- big sparkly eyes with lashes -->
+    <path fill="none" stroke-width="4" d="M158 248 L144 238 M166 236 L156 222 M180 228 L176 212"/>
+    <circle fill="#FFFFFF" cx="202" cy="276" r="46"/>
+    <circle fill="#12224A" stroke="none" cx="206" cy="282" r="31"/>
+    <circle fill="#FFFFFF" stroke="none" cx="194" cy="268" r="11"/>
+    <circle fill="#FFFFFF" stroke="none" cx="218" cy="296" r="5"/>
+    <path fill="#FFFFFF" stroke="none" d="M222 260 L225 268 L233 271 L225 274 L222 282 L219 274 L211 271 L219 268 Z"/>
+    <path fill="none" stroke-width="4" d="M362 248 L376 238 M354 236 L364 222 M340 228 L344 212"/>
+    <circle fill="#FFFFFF" cx="318" cy="276" r="46"/>
+    <circle fill="#12224A" stroke="none" cx="314" cy="282" r="31"/>
+    <circle fill="#FFFFFF" stroke="none" cx="302" cy="268" r="11"/>
+    <circle fill="#FFFFFF" stroke="none" cx="326" cy="296" r="5"/>
+    <path fill="#FFFFFF" stroke="none" d="M330 260 L333 268 L341 271 L333 274 L330 282 L327 274 L319 271 L327 268 Z"/>
+
+    <!-- a silly smile with the tongue out -->
+    <path fill="#A8355A" d="M226 344 C244 358 276 358 294 344 C292 366 278 376 260 376 C242 376 228 366 226 344 Z"/>
+    <path fill="#FF8FAE" d="M246 368 C244 392 276 392 274 368 C266 374 254 374 246 368 Z"/>
+    <path fill="none" stroke-width="2.5" d="M260 372 L260 384"/>
+
+    <!-- cheeks -->
+    <ellipse fill="#FF9BB8" stroke="none" cx="152" cy="336" rx="22" ry="13"/>
+    <ellipse fill="#FF9BB8" stroke="none" cx="368" cy="336" rx="22" ry="13"/>
+  </g>
+</svg>

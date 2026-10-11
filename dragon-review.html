@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="UTF-8" /><title>Dragon review — local only</title>
+  <style>
+    body { margin: 0; font-family: system-ui; background: #eef3f8; }
+    .grid { display: grid; grid-template-columns: repeat(4, 180px); gap: 6px; padding: 8px; }
+    .cell { background: #fff; border-radius: 8px; }
+    h3 { margin: 8px; }
+  </style>
+  <div id="root"></div>
+  <script type="module">
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import Dragon2D from '/src/characters/dragon/Dragon2D.tsx';
+    import '/src/styles/global.css';
+    const bodies = ['classic', 'chubby', 'tall', 'spiky'];
+    const rows = {
+      wings: ['bat', 'feather', 'butterfly', 'tiny'],
+      eyes: ['cute', 'fierce', 'big', 'star'],
+      mouth: ['smile', 'fire', 'teeth', 'tongue'],
+      tail: ['lightning', 'fire', 'ice', 'leaf'],
+    };
+    const own = {
+      classic: { wings: 'bat', eyes: 'cute', mouth: 'smile', tail: 'lightning' },
+      chubby: { wings: 'feather', eyes: 'fierce', mouth: 'fire', tail: 'fire' },
+      tall: { wings: 'butterfly', eyes: 'big', mouth: 'teeth', tail: 'ice' },
+      spiky: { wings: 'tiny', eyes: 'star', mouth: 'tongue', tail: 'leaf' },
+    };
+    const row = new URLSearchParams(location.search).get('row') || 'wings';
+    const h = React.createElement;
+    const App = () =>
+      h('div', null,
+        h('h3', null, `row: ${row} (rows = bodies, columns = options)`),
+        h('div', { className: 'grid' },
+          bodies.flatMap((b) =>
+            rows[row].map((o) =>
+              h('div', { className: 'cell', key: b + o },
+                h(Dragon2D, { parts: { body: b, ...own[b], [row]: o }, colors: {}, animate: false }))))));
+    createRoot(document.getElementById('root')).render(h(App));
+  </script>
+</html>

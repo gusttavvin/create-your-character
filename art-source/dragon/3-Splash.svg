@@ -1,0 +1,78 @@
+<svg viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skin" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#9ADFFF"/>
+      <stop offset="0.55" stop-color="#4FB3F5"/>
+      <stop offset="1" stop-color="#2E86D9"/>
+    </linearGradient>
+    <linearGradient id="belly" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#F0FBFF"/>
+      <stop offset="1" stop-color="#BDE8FF"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#B6F7EF"/>
+      <stop offset="1" stop-color="#45CFE0"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- tail, ending in a fish's fin -->
+    <path fill="url(#skin)" d="M330 456 C384 476 424 462 440 424 C446 410 448 400 446 390 L464 392 C468 412 464 436 452 456 C428 498 372 512 326 500 Z"/>
+    <path fill="url(#fin)" d="M456 398 C440 384 430 360 436 334 C448 346 458 360 462 374 C468 354 482 338 500 330 C502 356 490 382 470 398 C466 402 460 402 456 398 Z"/>
+    <path fill="none" stroke-width="2.5" d="M458 390 L446 354 M462 388 L486 346"/>
+
+    <!-- fin wings: webbed like a sea dragon's, with round points between the ribs -->
+    <path fill="url(#fin)" d="M176 318 C140 266 102 222 58 196 C56 220 42 236 22 242 C42 258 44 280 30 300 C54 304 68 322 64 346 C96 340 140 346 178 368 Z"/>
+    <path fill="none" stroke-width="3" d="M150 300 C112 270 84 254 58 196 M150 300 C100 290 60 270 22 242 M150 300 C104 300 64 300 30 300 M150 300 C112 316 84 330 64 346"/>
+    <path fill="none" stroke="#2E86D9" stroke-width="8" d="M176 318 C140 266 102 222 58 196"/>
+    <path fill="none" stroke-width="2" d="M176 318 C140 266 102 222 58 196"/>
+    <path fill="url(#fin)" d="M344 318 C380 266 418 222 462 196 C464 220 478 236 498 242 C478 258 476 280 490 300 C466 304 452 322 456 346 C424 340 380 346 342 368 Z"/>
+    <path fill="none" stroke-width="3" d="M370 300 C408 270 436 254 462 196 M370 300 C420 290 460 270 498 242 M370 300 C416 300 456 300 490 300 M370 300 C408 316 436 330 456 346"/>
+    <path fill="none" stroke="#2E86D9" stroke-width="8" d="M344 318 C380 266 418 222 462 196"/>
+    <path fill="none" stroke-width="2" d="M344 318 C380 266 418 222 462 196"/>
+
+    <!-- webbed flippers -->
+    <path fill="url(#fin)" d="M206 510 C186 510 170 520 164 536 L150 562 C162 556 174 560 180 568 C188 558 198 558 206 568 C214 558 224 558 232 568 C238 560 250 556 262 562 L248 536 C242 520 226 510 206 510 Z"/>
+    <path fill="url(#fin)" d="M314 510 C294 510 278 520 272 536 L258 562 C270 556 282 560 288 568 C296 558 306 558 314 568 C322 558 332 558 340 568 C346 560 358 556 370 562 L356 536 C350 520 334 510 314 510 Z"/>
+    <path fill="none" stroke-width="2.5" d="M206 522 L206 562 M190 524 L176 560 M222 524 L236 560"/>
+    <path fill="none" stroke-width="2.5" d="M314 522 L314 562 M298 524 L284 560 M330 524 L344 560"/>
+
+    <!-- a wavy crest and two ear fins -->
+    <path fill="url(#fin)" d="M214 92 C222 62 244 42 268 34 C262 50 266 62 278 66 C288 56 300 52 314 54 C302 66 298 80 304 96 Z"/>
+    <path fill="none" stroke-width="2.5" d="M240 88 L254 54 M268 88 L280 62"/>
+    <path fill="url(#fin)" d="M132 206 C96 188 72 158 66 124 C86 136 104 134 112 122 C114 150 126 172 146 186 Z"/>
+    <path fill="none" stroke-width="2.5" d="M136 192 L84 140 M140 186 L110 132"/>
+    <path fill="url(#fin)" d="M388 206 C424 188 448 158 454 124 C434 136 416 134 408 122 C406 150 394 172 374 186 Z"/>
+    <path fill="none" stroke-width="2.5" d="M384 192 L436 140 M380 186 L410 132"/>
+
+    <!-- one tall egg of a body, head and all, with little arms -->
+    <path fill="url(#skin)" d="M150 394 C122 402 108 426 118 444 C130 458 152 448 160 428 Z"/>
+    <path fill="url(#skin)" d="M370 394 C398 402 412 426 402 444 C390 458 368 448 360 428 Z"/>
+    <path fill="url(#skin)" d="M260 72 C352 72 400 162 400 300 C400 440 344 530 260 530 C176 530 120 440 120 300 C120 162 168 72 260 72 Z"/>
+    <path fill="#E8F8FF" stroke="none" d="M156 160 C164 126 190 102 220 96 C232 94 234 108 220 112 C196 120 180 140 172 166 C166 176 152 172 156 160 Z"/>
+    <path fill="url(#belly)" d="M260 330 C306 330 336 372 336 428 C336 484 302 512 260 512 C218 512 184 484 184 428 C184 372 214 330 260 330 Z"/>
+    <path fill="none" stroke="#86C6EA" stroke-width="3" d="M206 372 Q260 384 314 372 M192 406 Q260 420 328 406 M190 440 Q260 454 330 440 M198 474 Q260 488 322 474"/>
+
+    <!-- sleepy, happy eyes: a lid over the top of each -->
+    <circle fill="#FFFFFF" cx="206" cy="210" r="36"/>
+    <circle fill="#12224A" stroke="none" cx="210" cy="222" r="20"/>
+    <circle fill="#FFFFFF" stroke="none" cx="203" cy="216" r="6"/>
+    <path fill="url(#skin)" d="M172 198 A36 36 0 0 1 240 198 Q206 190 172 198 Z"/>
+    <path fill="none" stroke-width="3" d="M176 200 L166 194 M186 196 L180 186"/>
+    <circle fill="#FFFFFF" cx="314" cy="210" r="36"/>
+    <circle fill="#12224A" stroke="none" cx="310" cy="222" r="20"/>
+    <circle fill="#FFFFFF" stroke="none" cx="303" cy="216" r="6"/>
+    <path fill="url(#skin)" d="M280 198 A36 36 0 0 1 348 198 Q314 190 280 198 Z"/>
+    <path fill="none" stroke-width="3" d="M344 200 L354 194 M334 196 L340 186"/>
+
+    <!-- a little round mouth blowing bubbles -->
+    <ellipse fill="#A8355A" cx="260" cy="280" rx="15" ry="17"/>
+    <ellipse fill="#FF8FAE" stroke="none" cx="260" cy="288" rx="9" ry="6"/>
+    <circle fill="#E8F8FF" stroke-width="3" cx="300" cy="288" r="10"/>
+    <circle fill="#E8F8FF" stroke-width="3" cx="320" cy="272" r="6"/>
+    <circle fill="#FFFFFF" stroke="none" cx="297" cy="284" r="3"/>
+
+    <!-- cheeks -->
+    <ellipse fill="#FF9BB8" stroke="none" cx="168" cy="262" rx="18" ry="11"/>
+    <ellipse fill="#FF9BB8" stroke="none" cx="352" cy="262" rx="18" ry="11"/>
+  </g>
+</svg>

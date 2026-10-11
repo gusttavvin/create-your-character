@@ -1,0 +1,85 @@
+<svg viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skin" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#A4EE78"/>
+      <stop offset="0.55" stop-color="#6FD14A"/>
+      <stop offset="1" stop-color="#3FA62B"/>
+    </linearGradient>
+    <linearGradient id="belly" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFF8D2"/>
+      <stop offset="1" stop-color="#FFE08A"/>
+    </linearGradient>
+    <linearGradient id="horn" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFF6E4"/>
+      <stop offset="1" stop-color="#FFD9A6"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFF0A8"/>
+      <stop offset="1" stop-color="#FFC93D"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- tail, behind everything: thick at the hip, a spade at the tip -->
+    <path fill="url(#skin)" d="M318 452 C372 470 416 460 438 420 C446 404 448 392 446 380 L464 384 C468 406 462 430 450 450 C424 494 366 508 314 494 Z"/>
+    <path fill="#FFC93D" d="M454 326 C472 344 486 362 484 380 C472 388 462 386 454 380 C446 386 434 388 422 380 C422 362 436 344 454 326 Z"/>
+    <path fill="#FFC93D" d="M392 470 L408 448 L414 474 Z"/>
+    <path fill="#FFC93D" d="M420 446 L440 430 L438 458 Z"/>
+
+    <!-- bat wings: a bony top edge from the shoulder to the tip, and a skin scalloped
+         between the fingers -->
+    <path fill="url(#wing)" d="M205 318 C170 262 136 206 100 166 C76 140 44 122 12 116 C40 150 44 196 22 238 C60 240 84 272 74 318 C110 314 158 330 200 362 Z"/>
+    <path fill="none" stroke-width="3" d="M100 166 C76 190 50 214 22 238"/>
+    <path fill="none" stroke-width="3" d="M100 166 C92 214 84 268 74 318"/>
+    <path fill="none" stroke="#3FA62B" stroke-width="9" d="M205 318 C170 262 136 206 100 166 C76 140 44 122 12 116"/>
+    <path fill="none" stroke-width="2" d="M205 318 C170 262 136 206 100 166 C76 140 44 122 12 116"/>
+    <path fill="url(#wing)" d="M315 318 C350 262 384 206 420 166 C444 140 476 122 508 116 C480 150 476 196 498 238 C460 240 436 272 446 318 C410 314 362 330 320 362 Z"/>
+    <path fill="none" stroke-width="3" d="M420 166 C444 190 470 214 498 238"/>
+    <path fill="none" stroke-width="3" d="M420 166 C428 214 436 268 446 318"/>
+    <path fill="none" stroke="#3FA62B" stroke-width="9" d="M315 318 C350 262 384 206 420 166 C444 140 476 122 508 116"/>
+    <path fill="none" stroke-width="2" d="M315 318 C350 262 384 206 420 166 C444 140 476 122 508 116"/>
+
+    <!-- feet -->
+    <ellipse fill="url(#skin)" cx="204" cy="530" rx="46" ry="30"/>
+    <ellipse fill="url(#skin)" cx="316" cy="530" rx="46" ry="30"/>
+    <path fill="#FFFFFF" stroke-width="3" d="M176 548 L182 562 L190 548 Z M196 552 L203 566 L210 552 Z M216 548 L223 562 L230 548 Z"/>
+    <path fill="#FFFFFF" stroke-width="3" d="M290 548 L297 562 L304 548 Z M310 552 L317 566 L324 552 Z M330 548 L337 562 L344 548 Z"/>
+
+    <!-- body and its little arms -->
+    <path fill="url(#skin)" d="M162 388 C134 396 120 420 130 438 C142 452 164 442 172 424 Z"/>
+    <path fill="url(#skin)" d="M358 388 C386 396 400 420 390 438 C378 452 356 442 348 424 Z"/>
+    <path fill="url(#skin)" d="M260 300 C330 300 372 360 372 430 C372 492 326 528 260 528 C194 528 148 492 148 430 C148 360 190 300 260 300 Z"/>
+    <path fill="url(#belly)" d="M260 346 C300 346 326 384 326 432 C326 482 298 510 260 510 C222 510 194 482 194 432 C194 384 220 346 260 346 Z"/>
+    <path fill="none" stroke="#E2B24A" stroke-width="3" d="M210 384 Q260 396 310 384 M200 416 Q260 430 320 416 M198 450 Q260 464 322 450 M206 482 Q260 496 314 482"/>
+
+    <!-- crest and horns, then the head over their roots -->
+    <path fill="#FFC93D" d="M232 90 L242 60 L256 86 Z"/>
+    <path fill="#FFC93D" d="M250 86 L262 50 L274 86 Z"/>
+    <path fill="#FFC93D" d="M268 86 L280 60 L290 90 Z"/>
+    <path fill="url(#horn)" d="M182 108 C164 84 156 58 166 34 C184 52 202 78 212 98 Z"/>
+    <path fill="url(#horn)" d="M338 108 C356 84 364 58 354 34 C336 52 318 78 308 98 Z"/>
+    <path fill="url(#skin)" d="M260 82 C360 82 410 140 410 208 C410 280 350 322 260 322 C170 322 110 280 110 208 C110 140 160 82 260 82 Z"/>
+    <path fill="#EEFFE0" stroke="none" d="M150 150 C158 118 186 98 214 94 C224 94 226 106 214 110 C192 118 176 134 168 156 C162 166 148 162 150 150 Z"/>
+    <ellipse fill="#C9F5A8" stroke="none" cx="260" cy="262" rx="84" ry="46"/>
+    <ellipse fill="#2D7A1E" stroke="none" cx="238" cy="246" rx="6" ry="4"/>
+    <ellipse fill="#2D7A1E" stroke="none" cx="282" cy="246" rx="6" ry="4"/>
+
+    <!-- eyes -->
+    <circle fill="#FFFFFF" cx="204" cy="196" r="40"/>
+    <circle fill="#12224A" stroke="none" cx="210" cy="202" r="24"/>
+    <circle fill="#FFFFFF" stroke="none" cx="200" cy="190" r="9"/>
+    <circle fill="#FFFFFF" stroke="none" cx="219" cy="212" r="4"/>
+    <circle fill="#FFFFFF" cx="316" cy="196" r="40"/>
+    <circle fill="#12224A" stroke="none" cx="310" cy="202" r="24"/>
+    <circle fill="#FFFFFF" stroke="none" cx="300" cy="190" r="9"/>
+    <circle fill="#FFFFFF" stroke="none" cx="319" cy="212" r="4"/>
+
+    <!-- mouth: a happy smile with one little fang -->
+    <path fill="#D8486E" d="M222 278 C240 292 280 292 298 278 C294 302 278 312 260 312 C242 312 226 302 222 278 Z"/>
+    <path fill="#FFFFFF" stroke-width="3" d="M236 284 L243 298 L250 287 Z"/>
+    <path fill="#FF8FAE" stroke="none" d="M246 304 C252 298 268 298 274 304 C270 309 250 309 246 304 Z"/>
+
+    <!-- cheeks -->
+    <ellipse fill="#FF9BB8" stroke="none" cx="160" cy="250" rx="18" ry="11"/>
+    <ellipse fill="#FF9BB8" stroke="none" cx="360" cy="250" rx="18" ry="11"/>
+  </g>
+</svg>
