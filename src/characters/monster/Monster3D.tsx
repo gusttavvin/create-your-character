@@ -500,6 +500,11 @@ const ARM_INTO: Record<string, Record<string, number>> = {
 const WIGGLE = { period: 2.4, from: -6, to: 8 };
 const BLINK = { period: 4.5, start: 0.92, shut: 0.95, squash: 0.12 };
 
+/** How far a brow stands off the skin, as a share of how far its eyeball stands out. */
+const BROW_LIFT: Record<string, number> = {
+  one: 0.6,
+};
+
 /** Remembers where a row of eyes is, so it can blink about its own middle. */
 function blinkAbout(root: Object3D) {
   root.updateMatrixWorld(true);
@@ -1014,6 +1019,19 @@ function ModelPart({ row, id, body }: { row: Row; id: string; body: string }) {
             // stalks/eyebrows follow the local skin, without changing their own thickness
             bendObject(eye, at, own.geometries);
           }
+        }
+        /*
+         * The brow over the single eye, laid on the skin like that, was stuck flat to the body;
+         * Clara asked for it off the body. It stands forward of the skin by a share of how far
+         * the eyeball does.
+         */
+        const lift = BROW_LIFT[id] ?? 0;
+        const ball = holder.children.find((eye) => eye.userData.attachment);
+        if (lift && ball) {
+          const depth = boxOf(meshesIn(ball)).getSize(new Vector3()).z / 2;
+          for (const brow of holder.children)
+            if (!brow.userData.attachment && meshesIn(brow, "_line").length)
+              brow.position.z += depth * lift;
         }
       } else if (row === "mouth" && id !== "beak") {
         // A smile is a surface detail; conform it to the new host rather than floating a flat panel.

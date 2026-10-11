@@ -108,8 +108,8 @@ export function BodyRound({ className }: PartSvgProps) {
       <path key="s6" d="M 140 372 C 160 416, 200 438, 260 438 C 320 438, 360 416, 380 372 C 374 410, 330 430, 260 430 C 190 430, 146 410, 140 372 Z" transform="translate(0,16)" fill="#F8C795" stroke="none" />
       <circle key="s7" cx="222" cy="414" r="5" transform="translate(0,16)" fill="#FFC08A" stroke="none" />
       <circle key="s8" cx="298" cy="408" r="4" transform="translate(0,16)" fill="#FFC08A" stroke="none" />
-      <ellipse key="s9" cx="158" cy="302" rx="24" ry="13" transform="translate(0,16)" fill="#FF9E9E" stroke="none" />
-      <ellipse key="s10" cx="368" cy="296" rx="24" ry="13" transform="translate(0,16)" fill="#FF9E9E" stroke="none" />
+      <ellipse key="s9" cx="166" cy="300" rx="24" ry="13" transform="translate(0,16)" fill="#FF9E9E" stroke="none" />
+      <ellipse key="s10" cx="354" cy="300" rx="24" ry="13" transform="translate(0,16)" fill="#FF9E9E" stroke="none" />
     </Part>
   );
 }

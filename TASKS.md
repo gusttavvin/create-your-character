@@ -1293,3 +1293,38 @@ Clara: o Play não deve ocupar a tela do computador, só a tela do site.
 
 Conferido: no Play aparecem só as 12 cartas e `document.fullscreenElement` fica vazio; o Esc
 volta à página normal; sem erros no console. `npm run build` passa.
+
+## Monstro: bochechas do round longe do contorno — 11 de outubro de 2026
+
+Clara mandou foto do 2D: uma bochecha rosa encostava no contorno preto do rosto e a outra
+não; nenhuma deve encostar.
+
+- [x] **Causa:** no desenho do Fuzzbop, as bochechas não estavam simétricas em relação ao
+      rosto, que é centrado em x = 260.
+      - A esquerda ficava em (158, 302), a 5 unidades da beira do rosto (x ≈ 129).
+      - A direita ficava em (368, 296).
+- [x] **Correção:** no desenho aprovado (`2-Fuzzbop.svg`), as duas foram para a mesma altura
+      e a mesma distância do centro: (166, 300) e (354, 300). Ficam uns 12 longe do contorno
+      dos dois lados.
+      - As caixas medidas dessas duas formas foram atualizadas em `bbox.json`.
+      - Rodei `flatten.cjs`, `gen.cjs` e `genpaths.cjs`; só as duas bochechas mudaram em
+        `parts.tsx` e `paths3d.ts`.
+
+Conferido: 2D do round no jogo; `npm run build` passa. O 3D do round usa as bochechas do
+modelo laranja e não mudou.
+
+## Monstro: sobrancelha do olho "one" descolada do corpo — 11 de outubro de 2026
+
+Clara: "a sobrancelha do one está colada no corpo, descole".
+
+- [x] **Causa:** no 3D, a sobrancelha do `one` (`one_25_line`) era deitada sobre a pele pelo
+      `bendObject`, como um risco pintado no corpo.
+- [x] **Correção:** depois de assentada, ela vem para a frente da pele 0,6 do quanto o globo
+      do olho sobressai (`BROW_LIFT`). Assim fica solta do corpo, por cima do olho, como a
+      sobrancelha do `angry`.
+
+Conferido:
+- **Monster review:** egg com `one` de frente, lado e três quartos; matriz de olhos nos
+  quatro corpos.
+- *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
+- **Build:** `npm run build` passa.

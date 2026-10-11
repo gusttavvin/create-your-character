@@ -164,28 +164,28 @@ export const MONSTER_PIECES: Record<string, DrawnPart> = {
    },
    {
     i: 19,
-    d: 'M 134 302 a 24 13 0 1 0 48 0 a 24 13 0 1 0 -48 0 Z',
+    d: 'M 142 300 a 24 13 0 1 0 48 0 a 24 13 0 1 0 -48 0 Z',
     dx: 0,
     dy: 16,
     fill: '#FF9E9E',
     repaint: false,
     stroke: null,
     sw: 0,
-    cx: 158,
-    cy: 334,
+    cx: 166,
+    cy: 332,
     area: 1248
    },
    {
     i: 20,
-    d: 'M 344 296 a 24 13 0 1 0 48 0 a 24 13 0 1 0 -48 0 Z',
+    d: 'M 330 300 a 24 13 0 1 0 48 0 a 24 13 0 1 0 -48 0 Z',
     dx: 0,
     dy: 16,
     fill: '#FF9E9E',
     repaint: false,
     stroke: null,
     sw: 0,
-    cx: 368,
-    cy: 328,
+    cx: 354,
+    cy: 332,
     area: 1248
    }
   ]

@@ -43,8 +43,8 @@
     <circle cx="222" cy="414" r="5" fill="#FFC08A" stroke="none"/>
     <circle cx="298" cy="408" r="4" fill="#FFC08A" stroke="none"/>
 
-    <ellipse cx="158" cy="302" rx="24" ry="13" fill="#FF9E9E" stroke="none"/>
-    <ellipse cx="368" cy="296" rx="24" ry="13" fill="#FF9E9E" stroke="none"/>
+    <ellipse cx="166" cy="300" rx="24" ry="13" fill="#FF9E9E" stroke="none"/>
+    <ellipse cx="354" cy="300" rx="24" ry="13" fill="#FF9E9E" stroke="none"/>
 
     <path d="M 172 312 Q 260 326 348 306 C 352 420, 168 420, 172 312 Z" fill="#A8355A" stroke-width="3"/>
     <path d="M 208 348 Q 262 330 316 344 C 314 382, 212 384, 208 348 Z" fill="#FF93AD" stroke-width="2.5"/>
