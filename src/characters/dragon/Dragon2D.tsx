@@ -129,6 +129,45 @@ function wingsPlace(body: string, id: string) {
   };
 }
 
+/**
+ * How a piece is carried from the drawing it was cut from onto the body's: a point (x, y) of
+ * the piece lands at (x·k + tx, y·k + ty) in the body's drawing. The 3D dragon puts its
+ * pieces where the flat one does, through these.
+ */
+export interface DragonMove {
+  k: number;
+  tx: number;
+  ty: number;
+}
+
+function moveOf(r: Rect, x0: number, y0: number, w0: number): DragonMove {
+  const k = r.width / w0;
+  return { k, tx: r.left - OX - k * x0, ty: r.top - OY - k * y0 };
+}
+
+/** Where every chosen piece goes on the chosen body. */
+export function dragonPlacement(parts: PartMap) {
+  const body = bodyOf(parts);
+  const out: Partial<Record<'tail' | 'wingL' | 'wingR' | 'eyes' | 'mouth', DragonMove>> = {};
+  const box = (row: string, id: string) => DRAGON_PIECES[`${row}:${id}`].box;
+  if (parts.tail) {
+    const b = box('tail', parts.tail);
+    out.tail = moveOf(tailPlace(body, parts.tail).rect, b[0], b[1], b[2]);
+  }
+  if (parts.wings) {
+    const b = box('wings', parts.wings);
+    const w = wingsPlace(body, parts.wings);
+    out.wingL = moveOf(w.left, b[0], b[1], MID - b[0]);
+    out.wingR = moveOf(w.right, MID, b[1], MID - b[0]);
+  }
+  for (const row of ['eyes', 'mouth'] as const)
+    if (parts[row]) {
+      const b = box(row, parts[row]);
+      out[row] = moveOf(facePlace(body, row, parts[row]), b[0], b[1], b[2]);
+    }
+  return { body, moves: out, slots: (row: string) => slotOf(body, row) };
+}
+
 function rectOf(box: DragonPiece['box']) {
   return { cx: OX + box[0] + box[2] / 2, cy: OY + box[1] + box[3] / 2, w: box[2], h: box[3] };
 }

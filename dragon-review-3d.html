@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="UTF-8" /><title>Dragon 3D review — local only</title>
+  <style>
+    body { margin: 0; font-family: system-ui; background: #eef3f8; }
+    .bar { padding: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px; }
+    .cell { position: relative; overflow: hidden; background: #fff; border-radius: 8px; height: 300px; }
+  </style>
+  <div id="root"></div>
+  <script type="module">
+    /*
+     * The 3D dragon on each body, side by side: ?row=wings (or eyes, mouth, tail) shows that
+     * row's four pieces on the four bodies; ?view=0..360 turns them all (dev server only); no row shows the four
+     * dragons as drawn.
+     */
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import Character3D from '/src/components/Character3D.tsx';
+    import '/src/styles/global.css';
+    const bodies = ['classic', 'chubby', 'tall', 'spiky'];
+    const rows = {
+      wings: ['bat', 'feather', 'butterfly', 'tiny'],
+      eyes: ['cute', 'fierce', 'big', 'star'],
+      mouth: ['smile', 'fire', 'teeth', 'tongue'],
+      tail: ['lightning', 'fire', 'ice', 'leaf'],
+    };
+    const own = {
+      classic: { wings: 'bat', eyes: 'cute', mouth: 'smile', tail: 'lightning' },
+      chubby: { wings: 'feather', eyes: 'fierce', mouth: 'fire', tail: 'fire' },
+      tall: { wings: 'butterfly', eyes: 'big', mouth: 'teeth', tail: 'ice' },
+      spiky: { wings: 'tiny', eyes: 'star', mouth: 'tongue', tail: 'leaf' },
+    };
+    const q = new URLSearchParams(location.search);
+    const row = q.get('row');
+    const h = React.createElement;
+    const cells = row
+      ? bodies.flatMap((b) => rows[row].map((o) => ({ body: b, ...own[b], [row]: o })))
+      : bodies.map((b) => ({ body: b, ...own[b] }));
+    const App = () =>
+      h('div', null,
+        h('div', { className: 'bar' }, `row: ${row ?? 'own pieces'}`),
+        h('div', { className: 'grid' },
+          cells.map((parts, i) =>
+            h('div', { className: 'cell', key: i },
+              h(Character3D, { kind: 'dragon', parts, colors: {}, still: true })))));
+    createRoot(document.getElementById('root')).render(h(App));
+    // ?view=degrees: moves every camera round the dragon, 0 = front, 90 = its left side
+    const view = Number(q.get('view'));
+    if (view) {
+      const turn = () => {
+        for (const get of window.__r3fAll ?? []) {
+          const { camera, controls } = get();
+          const r = Math.hypot(camera.position.x, camera.position.z);
+          const a = (view * Math.PI) / 180;
+          camera.position.set(Math.sin(a) * r, camera.position.y, Math.cos(a) * r);
+          camera.lookAt(0, 0, 0);
+          controls?.update();
+        }
+      };
+      setTimeout(turn, 1500);
+      setTimeout(turn, 3000);
+    }
+  </script>
+</html>

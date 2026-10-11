@@ -1431,5 +1431,53 @@ Conferido:
 - **Build:** `npm run build` passa.
 
 Falta:
-- [ ] **3D novo**, feito a partir desses desenhos. O 3D atual ainda é o antigo (formas
-      simples, com manchas) e só ganhou as cores novas.
+- [x] **3D novo**, feito a partir desses desenhos: veja a seção seguinte.
+
+## Dragão: 3D novo, feito dos desenhos aprovados — 11 de outubro de 2026
+
+Pedido: "1 - isso / 2 e 3 - pode publicar o 2d e começamos o 3d logo em seguida". O 3D do
+dragão se monta sozinho, como o do monstro: a criança não arrasta as peças.
+
+- [x] **Gerador `art-source/dragon/model3d.mjs`** (`npm run models:dragon`): lê os mesmos
+      desenhos do 2D e escreve um GLB por peça em `public/models/dragon/<fileira>-<id>.glb`
+      (20 arquivos), `src/characters/dragon/model-library.json` e
+      `docs/dragon-model-validation.json`.
+      - Corpo, braços, pernas e chifres viram volumes redondos; barriga, bochechas e
+        manchas são pintadas sobre a pele.
+      - Olhos: cada globo branco é um olho separado (`EyeL`/`EyeR`), com íris e pálpebras
+        por cima.
+      - Boca: desenhada chapada e assentada na cara; só o que sai da cara (fogo, bolhas,
+        língua) tem volume.
+      - Asas: um grupo por asa (`WingL`/`WingR`), finas, com os ossos em relevo.
+      - O que tem a cor do corpo usa o material "Skin", que o jogo pinta com a cor do corpo
+        escolhido (o rabo e as pálpebras emprestados ficam da cor certa).
+      - A frente de cada corpo é medida numa grade, para olhos e boca de outro dragão
+        assentarem na cara dele.
+- [x] **`Dragon3D.tsx`:** usa o mesmo encaixe do 2D (`dragonPlacement` em `Dragon2D.tsx`).
+      - Olhos piscam; asas batem a partir do ombro, abertas um pouco para trás (0,3 rad;
+        com 0,45 a asa de trás sumia de três quartos); o rabo sai de trás e balança.
+      - Cada instância clona materiais e geometrias e libera só o que criou.
+      - Se um arquivo não carrega, só aquela peça some e o resto continua em 3D.
+- [x] **`movable3d.ts`:** `dragon: []`, o dragão em 3D não é arrastável.
+- [x] **`Character3D.tsx`:** o enquadramento mede de novo aos 0,4 s, 1,2 s e 2,5 s, porque
+      as peças chegam do arquivo um pouco depois (o dragão aparecia fora do centro).
+- [x] **`dragon-review-3d.html`:** cada fileira nos quatro corpos (`?row=`), e `?view=`
+      gira todos (só no servidor local).
+
+Conferido:
+- **Revisão:** as quatro fileiras nos quatro corpos, de frente; os quatro dragões de três
+  quartos (dos dois lados), de lado e de costas.
+- **Falha:** `wings-bat.glb` renomeado de propósito: só as asas do verde sumiram; arquivo
+  restaurado.
+- **No jogo:** azul + Bat + Brave + Silly + Heart, igual no 2D e no 3D; todos os arquivos
+  carregam (200).
+- **glTF:** 0 erros e 0 avisos. **Build:** `npm run build` passa.
+
+Limitações reais:
+- Tamanho: 10,9 MB ao todo, cada arquivo abaixo de 2 MB (o maior é o corpo azul, 1,7 MB);
+  555 mil triângulos nos 20 arquivos, até 90 mil num só. Um dragão usa 5 arquivos.
+  Sem LOD; desempenho no celular ainda não medido.
+- Peças pequenas (dedos, chifres) usam menos fatias que o corpo; antes cada uma tinha 8 mil
+  triângulos e o corpo verde passava de 2,5 MB.
+- De três quartos a asa de trás fica escondida pelo corpo redondo.
+- Não salvei personagem no teste (o formato salvo não mudou: mesmos IDs).

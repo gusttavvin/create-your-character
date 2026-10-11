@@ -1,0 +1,142 @@
+[
+  {
+    "piece": "tail-lightning",
+    "bytes": 170588,
+    "triangles": 8944,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "wings-bat",
+    "bytes": 458756,
+    "triangles": 22192,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "body-classic",
+    "bytes": 1177100,
+    "triangles": 60204,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "eyes-cute",
+    "bytes": 148244,
+    "triangles": 6024,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "mouth-smile",
+    "bytes": 339876,
+    "triangles": 18540,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "tail-fire",
+    "bytes": 362004,
+    "triangles": 19685,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "wings-feather",
+    "bytes": 755236,
+    "triangles": 37700,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "body-chubby",
+    "bytes": 946876,
+    "triangles": 47928,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "eyes-fierce",
+    "bytes": 294432,
+    "triangles": 14066,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "mouth-fire",
+    "bytes": 999152,
+    "triangles": 55382,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "tail-ice",
+    "bytes": 376228,
+    "triangles": 20000,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "wings-butterfly",
+    "bytes": 612688,
+    "triangles": 29688,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "body-tall",
+    "bytes": 1740936,
+    "triangles": 89550,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "eyes-big",
+    "bytes": 441604,
+    "triangles": 21160,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "mouth-teeth",
+    "bytes": 169392,
+    "triangles": 6952,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "tail-leaf",
+    "bytes": 122016,
+    "triangles": 6356,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "wings-tiny",
+    "bytes": 526968,
+    "triangles": 26544,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "body-spiky",
+    "bytes": 718648,
+    "triangles": 36618,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "eyes-star",
+    "bytes": 276304,
+    "triangles": 11040,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "mouth-tongue",
+    "bytes": 300256,
+    "triangles": 16102,
+    "errors": 0,
+    "warnings": 0
+  }
+]

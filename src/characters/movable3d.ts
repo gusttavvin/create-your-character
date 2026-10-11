@@ -10,11 +10,14 @@ import type { CharacterKind, PartMap } from './types';
  * A character with an empty list is assembled for the child in 3D: its pieces sit where
  * the model puts them and cannot be picked up. The monster works that way because the
  * class builds it on the 2D sheet first — where a piece is nudged into place — and the
- * 3D view is the finished creature, which needs its own arrangement to look right.
+ * 3D view is the finished creature, which needs its own arrangement to look right. The
+ * dragon works the same way.
  */
 const MOVABLE: Record<CharacterKind, string[]> = {
   monster: [],
-  dragon: ['body', 'wings', 'tail', 'eyes', 'mouth'],
+  // the dragon too, since it was remodelled from its four approved drawings: Clara asked
+  // for it to be put together on its own, as the monster is
+  dragon: [],
   princess: ['dress', 'hair', 'crown', 'accessory', 'eyes', 'mouth'],
   fairy: ['dress', 'wings', 'hair', 'crown', 'wand', 'eyes'],
   superhero: ['suit', 'cape', 'emblem', 'boots', 'mask', 'power'],

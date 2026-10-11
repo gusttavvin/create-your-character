@@ -1,775 +1,314 @@
-import { useMemo, useRef } from 'react';
+import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
+import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import FaceDecal from '../../components/FaceDecal';
-import Ink from '../../components/Ink';
-import * as THREE from 'three';
+import { Box3, BufferGeometry, Group, Material, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import type { ColorMap, PartMap } from '../types';
-import { DRAGON, resolveDragonColors } from './config';
-import { findOption } from '../types';
-import { INK3D, leafShape, pickPart, useGradientMap, usePatternTexture, useSvgTexture, latheBody } from '../../lib/three';
-import type { PatternKind } from '../../lib/three';
-import { shade } from '../../lib/color';
-import Part3D from '../../components/Part3D';
-
-/** Toon surface; a pattern texture carries the colour itself, so the tint goes white. */
-function Toon({ color, map, tex }: { color: string; map: THREE.Texture; tex?: THREE.Texture | null }) {
-  return <meshToonMaterial color={tex ? '#ffffff' : color} gradientMap={map} map={tex ?? null} />;
-}
-
-interface Spec {
-  headY: number; // centre of the face sphere
-  headR: number;
-  eyeY: number;
-  mouthY: number;
-  wingY: number;
-  halfW: number;
-  tailY: number;
-  /** The dragon body carries a snout, and the mouth (and its fire) lives on it. */
-  snout?: { y: number; z: number; r: number };
-}
-
-const BODY_KINDS = ['classic', 'chubby', 'tall', 'spiky'];
-
-const SPECS: Record<string, Spec> = {
-  // the eyes sit high on the skull so the snout in front of them never hides them
-  classic: { headY: 1.0, headR: 0.56, eyeY: 0.22, mouthY: -0.1, wingY: 0.15, halfW: 0.85, tailY: -0.75, snout: { y: 0.74, z: 0.6, r: 0.3 } },
-  chubby: { headY: 0.95, headR: 0.72, eyeY: 0.12, mouthY: -0.28, wingY: 0.1, halfW: 0.95, tailY: -0.6 },
-  tall: { headY: 0.9, headR: 0.7, eyeY: 0.12, mouthY: -0.26, wingY: 0.2, halfW: 0.7, tailY: -0.7 },
-  spiky: { headY: 0.3, headR: 1.05, eyeY: 0.35, mouthY: -0.15, wingY: 0.2, halfW: 1.0, tailY: -0.6 },
-};
-
-/** The drawn dragon is spotted with a paler, banded belly. */
-const BODY_SKIN: PatternKind = 'spots';
-const BELLY_SKIN: PatternKind = 'stripes';
-
-const WING_SKIN: Record<string, PatternKind> = {
-  bat: 'smooth',
-  feather: 'fur',
-  tiny: 'scales',
-  butterfly: 'spots',
-};
-
-/** Evenly spread directions over a sphere, minus the patch where the face goes. */
-const SPIKE_DIRS: THREE.Vector3[] = (() => {
-  const n = 54;
-  const out: THREE.Vector3[] = [];
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (i / (n - 1)) * 2;
-    const r = Math.sqrt(Math.max(0, 1 - y * y));
-    const th = i * 2.39996;
-    const v = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r);
-    if (v.z > 0.4 && v.y < 0.45) continue; // keep the face clear
-    out.push(v);
-  }
-  return out;
-})();
-
-const UP = new THREE.Vector3(0, 1, 0);
-const FWD = new THREE.Vector3(0, 0, 1);
-
-/** Turns +y toward `dir`, for cones and shards placed along a curve. */
-function aim(dir: THREE.Vector3) {
-  return new THREE.Quaternion().setFromUnitVectors(UP, dir.clone().normalize());
-}
-
-/* ------------------------------------------------------------------ fire */
+import { dragonColors } from './config';
+import { dragonPlacement, type DragonMove } from './Dragon2D';
+import { DRAGON_PIECES } from './parts';
+import rawLibrary from './model-library.json';
 
 /**
- * The outline a child draws for fire: a tall middle point with smaller licks breaking
- * away either side, and notches between them. It points up (+y) and is one unit wide.
- */
-function flameShape() {
-  const f = new THREE.Shape();
-  // sharp points with round valleys between them, tall and narrow, the way fire is drawn
-  f.moveTo(0.24, 0);
-  f.quadraticCurveTo(0.34, 0.14, 0.38, 0.34); // right lick
-  f.quadraticCurveTo(0.2, 0.42, 0.16, 0.5);
-  f.quadraticCurveTo(0.3, 0.62, 0.34, 0.86); // second lick
-  f.quadraticCurveTo(0.18, 0.92, 0.12, 1.02);
-  f.quadraticCurveTo(0.18, 1.2, 0.14, 1.36);
-  f.lineTo(0.0, 1.82); // the tip
-  f.lineTo(-0.14, 1.3);
-  f.quadraticCurveTo(-0.2, 1.14, -0.12, 0.98);
-  f.quadraticCurveTo(-0.34, 0.9, -0.36, 0.64); // left lick
-  f.quadraticCurveTo(-0.2, 0.56, -0.16, 0.46);
-  f.quadraticCurveTo(-0.34, 0.32, -0.26, 0.1);
-  f.quadraticCurveTo(-0.16, 0.02, 0.24, 0);
-  f.closePath();
-  return f;
-}
-
-/** The flame silhouette, flat, ready to be crossed into a 3D-looking fire. */
-const FLAME_GEO = new THREE.ExtrudeGeometry(flameShape(), { depth: 0.07, bevelEnabled: false });
-
-/**
- * One layer of fire: the same silhouette on three cards crossed about the jet, so the
- * flame keeps a flame's outline from whatever side the model is turned to. Each layer
- * breathes at its own pace, and the inner ones are shorter and hotter, which is how the
- * drawing shades it: orange outside, yellow inside, white at the heart.
- */
-function FlameLayer({
-  grad,
-  color,
-  len,
-  phase,
-  ink,
-}: {
-  grad: THREE.DataTexture;
-  color: string;
-  len: number;
-  phase: number;
-  ink?: boolean;
-}) {
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    const g = ref.current;
-    if (!g) return;
-    const t = clock.getElapsedTime() * 7 + phase;
-    g.scale.set(len * (1 + Math.sin(t * 1.6) * 0.09), len * (1 + Math.sin(t) * 0.2), len);
-    g.rotation.z = Math.sin(t * 0.7) * 0.1;
-  });
-  return (
-    <group ref={ref} scale={len}>
-      {[0, 60, 120].map((deg) => (
-        <group key={deg} rotation={[0, (deg * Math.PI) / 180, 0]}>
-          <mesh geometry={FLAME_GEO} position={[0, 0, -0.035]}>
-            <meshToonMaterial color={color} gradientMap={grad} side={THREE.DoubleSide} />
-            {ink && <Ink thin />}
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-/**
- * Fire: three crossed layers, hottest in the middle, leaning out of the mouth.
- * A single cone only ever looked like a traffic cone, and smooth teardrops looked like
- * balloons; this keeps the drawn outline from every angle.
- */
-function Flame({ grad, len = 1 }: { grad: THREE.DataTexture; len?: number }) {
-  return (
-    <group rotation={[Math.PI / 2, 0, 0]}>
-      <FlameLayer grad={grad} color="#FF6A00" len={0.62 * len} phase={0} ink />
-      <FlameLayer grad={grad} color="#FFB01F" len={0.42 * len} phase={2.1} />
-      <FlameLayer grad={grad} color="#FFF0B8" len={0.24 * len} phase={4.2} />
-      {/* little licks breaking away past the tip, which is what says "fire" at a glance */}
-      {([
-        [0.3, 0.72, 0.17, '#FF8A1F'],
-        [-0.32, 0.9, 0.13, '#FFB01F'],
-        [0.12, 1.16, 0.11, '#FF6A00'],
-      ] as const).map(([x, y, k, c], i) => (
-        <group key={i} position={[x * len, y * len, 0]}>
-          <FlameLayer grad={grad} color={c} len={k * len} phase={1.1 + i * 1.7} ink />
-        </group>
-      ))}
-    </group>
-  );
-}
-
-/** The dark opening the fire shoots out of (the other three mouths stay decals). */
-function OpenMouth({ grad, pos, r }: { grad: THREE.DataTexture; pos: [number, number, number]; r: number }) {
-  return (
-    <mesh position={pos} scale={[1, 0.7, 0.55]}>
-      <sphereGeometry args={[r, 28, 28]} />
-      <meshToonMaterial color="#5B1220" gradientMap={grad} />
-      <Ink thin />
-    </mesh>
-  );
-}
-
-/* ------------------------------------------------------------------ body */
-
-/**
- * The row of spikes down a dragon's head and back.
+ * The dragon in 3D, assembled from the models of the four dragons Clara approved.
  *
- * They used to be placed by hand at fixed heights and all but the top one ended up
- * buried inside the head or the belly, so the dragon looked like it had a single fin.
- * Each spike now sits on the surface it grows from and points straight out of it.
+ * Every piece was modelled from the same drawing the flat dragon is cut from
+ * (art-source/dragon/model3d.mjs) and keeps its place in that drawing, so a piece is put on a
+ * body exactly where the flat dragon puts it — through dragonPlacement, the flat dragon's own
+ * sums. What 3D adds is depth:
+ *
+ *   the eyes sit on the front of the body, each eyeball pushed in a little, and the mouth is
+ *   laid onto it point by point, so it follows the curve of whichever face wears it;
+ *   the wings stand behind the body, swept back, and beat at the shoulder;
+ *   the tail comes out from behind the body and wags;
+ *   the eyes blink, as the flat dragon's do.
+ *
+ * Nothing here is dragged: like the monster, the 3D dragon is the finished creature the class
+ * built on the sheet (see movable3d). The tail and the lids of the sleepy eyes are skin, and
+ * are painted the colour of the body.
  */
-function Crest({ spec, color, grad }: { spec: Spec; color: string; grad: THREE.DataTexture }) {
-  const spikes = useMemo(() => {
-    const out: { pos: [number, number, number]; dir: THREE.Vector3; h: number }[] = [];
-    // over the head: from the crown backwards
-    for (const [a, h] of [
-      [0.1, 0.34],
-      [0.55, 0.38],
-      [1.0, 0.34],
-      [1.45, 0.28],
-    ] as const) {
-      const dir = new THREE.Vector3(0, Math.cos(a), -Math.sin(a));
-      out.push({
-        pos: [0, spec.headY + dir.y * spec.headR * 0.94, dir.z * spec.headR * 0.94],
-        dir,
-        h,
-      });
-    }
-    // down the neck and along the back, on the far side of the body
-    const bodyY = -0.5;
-    const bodyR = 0.92;
-    for (const [a, h] of [
-      [0.62, 0.3],
-      [0.95, 0.32],
-      [1.3, 0.28],
-      [1.7, 0.22],
-    ] as const) {
-      const dir = new THREE.Vector3(0, Math.cos(a), -Math.sin(a));
-      out.push({
-        pos: [0, bodyY + dir.y * bodyR * 0.96, dir.z * bodyR * 0.96],
-        dir,
-        h,
-      });
-    }
-    return out;
-  }, [spec.headY, spec.headR]);
+interface PieceMeta {
+  url: string;
+  group: string;
+  surface?: { step: number; nx: number; ny: number; heights: number[] };
+  depth?: number;
+  eyes?: { group: string; centre: [number, number] }[];
+}
+const LIB = rawLibrary as unknown as { unit: number; pieces: Record<string, PieceMeta> };
+const U = LIB.unit;
 
-  return (
-    <group>
-      {spikes.map((sp, i) => (
-        <mesh key={i} position={sp.pos} quaternion={aim(sp.dir)}>
-          <coneGeometry args={[sp.h * 0.45, sp.h, 8]} />
-          <Toon color={color} map={grad} />
-          <Ink />
-        </mesh>
-      ))}
-    </group>
-  );
+function urlOf(row: string, id: string) {
+  return `${import.meta.env.BASE_URL}${LIB.pieces[`${row}:${id}`].url}`;
 }
 
+/** From a point of a drawing to the model, and back. */
+const toModel = (x: number, y: number): [number, number] => [(x - 260) * U, (620 - y) * U];
+const fromModel = (X: number, Y: number): [number, number] => [X / U + 260, 620 - Y / U];
 
-function Body({
-  kind,
-  color,
-  grad,
-  eyesTex,
-  mouthTex,
-  spec,
-}: {
-  kind: string | null;
-  color: string;
-  grad: THREE.DataTexture;
-  eyesTex: THREE.Texture | null;
-  mouthTex: THREE.Texture | null;
-  spec: Spec;
-}) {
-  // a standing egg: narrow at the top, heavy at the bottom, no seams
-  const egg = useMemo(
-    () =>
-      latheBody([
-        [0, -1.0],
-        [0.5, -0.9],
-        [0.78, -0.55],
-        [0.85, -0.05],
-        [0.78, 0.5],
-        [0.58, 0.95],
-        [0.3, 1.25],
-        [0, 1.35],
-      ]),
-    [],
-  );
-  const belly = shade(color, 0.45);
-  const skin = usePatternTexture({ base: color, pattern: BODY_SKIN, scale: 2.8 });
-  const bellySkin = usePatternTexture({ base: belly, pattern: BELLY_SKIN, scale: 1.6 });
-  if (!kind) return null;
-  const face = (
-    <>
-      <FaceDecal order={2} part="eyes" tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.15} />
-      <FaceDecal order={3} part="mouth" tex={mouthTex} y={spec.mouthY} z={spec.headR} size={spec.headR * 0.9} />
-    </>
-  );
+/** Puts a piece on the body: scaled by k about the drawing's origin, moved by (tx, ty). */
+function place(obj: Group, m: DragonMove) {
+  obj.scale.setScalar(m.k);
+  obj.position.set((260 * m.k + m.tx - 260) * U, (620 - 620 * m.k - m.ty) * U, 0);
+}
 
-  // the dragon proper: snout, neck, chest, crest of spikes
-  if (kind === 'classic') {
-    const s = spec.snout!;
-    const crest = shade(color, -0.2);
-    return (
-      <group key="classic">
-        <mesh position={[0, -0.5, 0]} scale={[1.02, 0.92, 0.95]}>
-          <sphereGeometry args={[0.92, 48, 48]} />
-          <Toon color={color} map={grad} tex={skin} />
-          <Ink />
-        </mesh>
-        <mesh position={[0, -0.55, 0.62]} scale={[0.62, 0.8, 0.3]}>
-          <sphereGeometry args={[0.8, 32, 32]} />
-          <Toon color={belly} map={grad} tex={bellySkin} />
-        </mesh>
-        {/* neck */}
-        <mesh position={[0, 0.34, 0.02]} rotation={[0.1, 0, 0]}>
-          <cylinderGeometry args={[0.3, 0.44, 0.86, 22]} />
-          <Toon color={color} map={grad} tex={skin} />
-          <Ink />
-        </mesh>
-        {/* head + snout, each carrying its half of the face */}
-        <mesh position={[0, spec.headY, 0]}>
-          <sphereGeometry args={[spec.headR, 48, 48]} />
-          <Toon color={color} map={grad} tex={skin} />
-          <Ink />
-          <FaceDecal order={2} part="eyes" tex={eyesTex} y={spec.eyeY} z={spec.headR} size={spec.headR * 1.5} />
-        </mesh>
-        <mesh position={[0, s.y, s.z]}>
-          <sphereGeometry args={[s.r, 32, 32]} />
-          <Toon color={shade(color, 0.12)} map={grad} />
-          <Ink />
-          <FaceDecal order={3} part="mouth" tex={mouthTex} y={-0.02} z={s.r} size={s.r * 1.8} />
-        </mesh>
-        {[-1, 1].map((x) => (
-          <mesh key={x} position={[x * 0.11, s.y + 0.14, s.z + s.r * 0.82]} scale={[1, 0.65, 0.5]}>
-            <sphereGeometry args={[0.055, 12, 12]} />
-            <meshToonMaterial color={INK3D} gradientMap={grad} />
-          </mesh>
-        ))}
-        {/* the row of spikes, riding the outside of the head, neck and back */}
-        <Crest spec={spec} color={crest} grad={grad} />
-        <Feet color={color} grad={grad} y={-1.26} />
-      </group>
-    );
+/** The front of a body, in drawing units, anywhere on its drawing (-1 off the body). */
+function surfaceOf(body: string) {
+  const s = LIB.pieces[`body:${body}`].surface!;
+  return (x: number, y: number) => {
+    const u = Math.max(0, Math.min(s.nx - 1.001, x / s.step));
+    const v = Math.max(0, Math.min(s.ny - 1.001, y / s.step));
+    const i = Math.floor(u);
+    const j = Math.floor(v);
+    const a = u - i;
+    const b = v - j;
+    const at = (di: number, dj: number) => s.heights[(j + dj) * s.nx + i + di];
+    return (at(0, 0) * (1 - a) + at(1, 0) * a) * (1 - b) + (at(0, 1) * (1 - a) + at(1, 1) * a) * b;
+  };
+}
+
+/** A copy of a loaded model this dragon can change: its own materials and geometry. */
+function own(scene: Group) {
+  const root = scene.clone(true);
+  const materials = new Map<Material, Material>();
+  const geometries: BufferGeometry[] = [];
+  root.traverse((o) => {
+    if (!(o instanceof Mesh)) return;
+    o.geometry = o.geometry.clone();
+    geometries.push(o.geometry);
+    const copy = (m: Material) => {
+      if (!materials.has(m)) materials.set(m, m.clone());
+      return materials.get(m)!;
+    };
+    o.material = Array.isArray(o.material) ? o.material.map(copy) : copy(o.material);
+  });
+  return { root, materials: [...materials.values()], geometries };
+}
+
+/** Paints the skin of a piece (a tail, an eyelid) the colour of the body. */
+function tint(root: Group, colour: string) {
+  root.traverse((o) => {
+    if (o instanceof Mesh && o.material instanceof MeshStandardMaterial && o.material.name === 'Skin') o.material.color.set(colour);
+  });
+}
+
+/** Lays every point of a mesh onto the body: its z goes up by the body's front there. */
+function layOn(mesh: Mesh, m: DragonMove, surface: (x: number, y: number) => number, lift = 0) {
+  const p = mesh.geometry.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const [x, y] = fromModel(p.getX(i), p.getY(i));
+    const s = Math.max(0, surface(x * m.k + m.tx, y * m.k + m.ty));
+    p.setZ(i, p.getZ(i) + ((s + lift) * U) / m.k);
   }
+  p.needsUpdate = true;
+  mesh.geometry.computeVertexNormals();
+  mesh.geometry.computeBoundingBox();
+  mesh.geometry.computeBoundingSphere();
+}
 
-  if (kind === 'chubby' || kind === 'tall') {
-    const tall = kind === 'tall';
-    return (
-      <group key={kind}>
-        {/* torso: the tall one is a standing egg, the chubby one a wide ball */}
-        {tall ? (
-          <mesh geometry={egg} position={[0, -0.62, 0]} scale={[0.95, 0.72, 0.95]}>
-            <Toon color={color} map={grad} tex={skin} />
-            <Ink />
-          </mesh>
-        ) : (
-          <mesh position={[0, -0.35, 0]} scale={[1.15, 0.95, 1.0]}>
-            <sphereGeometry args={[0.95, 48, 48]} />
-            <Toon color={color} map={grad} tex={skin} />
-            <Ink />
-          </mesh>
-        )}
-        <mesh position={[0, -0.4, tall ? 0.62 : 0.78]} scale={[0.7, 0.8, 0.35]}>
-          <sphereGeometry args={[0.8, 32, 32]} />
-          <Toon color={belly} map={grad} tex={bellySkin} />
-        </mesh>
-        {/* head */}
-        <mesh position={[0, spec.headY, 0]}>
-          <sphereGeometry args={[spec.headR, 48, 48]} />
-          <Toon color={color} map={grad} tex={skin} />
-          <Ink />
-          {face}
-        </mesh>
-        <Feet color={color} grad={grad} y={-1.2} />
-      </group>
-    );
-  }
-
-  // spiky: one big ball, bristling on every side
-  return (
-    <group key="spiky">
-      <mesh position={[0, spec.headY, 0]}>
-        <sphereGeometry args={[spec.headR, 48, 48]} />
-        <Toon color={color} map={grad} tex={skin} />
-        <Ink />
-        {face}
-      </mesh>
-      <mesh position={[0, spec.headY - 0.45, spec.headR - 0.25]} scale={[0.75, 0.6, 0.35]}>
-        <sphereGeometry args={[0.8, 32, 32]} />
-        <Toon color={belly} map={grad} tex={bellySkin} />
-      </mesh>
-      {SPIKE_DIRS.map((d, i) => (
-        <mesh
-          key={i}
-          position={[d.x * (spec.headR - 0.08), spec.headY + d.y * (spec.headR - 0.08), d.z * (spec.headR - 0.08)]}
-          quaternion={aim(d)}
-        >
-          <coneGeometry args={[0.12, 0.38 + ((i * 7) % 5) * 0.08, 8]} />
-          <Toon color={shade(color, -0.2)} map={grad} />
-          <Ink />
-        </mesh>
-      ))}
-      <Feet color={color} grad={grad} y={spec.headY - spec.headR + 0.05} />
-    </group>
+/** Frees what a copy made for itself when the piece goes. */
+function useDispose(made: { materials: Material[]; geometries: BufferGeometry[] }) {
+  useEffect(
+    () => () => {
+      made.materials.forEach((m) => m.dispose());
+      made.geometries.forEach((g) => g.dispose());
+    },
+    [made],
   );
 }
 
-function Feet({ color, grad, y }: { color: string; grad: THREE.DataTexture; y: number }) {
-  return (
-    <group>
-      {[-0.42, 0.42].map((x) => (
-        <mesh key={x} position={[x, y, 0.2]} scale={[1, 0.55, 1.3]}>
-          <sphereGeometry args={[0.3, 24, 24]} />
-          <Toon color={shade(color, -0.12)} map={grad} />
-          <Ink />
-        </mesh>
-      ))}
-    </group>
-  );
+/* ------------------------------------------------------------------- the pieces */
+
+function Body({ body }: { body: string }) {
+  const { scene } = useGLTF(urlOf('body', body));
+  const made = useMemo(() => own(scene), [scene]);
+  useDispose(made);
+  return <primitive object={made.root} dispose={null} />;
 }
 
-/* ----------------------------------------------------------------- wings */
-
-/** Leathery wing: a bone arm with a thumb claw, then finger tips joined by scallops. */
-function batShape() {
-  const s = new THREE.Shape();
-  s.moveTo(0, 0.12);
-  s.lineTo(0.62, 0.72);
-  s.lineTo(1.12, 1.06);
-  s.lineTo(1.26, 1.32);
-  s.lineTo(1.44, 1.22);
-  s.lineTo(1.3, 1.0);
-  s.lineTo(1.58, 0.76);
-  s.quadraticCurveTo(1.1, 0.52, 1.5, 0.28);
-  s.quadraticCurveTo(1.0, 0.08, 1.34, -0.2);
-  s.quadraticCurveTo(0.86, -0.28, 0.98, -0.62);
-  s.lineTo(0.44, -0.46);
-  s.lineTo(0, -0.3);
-  s.closePath();
-  return s;
-}
-
-/** The same bone arm, but the trailing edge breaks into long blades. */
-function featherShape() {
-  const s = new THREE.Shape();
-  s.moveTo(0, 0.12);
-  s.lineTo(0.62, 0.72);
-  s.lineTo(1.12, 1.06);
-  s.lineTo(1.26, 1.32);
-  s.lineTo(1.44, 1.22);
-  s.lineTo(1.3, 1.0);
-  ([
-    [1.64, 0.84, 1.28, 0.66],
-    [1.52, 0.4, 1.14, 0.28],
-    [1.3, 0.0, 0.94, -0.08],
-    [1.02, -0.36, 0.68, -0.38],
-    [0.7, -0.64, 0.34, -0.5],
-  ] as const).forEach(([tx, ty, nx, ny]) => {
-    s.lineTo(tx, ty);
-    s.lineTo(nx, ny);
-  });
-  s.lineTo(0, -0.3);
-  s.closePath();
-  return s;
-}
-
-function tinyShape() {
-  const s = new THREE.Shape();
-  s.moveTo(0, 0.08);
-  s.lineTo(0.34, 0.42);
-  s.lineTo(0.6, 0.62);
-  s.lineTo(0.68, 0.8);
-  s.lineTo(0.82, 0.72);
-  s.lineTo(0.72, 0.56);
-  s.lineTo(0.92, 0.4);
-  s.quadraticCurveTo(0.62, 0.24, 0.88, 0.08);
-  s.quadraticCurveTo(0.56, -0.06, 0.74, -0.28);
-  s.lineTo(0.3, -0.26);
-  s.lineTo(0, -0.22);
-  s.closePath();
-  return s;
-}
-
-/** Two leathery lobes, with the waist pinched between them. */
-function butterflyShape() {
-  const s = new THREE.Shape();
-  s.moveTo(0, 0.12);
-  s.lineTo(0.6, 0.86);
-  s.lineTo(1.16, 1.2);
-  s.lineTo(1.3, 1.44);
-  s.lineTo(1.48, 1.34);
-  s.lineTo(1.34, 1.12);
-  s.lineTo(1.58, 0.74);
-  s.quadraticCurveTo(1.3, 0.5, 1.3, 0.3);
-  s.lineTo(0.9, 0.16);
-  s.lineTo(1.26, -0.04);
-  s.quadraticCurveTo(1.5, -0.34, 1.22, -0.66);
-  s.quadraticCurveTo(0.96, -0.5, 0.88, -0.76);
-  s.lineTo(0.42, -0.5);
-  s.lineTo(0, -0.28);
-  s.closePath();
-  return s;
-}
-
-const WING_SHAPES: Record<string, THREE.Shape> = {
-  bat: batShape(),
-  feather: featherShape(),
-  tiny: tinyShape(),
-  butterfly: butterflyShape(),
-};
-
-/** Where the finger bones run, per wing: [wrist, ...tips]. */
-const WING_BONES: Record<string, [number, number][]> = {
-  bat: [[1.16, 1.0], [1.58, 0.76], [1.5, 0.28], [1.34, -0.2], [0.98, -0.62], [0, -0.28]],
-  feather: [[1.16, 1.0], [1.62, 0.84], [1.5, 0.4], [1.28, 0.0], [1.0, -0.36], [0, -0.28]],
-  tiny: [[0.66, 0.58], [0.92, 0.4], [0.88, 0.08], [0.74, -0.28], [0, -0.2]],
-  butterfly: [[1.2, 1.12], [1.58, 0.74], [1.28, 0.28], [0, -0.26]],
-};
-
-function Bone({ from, to, color, grad }: { from: [number, number]; to: [number, number]; color: string; grad: THREE.DataTexture }) {
-  const dx = to[0] - from[0];
-  const dy = to[1] - from[1];
-  const len = Math.hypot(dx, dy);
-  return (
-    <mesh position={[(from[0] + to[0]) / 2, (from[1] + to[1]) / 2, 0.07]} rotation={[0, 0, Math.atan2(dy, dx) - Math.PI / 2]}>
-      <cylinderGeometry args={[0.035, 0.035, len, 8]} />
-      <Toon color={color} map={grad} />
-    </mesh>
-  );
-}
-
-function Wings({ kind, color, grad, y, halfW }: { kind: string | null; color: string; grad: THREE.DataTexture; y: number; halfW: number }) {
-  const shape = WING_SHAPES[kind ?? ''] ?? WING_SHAPES.bat;
-  const bones = WING_BONES[kind ?? ''] ?? WING_BONES.bat;
-  const l = useRef<THREE.Group>(null);
-  const r = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    const f = Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    if (l.current) l.current.rotation.y = -0.6 - f;
-    if (r.current) r.current.rotation.y = 0.6 + f;
-  });
-  const geo = useMemo(() => new THREE.ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: false }), [shape]);
-  const tex = usePatternTexture({ base: color, pattern: WING_SKIN[kind ?? ''] ?? 'smooth', scale: 1 });
-  if (!kind) return null;
-  const boneColor = shade(color, -0.3);
-  const wing = (
-    <group>
-      <mesh geometry={geo}>
-        <meshToonMaterial color={tex ? '#ffffff' : color} gradientMap={grad} map={tex ?? null} side={THREE.DoubleSide} />
-        <Ink />
-      </mesh>
-      {bones.slice(1).map((tip, i) => (
-        <Bone key={i} from={bones[0]} to={tip} color={boneColor} grad={grad} />
-      ))}
-    </group>
-  );
-  return (
-    <group position={[0, y, -0.35]}>
-      <group ref={r} position={[halfW * 0.6, 0, 0]}>
-        {wing}
-      </group>
-      <group ref={l} position={[-halfW * 0.6, 0, 0]} scale={[-1, 1, 1]}>
-        {wing}
-      </group>
-    </group>
-  );
-}
-
-/**
- * A length of tail. A bare tube is open at both ends, which is why the leaf tail
- * looked snipped off, so each end is closed with a ball.
- */
-function CappedTube({
-  curve,
-  r,
-  tip = 1,
-  children,
-}: {
-  curve: THREE.CatmullRomCurve3;
-  r: number;
-  tip?: number;
-  children: React.ReactNode;
-}) {
-  const a = curve.getPoint(0);
-  const b = curve.getPoint(1);
-  return (
-    <group>
-      <mesh>
-        <tubeGeometry args={[curve, 40, r, 14, false]} />
-        {children}
-      </mesh>
-      <mesh position={[a.x, a.y, a.z]}>
-        <sphereGeometry args={[r, 18, 18]} />
-        {children}
-      </mesh>
-      <mesh position={[b.x, b.y, b.z]}>
-        <sphereGeometry args={[r * tip, 18, 18]} />
-        {children}
-      </mesh>
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ tail */
-
-/** Each tail is themed from root to tip, so the whole length tells the story. */
-const TAIL_KINDS = ['fire', 'lightning', 'ice', 'leaf'];
-
-function Tail({ kind: raw, grad, y }: { kind: string | null; grad: THREE.DataTexture; y: number }) {
-  // an id from before the tails were redesigned still gets a tail, not a stump
-  const kind = raw === null ? null : TAIL_KINDS.includes(raw) ? raw : 'fire';
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = Math.sin(clock.getElapsedTime() * 3) * 0.25;
-  });
-  const curve = useMemo(
-    () =>
-      // the tail sweeps out to the side rather than straight backwards, so the child
-      // can see what it is from the front, where the picture is taken
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0.45, -0.25, -0.4),
-        new THREE.Vector3(1.05, -0.12, -0.62),
-        new THREE.Vector3(1.62, 0.5, -0.7),
-      ]),
-    [],
-  );
-  /** Stations along the tail: point, outward normal and how far along we are. */
-  const stations = useMemo(
-    () =>
-      [0.1, 0.28, 0.46, 0.64, 0.82, 1].map((t) => {
-        const p = curve.getPoint(t);
-        const tan = curve.getTangent(t).normalize();
-        const out = new THREE.Vector3().crossVectors(tan, UP).normalize().multiplyScalar(0.35).add(UP).normalize();
-        return { t, p, tan, out };
-      }),
-    [curve],
-  );
-  /** A zig-zag polyline for the lightning bolt. */
-  const bolt = useMemo(() => {
-    const n = 8;
-    const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= n; i++) {
-      const t = i / n;
-      const p = curve.getPoint(t);
-      const tan = curve.getTangent(t).normalize();
-      const side = new THREE.Vector3().crossVectors(tan, UP).normalize();
-      const k = (i % 2 ? 0.24 : -0.24) * (1 - t * 0.35);
-      pts.push(p.clone().addScaledVector(side, k).addScaledVector(UP, k * 0.7));
+/** The eyes, each eyeball sunk a little into the front of the body; they blink. */
+function Eyes({ id, body, move, skin }: { id: string; body: string; move: DragonMove; skin: string }) {
+  const { scene } = useGLTF(urlOf('eyes', id));
+  const made = useMemo(() => {
+    const made = own(scene);
+    tint(made.root, skin);
+    const surface = surfaceOf(body);
+    const balls = LIB.pieces[`eyes:${id}`].eyes ?? [];
+    const groups = new Set<string>(balls.map((b) => b.group));
+    // brows, lashes and lids outside the balls are laid on the face
+    made.root.traverse((o) => {
+      if (o instanceof Mesh && !(o.parent && groups.has(o.parent.name))) layOn(o, move, surface, 1.5);
+    });
+    let middle = 0;
+    for (const b of balls) {
+      const g = made.root.getObjectByName(b.group);
+      if (!g) continue;
+      const [cx, cy] = b.centre;
+      const s = Math.max(0, surface(cx * move.k + move.tx, cy * move.k + move.ty));
+      const half = new Box3().setFromObject(g).getSize(new Vector3()).z / 2;
+      // a third of the eyeball inside the head, the rest out in front of it
+      g.position.z = (s * U) / move.k - half * 0.35;
+      middle += toModel(cx, cy)[1] / balls.length;
     }
-    return pts;
-  }, [curve]);
-  const leaf = useMemo(() => new THREE.ExtrudeGeometry(leafShape(0.5), { depth: 0.07, bevelEnabled: false }), []);
-  const vineSkin = usePatternTexture({ base: '#5FA83F', pattern: 'stripes', scale: 1.4 });
-  const iceSkin = usePatternTexture({ base: '#7FE3FF', pattern: 'scales', scale: 1.6 });
-  const tip = stations[stations.length - 1];
-  const tipQuat = useMemo(() => new THREE.Quaternion().setFromUnitVectors(FWD, curve.getTangent(1).normalize()), [curve]);
-  if (!kind) return null;
+    const outer = new Group();
+    outer.add(made.root);
+    place(outer, move);
+    outer.userData.blink = { y: outer.position.y, middle, k: move.k };
+    return { ...made, outer };
+  }, [scene, body, id, move, skin]);
+  useDispose(made);
+  useFrame(({ clock }) => {
+    const b = made.outer.userData.blink as { y: number; middle: number; k: number };
+    const phase = (clock.getElapsedTime() % 4.5) / 4.5;
+    const open = phase < 0.92 ? 1 : phase < 0.95 ? 1 - ((phase - 0.92) / 0.03) * 0.88 : 1 - ((1 - phase) / 0.05) * 0.88;
+    made.outer.scale.y = b.k * open;
+    made.outer.position.y = b.y + b.middle * b.k * (1 - open);
+  });
+  return <primitive object={made.outer} dispose={null} />;
+}
 
+/** The mouth, laid onto the face; fire, bubbles and a tongue stand out from it. */
+function Mouth({ id, body, move }: { id: string; body: string; move: DragonMove }) {
+  const { scene } = useGLTF(urlOf('mouth', id));
+  const made = useMemo(() => {
+    const made = own(scene);
+    const surface = surfaceOf(body);
+    const core = DRAGON_PIECES[`mouth:${id}`].core!;
+    const cx = (core[0] + core[2] / 2) * move.k + move.tx;
+    const cy = (core[1] + core[3] / 2) * move.k + move.ty;
+    const at = Math.max(0, surface(cx, cy));
+    made.root.traverse((o) => {
+      if (!(o instanceof Mesh)) return;
+      if (o.name.endsWith('_solid')) o.position.z += ((at + 4) * U) / move.k;
+      // in front of the snout and cheeks painted on the face, which sit a little proud of it
+      else layOn(o, move, surface, 4);
+    });
+    const outer = new Group();
+    outer.add(made.root);
+    place(outer, move);
+    return { ...made, outer };
+  }, [scene, body, id, move]);
+  useDispose(made);
+  return <primitive object={made.outer} dispose={null} />;
+}
+
+/** A wing or a tail on a hinge at its root, behind the body. */
+function hinge(piece: Group, move: DragonMove, root: [number, number], z: number) {
+  const outer = new Group();
+  outer.add(piece);
+  place(outer, move);
+  const [rx, ry] = toModel(root[0] * move.k + move.tx, root[1] * move.k + move.ty);
+  const pivot = new Group();
+  pivot.position.set(rx, ry, z);
+  outer.position.x -= rx;
+  outer.position.y -= ry;
+  pivot.add(outer);
+  return pivot;
+}
+
+/** The wings, swept back behind the body, beating at the shoulder. */
+function Wings({ id, body, left, right }: { id: string; body: string; left: DragonMove; right: DragonMove }) {
+  const { scene } = useGLTF(urlOf('wings', id));
+  const made = useMemo(() => {
+    const made = own(scene);
+    const depth = LIB.pieces[`body:${body}`].depth ?? 100;
+    const z = -0.2 * depth * U;
+    const [rx, ry] = DRAGON_PIECES[`wings:${id}`].root!;
+    const pair = new Group();
+    const sides: Group[] = [];
+    for (const [name, move, root, sweep] of [
+      ['WingL', left, [rx, ry], -0.3],
+      ['WingR', right, [520 - rx, ry], 0.3],
+    ] as const) {
+      const wing = made.root.getObjectByName(name);
+      if (!wing) continue;
+      const piece = new Group();
+      piece.add(wing);
+      const pivot = hinge(piece, move, root as [number, number], z);
+      pivot.rotation.y = sweep;
+      pivot.userData.sweep = sweep;
+      pair.add(pivot);
+      sides.push(pivot);
+    }
+    pair.userData.sides = sides;
+    return { ...made, pair };
+  }, [scene, body, id, left, right]);
+  useDispose(made);
+  useFrame(({ clock }) => {
+    const beat = Math.sin((clock.getElapsedTime() / 1.6) * Math.PI * 2) * 0.22;
+    for (const side of made.pair.userData.sides as Group[]) side.rotation.y = side.userData.sweep * (1 + beat);
+  });
+  return <primitive object={made.pair} dispose={null} />;
+}
+
+/** The tail, from behind the body, wagging. */
+function Tail({ id, body, move, skin }: { id: string; body: string; move: DragonMove; skin: string }) {
+  const { scene } = useGLTF(urlOf('tail', id));
+  const made = useMemo(() => {
+    const made = own(scene);
+    tint(made.root, skin);
+    const depth = LIB.pieces[`body:${body}`].depth ?? 100;
+    const pivot = hinge(made.root, move, DRAGON_PIECES[`tail:${id}`].root!, -0.25 * depth * U);
+    return { ...made, pivot };
+  }, [scene, body, id, move, skin]);
+  useDispose(made);
+  useFrame(({ clock }) => {
+    made.pivot.rotation.y = -0.35 + Math.sin((clock.getElapsedTime() / 1.8) * Math.PI * 2) * 0.15;
+  });
+  return <primitive object={made.pivot} dispose={null} />;
+}
+
+/** If a piece's file cannot load, that piece is left out and the rest still shows. */
+class IfLoads extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function Piece({ children, id }: { children: ReactNode; id: string }) {
   return (
-    <group ref={ref} position={[0, y, -0.4]}>
-      {/* fire: the tail itself burns, tongue after tongue, up to a blast at the tip */}
-      {kind === 'fire' && (
-        <group>
-          <CappedTube curve={curve} r={0.15} tip={0.7}>
-            <meshToonMaterial color="#E8541B" gradientMap={grad} />
-          </CappedTube>
-          {stations.slice(0, 5).map((s, i) => (
-            <group key={i} position={[s.p.x, s.p.y, s.p.z]} quaternion={aim(s.out)}>
-              <group rotation={[Math.PI / 2, 0, 0]}>
-                <FlameLayer grad={grad} color="#FF6A00" len={0.24 + s.t * 0.22} phase={i * 1.3} ink />
-                <FlameLayer grad={grad} color="#FFB01F" len={0.14 + s.t * 0.14} phase={i * 1.3 + 2} />
-              </group>
-            </group>
-          ))}
-          <group position={[tip.p.x, tip.p.y, tip.p.z]} quaternion={tipQuat}>
-            <Flame grad={grad} len={0.5} />
-          </group>
-        </group>
-      )}
-
-      {/* lightning: a flat, angular bolt rather than a string of fat sausages */}
-      {kind === 'lightning' &&
-        bolt.slice(0, -1).map((a, i) => {
-          const b = bolt[i + 1];
-          const dir = b.clone().sub(a);
-          const len = dir.length();
-          const k = 1 - i / bolt.length;
-          return (
-            <mesh key={i} position={[(a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2]} quaternion={aim(dir)}>
-              <boxGeometry args={[0.26 * k, len * 1.3, 0.09]} />
-              <Toon color="#FFD93D" map={grad} />
-              <Ink />
-            </mesh>
-          );
-        })}
-
-      {/* ice: a crystal tail, shards growing along it and a long point at the end */}
-      {kind === 'ice' && (
-        <group>
-          <CappedTube curve={curve} r={0.12} tip={0.6}>
-            <meshToonMaterial color="#BDEFFF" gradientMap={grad} map={iceSkin} />
-          </CappedTube>
-          {stations.map((s, i) => (
-            <mesh
-              key={i}
-              position={[s.p.x, s.p.y, s.p.z]}
-              quaternion={aim(i % 2 ? s.out : s.out.clone().negate())}
-              scale={[0.13 + s.t * 0.05, 0.3 + s.t * 0.42, 0.13 + s.t * 0.05]}
-            >
-              <octahedronGeometry args={[1, 0]} />
-              <Toon color={i % 2 ? '#8FE7FF' : '#DCF8FF'} map={grad} />
-              <Ink thin />
-            </mesh>
-          ))}
-          <mesh position={[tip.p.x, tip.p.y, tip.p.z]} quaternion={tipQuat} scale={[0.17, 0.17, 0.62]}>
-            <octahedronGeometry args={[1, 0]} />
-            <Toon color="#8FE7FF" map={grad} />
-            <Ink thin />
-          </mesh>
-        </group>
-      )}
-
-      {/* leaf: a vine with leaves sprouting the whole way, biggest at the tip */}
-      {kind === 'leaf' && (
-        <group>
-          <CappedTube curve={curve} r={0.13} tip={0.75}>
-            <meshToonMaterial color="#5FA83F" gradientMap={grad} map={vineSkin} />
-          </CappedTube>
-          {stations.map((s, i) => (
-            <mesh
-              key={i}
-              geometry={leaf}
-              position={[s.p.x, s.p.y + 0.12, s.p.z]}
-              rotation={[0.25, i % 2 ? -0.9 : 0.9, i % 2 ? -0.7 : 0.7]}
-              scale={0.4 + s.t * 0.7}
-            >
-              <Toon color={i % 2 ? '#7ED957' : '#9CE86F'} map={grad} />
-              <Ink thin />
-            </mesh>
-          ))}
-          <mesh geometry={leaf} position={[tip.p.x, tip.p.y + 0.1, tip.p.z]} rotation={[0.2, 0.3, -0.2]} scale={1.15}>
-            <Toon color="#7ED957" map={grad} />
-            <Ink thin />
-          </mesh>
-        </group>
-      )}
-    </group>
+    <IfLoads key={id}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </IfLoads>
   );
 }
 
-/* ------------------------------------------------------------------ root */
-
-export default function Dragon3D({ parts, colors }: { parts: PartMap; colors: ColorMap }) {
-  const grad = useGradientMap();
-  const eff = resolveDragonColors(parts, colors);
-  const raw = pickPart(parts.body, 'classic');
-  const body = raw === null ? null : BODY_KINDS.includes(raw) ? raw : 'classic';
-  const mouth = pickPart(parts.mouth, 'smile');
-  const spec = SPECS[body ?? ''] ?? SPECS.classic;
-  const fire = mouth === 'fire';
-  const EyesSvg = findOption(DRAGON, 'eyes', pickPart(parts.eyes, 'cute') ?? '')?.Svg;
-  const MouthSvg = fire ? undefined : findOption(DRAGON, 'mouth', mouth ?? '')?.Svg;
-  const eyesEl = useMemo(() => (EyesSvg ? <EyesSvg colors={eff} /> : null), [EyesSvg, eff.body]); // eslint-disable-line react-hooks/exhaustive-deps
-  const mouthEl = useMemo(() => (MouthSvg ? <MouthSvg colors={eff} /> : null), [MouthSvg]); // eslint-disable-line react-hooks/exhaustive-deps
-  const eyesTex = useSvgTexture(eyesEl);
-  const mouthTex = useSvgTexture(mouthEl);
-  /** Where the jaw opens: the snout tip if this body has one, else the front of the head. */
-  const frontZ = Math.sqrt(Math.max(spec.headR * spec.headR - spec.mouthY * spec.mouthY, 0.04));
-  const jaw: [number, number, number] = spec.snout
-    ? [0, spec.snout.y - 0.02, spec.snout.z + spec.snout.r * 0.55]
-    : [0, spec.headY + spec.mouthY, frontZ * 0.88];
-  const jet: [number, number, number] = spec.snout
-    ? [0, spec.snout.y - 0.02, spec.snout.z + spec.snout.r * 0.9]
-    : [0, spec.headY + spec.mouthY, frontZ * 0.95];
-
+export default function Dragon3D({ parts }: { parts: PartMap; colors?: ColorMap }) {
+  // worked out again only when a piece changes: every piece rebuilds when its place does
+  const { body, moves } = useMemo(
+    () => dragonPlacement(parts),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [parts.body, parts.wings, parts.eyes, parts.mouth, parts.tail],
+  );
+  const skin = dragonColors(parts).skin;
   return (
-    <group position={[0, -0.1, 0]}>
-      <Part3D id="tail"><Tail kind={pickPart(parts.tail, 'fire')} grad={grad} y={spec.tailY} /></Part3D>
-      <Part3D id="wings"><Wings kind={pickPart(parts.wings, 'bat')} color={eff.wings} grad={grad} y={spec.wingY} halfW={spec.halfW} /></Part3D>
-      <Part3D id="body"><Body kind={body} color={eff.body} grad={grad} eyesTex={eyesTex} mouthTex={mouthTex} spec={spec} /></Part3D>
-      {fire && body && (
-        <Part3D id="mouth">
-          <OpenMouth grad={grad} pos={jaw} r={spec.snout ? spec.snout.r * 0.8 : 0.27} />
-          {/* the jet climbs and leans aside, the way the card draws it: fire aimed at the
-              viewer is only an orange blob, and fire straight up hides his own face */}
-          <group position={jet} rotation={[-0.62, 0.62, 0]}>
-            <Flame grad={grad} len={1.2} />
-          </group>
-        </Part3D>
+    <group name="dragon-model">
+      {parts.body && (
+        <Piece id={`body-${body}`}>
+          <Body body={body} />
+        </Piece>
+      )}
+      {parts.wings && moves.wingL && moves.wingR && (
+        <Piece id={`wings-${parts.wings}-${body}`}>
+          <Wings id={parts.wings} body={body} left={moves.wingL} right={moves.wingR} />
+        </Piece>
+      )}
+      {parts.tail && moves.tail && (
+        <Piece id={`tail-${parts.tail}-${body}`}>
+          <Tail id={parts.tail} body={body} move={moves.tail} skin={skin} />
+        </Piece>
+      )}
+      {parts.eyes && moves.eyes && (
+        <Piece id={`eyes-${parts.eyes}-${body}`}>
+          <Eyes id={parts.eyes} body={body} move={moves.eyes} skin={skin} />
+        </Piece>
+      )}
+      {parts.mouth && moves.mouth && (
+        <Piece id={`mouth-${parts.mouth}-${body}`}>
+          <Mouth id={parts.mouth} body={body} move={moves.mouth} />
+        </Piece>
       )}
     </group>
   );

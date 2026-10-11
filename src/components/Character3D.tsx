@@ -29,7 +29,14 @@ interface Props {
 function DevExpose() {
   const get = useThree((s) => s.get);
   useEffect(() => {
-    if (import.meta.env.DEV) (window as unknown as { __r3f?: unknown }).__r3f = get;
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __r3f?: unknown; __r3fAll?: unknown[] };
+    w.__r3f = get;
+    // every canvas on the page, so a review page can turn them all at once
+    (w.__r3fAll ??= []).push(get);
+    return () => {
+      w.__r3fAll = w.__r3fAll?.filter((g) => g !== get);
+    };
   }, [get]);
   return null;
 }
@@ -71,11 +78,13 @@ function Fit({ sig, floor, children }: { sig: string; floor?: React.RefObject<Gr
     fit();
     // geometry can still be arriving on the first frame, so measure again once it settles
     const again = requestAnimationFrame(() => requestAnimationFrame(fit));
-    const later = setTimeout(fit, 400);
+    // and again as the models arrive: a piece loaded from a file comes in a moment later, and
+    // measured before it had, the new dragon stood off to one side of the picture
+    const later = [400, 1200, 2500].map((ms) => setTimeout(fit, ms));
     return () => {
       stop = true;
       cancelAnimationFrame(again);
-      clearTimeout(later);
+      later.forEach(clearTimeout);
     };
   }, [sig, floor, camera, size.width, size.height]);
 
