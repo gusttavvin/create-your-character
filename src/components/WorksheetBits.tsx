@@ -83,9 +83,11 @@ interface CardProps {
   /** What the piece will look like once it is on the character. */
   colors: ColorMap;
   onPick: (category: PartCategory, option: PartOption) => void;
+  /** Its place in the row, shown in front of its name. */
+  number?: number;
 }
 
-export function OptionCard({ category, option, selected, colors, onPick }: CardProps) {
+export function OptionCard({ category, option, selected, colors, onPick, number }: CardProps) {
   const Svg = option.Svg;
   const { beginDrag, drag } = useDrag();
   const held = drag?.option.id === option.id && drag.category.id === category.id;
@@ -105,7 +107,10 @@ export function OptionCard({ category, option, selected, colors, onPick }: CardP
       <span className="ws-card-art">
         {option.img ? <img src={option.img} alt="" draggable={false} /> : Svg ? <Svg colors={colors} /> : null}
       </span>
-      <span className="ws-card-label">{option.label}</span>
+      <span className="ws-card-label">
+        {number !== undefined && <span className="ws-card-num">{number}</span>}
+        {option.label}
+      </span>
       {selected && (
         <span className="ws-card-check" aria-hidden>
           ✓
@@ -138,7 +143,7 @@ export function PartRow({
   return (
     <div className="ws-row" data-cat={category.id}>
       <LabelTile def={def} category={category} />
-      {category.options.map((o) => (
+      {category.options.map((o, i) => (
         <OptionCard
           key={o.id}
           category={category}
@@ -146,6 +151,7 @@ export function PartRow({
           selected={value === o.id}
           colors={cardColors}
           onPick={onPick}
+          number={def.numbered ? i + 1 : undefined}
         />
       ))}
       {category.optional ? (

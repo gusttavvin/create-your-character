@@ -21,16 +21,22 @@ export const MONSTER: CharacterDefinition = {
   noun: 'Monster',
   title: 'Create Your Monster',
   emoji: '👾',
+  /*
+   * The names on the cards are for six-year-olds: colours, feelings and animals, chosen by
+   * Clara, and each card is numbered 1 to 4 so the class can call one out. The ids stay the
+   * ones saved characters are stored with; only the names and the sentence changed.
+   */
+  numbered: true,
   categories: [
     {
       id: 'body',
       label: 'Body',
       color: '#FF6B78',
       options: [
-        { id: 'round', label: 'Round', phrase: 'a round body', Svg: P.BodyRound },
-        { id: 'egg', label: 'Egg', phrase: 'an egg body', Svg: P.BodyEgg },
-        { id: 'square', label: 'Square', phrase: 'a square body', Svg: P.BodySquare },
-        { id: 'hourglass', label: 'Hourglass', phrase: 'an hourglass body', Svg: P.BodyHourglass },
+        { id: 'round', label: 'Orange', phrase: 'an orange body', Svg: P.BodyRound },
+        { id: 'egg', label: 'Green', phrase: 'a green body', Svg: P.BodyEgg },
+        { id: 'square', label: 'Purple', phrase: 'a purple body', Svg: P.BodySquare },
+        { id: 'hourglass', label: 'Yellow', phrase: 'a yellow body', Svg: P.BodyHourglass },
       ],
     },
     {
@@ -39,8 +45,8 @@ export const MONSTER: CharacterDefinition = {
       color: '#FFD93D',
       optional: true,
       options: [
-        { id: 'stalks', label: 'Stalks', phrase: 'eyes on stalks', Svg: P.EyesStalks },
-        { id: 'multiple', label: 'Multiple', phrase: 'multiple eyes', Svg: P.EyesMultiple },
+        { id: 'stalks', label: 'Antenna', phrase: 'antenna eyes', Svg: P.EyesStalks },
+        { id: 'multiple', label: 'Three', phrase: 'three eyes', Svg: P.EyesMultiple },
         { id: 'one', label: 'One', phrase: 'one big eye', Svg: P.EyesOne },
         { id: 'angry', label: 'Angry', phrase: 'angry eyes', Svg: P.EyesAngry },
       ],
@@ -51,10 +57,10 @@ export const MONSTER: CharacterDefinition = {
       color: '#7ED957',
       optional: true,
       options: [
-        { id: 'smile', label: 'Smile', phrase: 'a big smile', Svg: P.MouthSmile },
-        { id: 'tongue', label: 'Tongue', phrase: 'a smile with a tongue', Svg: P.MouthTongue },
-        { id: 'fangs', label: 'Fangs', phrase: 'two sharp fangs', Svg: P.MouthFangs },
-        { id: 'beak', label: 'Beak', phrase: 'a yellow beak', Svg: P.MouthBeak },
+        { id: 'smile', label: 'Happy', phrase: 'a happy mouth', Svg: P.MouthSmile },
+        { id: 'tongue', label: 'Excited', phrase: 'an excited mouth', Svg: P.MouthTongue },
+        { id: 'fangs', label: 'Scared', phrase: 'a scared mouth', Svg: P.MouthFangs },
+        { id: 'beak', label: 'Duck', phrase: 'a duck beak', Svg: P.MouthBeak },
       ],
     },
     {
@@ -63,10 +69,10 @@ export const MONSTER: CharacterDefinition = {
       color: '#A77BFF',
       optional: true,
       options: [
-        { id: 'claw', label: 'Claw', phrase: 'claw arms', Svg: P.ArmClaw },
+        { id: 'claw', label: 'Hands', phrase: 'two hands', Svg: P.ArmClaw },
         { id: 'tentacle', label: 'Tentacle', phrase: 'tentacle arms', Svg: P.ArmTentacle },
-        { id: 'pincher', label: 'Pincher', phrase: 'pincher arms', Svg: P.ArmPincher },
-        { id: 'fuzzy', label: 'Fuzzy', phrase: 'fuzzy arms', Svg: P.ArmFuzzy },
+        { id: 'pincher', label: 'Crab', phrase: 'crab claws', Svg: P.ArmPincher },
+        { id: 'fuzzy', label: 'Fluffy', phrase: 'fluffy arms', Svg: P.ArmFuzzy },
       ],
     },
     {
@@ -75,10 +81,10 @@ export const MONSTER: CharacterDefinition = {
       color: '#4FC3FF',
       optional: true,
       options: [
-        { id: 'paws', label: 'Paws', phrase: 'furry paws', Svg: P.LegsPaws },
+        { id: 'paws', label: 'Bear', phrase: 'bear paws', Svg: P.LegsPaws },
         { id: 'bird', label: 'Bird', phrase: 'bird legs', Svg: P.LegsBird },
         { id: 'long', label: 'Long', phrase: 'long legs', Svg: P.LegsLong },
-        { id: 'snake', label: 'Snake', phrase: 'snake legs', Svg: P.LegsSnake },
+        { id: 'snake', label: 'Octopus', phrase: 'octopus legs', Svg: P.LegsSnake },
       ],
     },
   ],

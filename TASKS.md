@@ -1328,3 +1328,46 @@ Conferido:
   quatro corpos.
 - *Check model instances*: 0 coordenadas inválidas e 0 materiais compartilhados.
 - **Build:** `npm run build` passa.
+
+## Monstro: nomes das peças para crianças de 6 anos, numerados — 11 de outubro de 2026
+
+Clara pediu nomes fáceis e legais (cores, sentimentos), com números de 1 a 4 na frente. Eu
+dei ideias, ela escolheu:
+
+| Fileira | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| Corpo | Orange | Green | Purple | Yellow |
+| Olhos | Stalks (ela ainda vai decidir) | Three eyes | One | Angry |
+| Boca | Happy | Excited | Scared | Duck |
+| Braços | Hands | Tentacle | Crab | Fluffy |
+| Pernas | Bear | Bird | Long | Octopus |
+
+- [x] **`config.ts` do monstro:** os rótulos e as frases mudaram juntos, a pedido dela.
+      Exemplos de frase: "an orange body", "three eyes", "a happy mouth", "an excited
+      mouth", "a scared mouth", "a duck beak", "two hands", "crab claws", "fluffy arms",
+      "bear paws", "octopus legs".
+      - Os IDs (`round`, `smile`, `claw`…) não mudaram, então os personagens salvos
+        continuam abrindo.
+- [x] **Numeração:**
+      - Nova opção `numbered` no `CharacterDefinition`; só o monstro usa.
+      - O `OptionCard` mostra o número da peça na fileira antes do nome (`.ws-card-num`).
+      - Primeiro foi um selo redondo: na cor da fileira não dava para ler na amarela, e
+        em azul-marinho Clara achou embolado.
+      - Ficou preto como o nome, sem selo: "1 ORANGE".
+
+Conferido:
+- **Cartões:** as cinco fileiras com números e nomes novos.
+- **Frase:** "My monster has an orange body, three eyes, a happy mouth, crab claws and
+  octopus legs."
+- **Build:** `npm run build` passa.
+- [x] **Depois:**
+      - **Olhos:** o 1º se chama só "Antenna" (frase "antenna eyes") e o 2º só "Three"
+        (frase "three eyes").
+      - **Letras dos cartões maiores:** `clamp(0.9rem, 1.6vw, 1.35rem)`, antes
+        `clamp(0.7rem, 1.1vw, 1rem)`.
+      - **Celular (até 560 px):** os cartões são estreitos, então o número vai em cima do
+        nome e o nome fica em 0,6rem. Antes "2 EXCITED" invadia o cartão vizinho.
+        Conferido em 375 × 812 e no computador.
+      - **Letra mais fina:** os nomes nos cartões deixaram a fonte de título (Lilita One)
+        e passaram para a fonte do texto do site (Baloo 2, peso 700), ainda em maiúsculas e
+        no mesmo tamanho. Na outra, Clara achou a letra grossa e embolada.

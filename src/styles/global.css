@@ -588,12 +588,36 @@ a {
 }
 
 .ws-card-label {
-  font-family: var(--font-display);
+  /* the site's own lettering, not the heavy title one: in that, Clara found the names thick
+     and jumbled */
+  font-family: var(--font-body);
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: clamp(0.7rem, 1.1vw, 1rem);
+  /* big enough for six-year-olds to read: Clara found the smaller size too small */
+  font-size: clamp(0.9rem, 1.6vw, 1.35rem);
   letter-spacing: 0.4px;
   line-height: 1.1;
   text-align: center;
+}
+
+/* the card's number in its row, in front of its name and just like it: in a badge it looked
+   jumbled */
+.ws-card-num {
+  margin-right: 0.35em;
+}
+
+/* on a phone the cards are narrow: the number goes over the name, and the name is smaller,
+   so "2 EXCITED" does not run into the next card */
+@media (max-width: 560px) {
+  .ws-card-label {
+    font-size: 0.6rem;
+    letter-spacing: 0;
+  }
+
+  .ws-card-num {
+    display: block;
+    margin-right: 0;
+  }
 }
 
 .ws-card-check {

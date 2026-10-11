@@ -104,6 +104,8 @@ export interface CharacterDefinition {
    * kit against the approved drawings.
    */
   outfits?: Record<string, PartMap>;
+  /** Each part card shows its place in its row, 1 to 4, so the teacher can call one out. */
+  numbered?: boolean;
   /**
    * The colours a character is actually drawn in, when they are not the ones the child
    * picked. The monster has no colour picker: each of its bodies is one of the creatures
