@@ -19,11 +19,15 @@
     </linearGradient>
   </defs>
   <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-    <!-- tail, behind everything: thick at the hip, a spade at the tip -->
+    <!-- tail, behind everything: thick at the hip, a row of spikes along the top, a spade at
+         the tip -->
+    <path fill="#FFC93D" d="M353.6 458.4 L363.9 442.4 L373.6 458.7 Z"/>
+    <path fill="#FFC93D" d="M373.5 459 L380.6 442.1 L393.2 455.3 Z"/>
+    <path fill="#FFC93D" d="M391.9 455.9 L395.2 438.7 L410.1 447.8 Z"/>
+    <path fill="#FFC93D" d="M408.5 449.1 L407.9 432.3 L424.2 436.6 Z"/>
+    <path fill="#FFC93D" d="M423.1 437.9 L419.1 422.3 L435.2 421.9 Z"/>
     <path fill="url(#skin)" d="M318 452 C372 470 416 460 438 420 C446 404 448 392 446 380 L464 384 C468 406 462 430 450 450 C424 494 366 508 314 494 Z"/>
     <path fill="#FFC93D" d="M454 326 C472 344 486 362 484 380 C472 388 462 386 454 380 C446 386 434 388 422 380 C422 362 436 344 454 326 Z"/>
-    <path fill="#FFC93D" d="M392 470 L408 448 L414 474 Z"/>
-    <path fill="#FFC93D" d="M420 446 L440 430 L438 458 Z"/>
 
     <!-- bat wings: a bony top edge from the shoulder to the tip, and a skin scalloped
          between the fingers -->
@@ -63,21 +67,22 @@
     <ellipse fill="#2D7A1E" stroke="none" cx="238" cy="246" rx="6" ry="4"/>
     <ellipse fill="#2D7A1E" stroke="none" cx="282" cy="246" rx="6" ry="4"/>
 
-    <!-- eyes -->
-    <circle fill="#FFFFFF" cx="204" cy="196" r="40"/>
-    <circle fill="#12224A" stroke="none" cx="210" cy="202" r="24"/>
-    <circle fill="#FFFFFF" stroke="none" cx="200" cy="190" r="9"/>
-    <circle fill="#FFFFFF" stroke="none" cx="219" cy="212" r="4"/>
-    <circle fill="#FFFFFF" cx="316" cy="196" r="40"/>
-    <circle fill="#12224A" stroke="none" cx="310" cy="202" r="24"/>
-    <circle fill="#FFFFFF" stroke="none" cx="300" cy="190" r="9"/>
-    <circle fill="#FFFFFF" stroke="none" cx="319" cy="212" r="4"/>
-
-    <!-- mouth: a happy smile with one little fang -->
-    <path fill="#D8486E" d="M222 278 C240 292 280 292 298 278 C294 302 278 312 260 312 C242 312 226 302 222 278 Z"/>
-    <path fill="#FFFFFF" stroke-width="3" d="M236 284 L243 298 L250 287 Z"/>
-    <path fill="#FF8FAE" stroke="none" d="M246 304 C252 298 268 298 274 304 C270 309 250 309 246 304 Z"/>
-
+    <!-- eyes: almond shaped, turned up at the outer corners -->
+    <path class="dragon-eyeball" fill="#FFFFFF" d="M252 218 C244 168 196 148 148 162 C154 216 204 244 252 218 Z"/>
+    <circle fill="#FF8A1F" stroke="none" cx="206" cy="197" r="24"/>
+    <circle fill="#12224A" stroke="none" cx="206" cy="197" r="13.2"/>
+    <circle fill="#FFFFFF" stroke="none" cx="197" cy="187" r="9"/>
+    <circle fill="#FFFFFF" stroke="none" cx="216" cy="208" r="4"/>
+    <path fill="none" stroke-width="5" d="M150 162 L132 146"/>
+    <path class="dragon-eyeball" fill="#FFFFFF" d="M268 218 C276 168 324 148 372 162 C366 216 316 244 268 218 Z"/>
+    <circle fill="#FF8A1F" stroke="none" cx="314" cy="197" r="24"/>
+    <circle fill="#12224A" stroke="none" cx="314" cy="197" r="13.2"/>
+    <circle fill="#FFFFFF" stroke="none" cx="323" cy="187" r="9"/>
+    <circle fill="#FFFFFF" stroke="none" cx="304" cy="208" r="4"/>
+    <path fill="none" stroke-width="5" d="M370 162 L388 146"/>
+    <!-- mouth: a wide grin full of little sharp teeth -->
+    <path fill="#D8486E" d="M214 276 C238 296 282 296 306 276 C302 304 284 318 260 318 C236 318 218 304 214 276 Z"/>
+    <path fill="#FFFFFF" stroke-width="2.5" d="M220.2 281.9 L230.1 273.4 L229.2 286.4 Z M231.6 285.1 L232.9 298.1 L241.1 288 Z M243 288.4 L246.3 301 L252.9 289.9 Z M255 290 L260 302 L265 290 Z M267.1 289.9 L273.7 301 L277 288.4 Z M278.9 288 L287.1 298.1 L288.4 285.1 Z M290.8 286.4 L289.9 273.4 L299.8 281.9 Z M302.3 293.6 L291.1 292.8 L297.1 302.2 Z M289.1 310.3 L279.8 304.2 L280.5 315.3 Z M270.7 318.2 L264.8 308.8 L260.8 319.2 Z M239.5 315.3 L240.2 304.2 L230.9 310.3 Z M222.9 302.2 L228.9 292.8 L217.7 293.6 Z"/>
     <!-- cheeks -->
     <ellipse fill="#FF9BB8" stroke="none" cx="160" cy="250" rx="18" ry="11"/>
     <ellipse fill="#FF9BB8" stroke="none" cx="360" cy="250" rx="18" ry="11"/>

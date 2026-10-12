@@ -72,7 +72,10 @@ function read(file) {
       row = rowOf(m[1]);
       continue;
     }
-    rows[row].push({ tag: m[2], attrs: attrsOf(m[3]) });
+    const attrs = attrsOf(m[3]);
+    // the separate shapes the 3D is built from, where the flat drawing has one outline instead
+    if (/\bonly-3d\b/.test(attrs.class ?? '')) continue;
+    rows[row].push({ tag: m[2], attrs });
   }
   return { gradients, groupAttrs, rows };
 }
@@ -308,7 +311,8 @@ DRAGONS.forEach((d, n) => {
       // the eyeballs themselves: the big white circles, not lids, lashes or brows
       const balls = els
         .map((el, i) => [el, shapes[i]])
-        .filter(([el]) => el.tag === 'circle' && +el.attrs.r >= 25);
+        // (an almond-shaped eye is a path, named an eyeball in the drawing)
+        .filter(([el]) => (el.tag === 'circle' && +el.attrs.r >= 25) || /dragon-eyeball/.test(el.attrs.class ?? ''));
       meta.core = boxOf(balls.map(([, s]) => s));
     } else if (row === 'mouth') {
       meta.core = boxOf([shapes[0]]);

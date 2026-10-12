@@ -124,6 +124,20 @@ function Body({ body }: { body: string }) {
   return <primitive object={made.root} dispose={null} />;
 }
 
+/** How far (drawing units) lashes stand off the face, and how much more a brow tilts in 3D. */
+const LASH_LIFT = 9;
+const BROW_TILT = 0.22;
+
+/** Turns a brow about its middle, its inner end down: the left brow one way, the right the other. */
+function tilt(mesh: Mesh, angle: number) {
+  const g = mesh.geometry;
+  g.computeBoundingBox();
+  const c = g.boundingBox!.getCenter(new Vector3());
+  g.translate(-c.x, -c.y, 0);
+  g.rotateZ(c.x < 0 ? -angle : angle);
+  g.translate(c.x, c.y, 0);
+}
+
 /** The eyes, each eyeball sunk a little into the front of the body; they blink. */
 function Eyes({ id, body, move, skin }: { id: string; body: string; move: DragonMove; skin: string }) {
   const { scene } = useGLTF(urlOf('eyes', id));
@@ -133,9 +147,13 @@ function Eyes({ id, body, move, skin }: { id: string; body: string; move: Dragon
     const surface = surfaceOf(body);
     const balls = LIB.pieces[`eyes:${id}`].eyes ?? [];
     const groups = new Set<string>(balls.map((b) => b.group));
-    // brows, lashes and lids outside the balls are laid on the face
+    // brows, lashes and lids outside the balls are laid on the face; the thin black lines (lashes,
+    // a flick of liner) stand a little off it, as Clara asked, instead of looking painted on
     made.root.traverse((o) => {
-      if (o instanceof Mesh && !(o.parent && groups.has(o.parent.name))) layOn(o, move, surface, 1.5);
+      if (!(o instanceof Mesh) || (o.parent && groups.has(o.parent.name))) return;
+      // in 3D a brow is tilted further down in the middle, so a brave face looks fiercer
+      if (o.name.endsWith('_brow')) tilt(o, BROW_TILT);
+      layOn(o, move, surface, o.name.endsWith('_line') ? LASH_LIFT : 1.5);
     });
     let middle = 0;
     for (const b of balls) {
@@ -179,7 +197,7 @@ function Mouth({ id, body, move }: { id: string; body: string; move: DragonMove 
     // the fire and each bubble move on their own, standing out from the mouth as one piece
     const movers: Object3D[] = [];
     made.root.traverse((o) => {
-      if (o.name === 'Fire' || /^Bubble\d+$/.test(o.name)) movers.push(o);
+      if (o.name === 'Fire' || o.name === 'Tongue' || /^Bubble\d+$/.test(o.name)) movers.push(o);
     });
     for (const g of movers) g.position.z += out;
     // the fire's root comes to a thin point in 3D, which left a gap at the corner of the mouth:
@@ -223,6 +241,14 @@ function Mouth({ id, body, move }: { id: string; body: string; move: DragonMove 
         });
         return;
       }
+      if (g.name === 'Tongue') {
+        // a snake's tongue: every couple of seconds it flicks out and in a few times, wiggling
+        const p = t % 2.4;
+        const on = p < 0.9 ? Math.sin((p / 0.9) * Math.PI) : 0;
+        g.scale.y = 0.75 + 0.25 * Math.abs(Math.sin(t * 18)) * on + 0.25 * (1 - on);
+        g.rotation.z = Math.sin(t * 24) * 0.14 * on;
+        return;
+      }
       // bubbles bob up and down out of step, and wobble like soap
       const w = Math.sin(t * 3 + i * 1.7) * 0.05;
       g.position.set(rest.x, rest.y + Math.sin(t * 1.4 + i * 1.3) * 0.02, rest.z);
@@ -246,6 +272,12 @@ function hinge(piece: Group, move: DragonMove, root: [number, number], z: number
   return pivot;
 }
 
+/**
+ * How far (drawing units) the wings sit lower on a body in 3D than on the sheet: Clara wanted
+ * them lower on the green one.
+ */
+const WING_DROP_3D: Record<string, number> = { classic: 24 };
+
 /** The wings, swept back behind the body, beating at the shoulder. */
 function Wings({ id, body, left, right }: { id: string; body: string; left: DragonMove; right: DragonMove }) {
   const { scene } = useGLTF(urlOf('wings', id));
@@ -265,6 +297,7 @@ function Wings({ id, body, left, right }: { id: string; body: string; left: Drag
       const piece = new Group();
       piece.add(wing);
       const pivot = hinge(piece, move, root as [number, number], z);
+      pivot.position.y -= (WING_DROP_3D[body] ?? 0) * U;
       pivot.rotation.y = sweep;
       pivot.userData.sweep = sweep;
       pair.add(pivot);
@@ -288,11 +321,21 @@ function Tail({ id, body, move }: { id: string; body: string; move: DragonMove }
     const made = own(scene);
     const depth = LIB.pieces[`body:${body}`].depth ?? 100;
     const pivot = hinge(made.root, move, DRAGON_PIECES[`tail:${id}`].root!, -0.25 * depth * U);
-    return { ...made, pivot };
+    const hearts: Mesh[] = [];
+    made.root.traverse((o) => {
+      if (o instanceof Mesh && o.name.endsWith('_heart')) hearts.push(o);
+    });
+    return { ...made, pivot, hearts };
   }, [scene, body, id, move]);
   useDispose(made);
   useFrame(({ clock }) => {
-    made.pivot.rotation.y = -0.35 + Math.sin((clock.getElapsedTime() / 1.8) * Math.PI * 2) * 0.15;
+    const t = clock.getElapsedTime();
+    made.pivot.rotation.y = -0.35 + Math.sin((t / 1.8) * Math.PI * 2) * 0.15;
+    // little hearts flying round the big one, each out of step
+    made.hearts.forEach((h, i) => {
+      h.position.y = Math.sin(t * 3.4 + i * 1.6) * 0.03;
+      h.position.z = 0.03 + Math.cos(t * 2.2 + i) * 0.02;
+    });
   });
   return <primitive object={made.pivot} dispose={null} />;
 }
@@ -318,7 +361,7 @@ function Piece({ children, id }: { children: ReactNode; id: string }) {
 
 export default function Dragon3D({ parts }: { parts: PartMap; colors?: ColorMap }) {
   // worked out again only when a piece changes: every piece rebuilds when its place does
-  const { body, moves } = useMemo(
+  const { body, moves, twin } = useMemo(
     () => dragonPlacement(parts),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [parts.body, parts.wings, parts.eyes, parts.mouth, parts.tail],
@@ -350,6 +393,22 @@ export default function Dragon3D({ parts }: { parts: PartMap; colors?: ColorMap 
         <Piece id={`mouth-${parts.mouth}-${body}`}>
           <Mouth id={parts.mouth} body={body} move={moves.mouth} />
         </Piece>
+      )}
+      {/* the red one's second head wears the same face, in a mirror down its middle: x = 0 is
+          the middle of the drawing, so the mirror is a flip of x (see Dragon2D, TWIN_HEADS) */}
+      {twin && (
+        <group scale={[-1, 1, 1]}>
+          {parts.eyes && moves.eyes && (
+            <Piece id={`eyes2-${parts.eyes}-${body}`}>
+              <Eyes id={parts.eyes} body={body} move={moves.eyes} skin={skin} />
+            </Piece>
+          )}
+          {parts.mouth && moves.mouth && (
+            <Piece id={`mouth2-${parts.mouth}-${body}`}>
+              <Mouth id={parts.mouth} body={body} move={moves.mouth} />
+            </Piece>
+          )}
+        </group>
       )}
     </group>
   );

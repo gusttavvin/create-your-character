@@ -59,12 +59,14 @@
 
     <!-- sleepy, happy eyes: a lid over the top of each -->
     <circle fill="#FFFFFF" cx="206" cy="210" r="36"/>
-    <circle fill="#12224A" stroke="none" cx="210" cy="222" r="20"/>
+    <circle fill="#1F3F9E" stroke="none" cx="210" cy="222" r="20"/>
+    <circle fill="#12224A" stroke="none" cx="210" cy="222" r="11"/>
     <circle fill="#FFFFFF" stroke="none" cx="203" cy="216" r="6"/>
     <path fill="url(#skin)" d="M172 198 A36 36 0 0 1 240 198 Q206 190 172 198 Z"/>
     <path fill="none" stroke-width="3" d="M176 200 L166 194 M186 196 L180 186"/>
     <circle fill="#FFFFFF" cx="314" cy="210" r="36"/>
-    <circle fill="#12224A" stroke="none" cx="310" cy="222" r="20"/>
+    <circle fill="#1F3F9E" stroke="none" cx="310" cy="222" r="20"/>
+    <circle fill="#12224A" stroke="none" cx="310" cy="222" r="11"/>
     <circle fill="#FFFFFF" stroke="none" cx="303" cy="216" r="6"/>
     <path fill="url(#skin)" d="M280 198 A36 36 0 0 1 348 198 Q314 190 280 198 Z"/>
     <path fill="none" stroke-width="3" d="M344 200 L354 194 M334 196 L340 186"/>

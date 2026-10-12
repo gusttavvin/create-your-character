@@ -14,7 +14,8 @@ import { pickOption, type ColorMap, type PartMap, type PartOption, type SlotLayo
  *
  *   eyes and a mouth are centred where the body's own were — by the eyeballs and the mouth
  *   itself, so the fire and the bubbles coming out of a mouth do not pull it off-centre —
- *   and eyes are made the width of the body's own pair;
+ *   and eyes are made the width of the body's own pair; the red one has two heads, and
+ *   wears them on both (TWIN_HEADS);
  *
  *   wings and a tail keep the size they were drawn at, so baby wings stay little and big
  *   ones stay big, and grow from the very place this body's own did: hung by their root,
@@ -60,15 +61,36 @@ function slotOf(body: string, row: string): DragonPiece {
  */
 const KEEP_SIZE = 1;
 
+type Core = [number, number, number, number];
+
+/**
+ * The red dragon has two heads, as Clara asked. Each one wears the eyes and the mouth the
+ * child picked: the right head at the face below, the left head its mirror image, so a fire
+ * or bubbles blow away from the other head. The heads are smaller than a whole dragon's
+ * face, so a mouth is made smaller on them too, and a big puff of fire stays on the sheet.
+ */
+const TWIN_HEADS: Record<string, { eyes: Core; mouth: Core; mouthK: number }> = {
+  chubby: { eyes: [300, 130, 96, 44], mouth: [326, 206, 44, 24], mouthK: 0.7 },
+};
+
+export function hasTwinHeads(body: string) {
+  return !!TWIN_HEADS[body];
+}
+
+/** The same place on the sheet, seen in a mirror down the middle of the dragon. */
+function mirrored(r: Rect): Rect {
+  return { ...r, left: 2 * (OX + MID) - r.left - r.width };
+}
+
 /** Eyes or a mouth: centred on this face. */
 function facePlace(body: string, row: 'eyes' | 'mouth', id: string): Rect {
   const piece = DRAGON_PIECES[`${row}:${id}`];
-  const slot = slotOf(body, row);
+  const twin = TWIN_HEADS[body];
   const [px, py, pw, ph] = piece.core!;
-  const [sx, sy, sw, sh] = slot.core!;
+  const [sx, sy, sw, sh] = twin ? twin[row] : slotOf(body, row).core!;
   // eyes are made the width of the face's own pair; a mouth keeps the size it was drawn at —
   // fitted to the blue one's little round mouth, every other mouth came out tiny on it
-  let k = row === 'eyes' ? sw / pw : 1;
+  let k = row === 'eyes' ? sw / pw : (twin?.mouthK ?? 1);
   // a piece much taller than the face's own is kept from running over the rest of the face
   if (row === 'eyes' && ph * k > sh * 1.6) k = (sh * 1.6) / ph;
   const [bx, by, bw, bh] = piece.box;
@@ -165,7 +187,7 @@ export function dragonPlacement(parts: PartMap) {
       const b = box(row, parts[row]);
       out[row] = moveOf(facePlace(body, row, parts[row]), b[0], b[1], b[2]);
     }
-  return { body, moves: out, slots: (row: string) => slotOf(body, row) };
+  return { body, moves: out, twin: hasTwinHeads(body), slots: (row: string) => slotOf(body, row) };
 }
 
 function rectOf(box: DragonPiece['box']) {
@@ -223,6 +245,7 @@ export default function Dragon2D({ parts, animate = true, className }: Props) {
   const tail = pickOption(DRAGON, 'tail', parts.tail);
 
   const body = bodyOf(parts);
+  const twin = hasTwinHeads(body);
   // the colours come from the body the child picked, not from a colour they chose
   const eff = dragonColors(parts);
   const anim = animate ? ' is-animated' : '';
@@ -283,9 +306,23 @@ export default function Dragon2D({ parts, animate = true, className }: Props) {
             <PartArt option={mouth} colors={eff} />
           </Layer>
         )}
+        {mouth && twin && (
+          <Layer key={`mouth2-${mouth.id}`} part="mouth" style={pct(mirrored(facePlace(body, 'mouth', mouth.id)), Z.mouth)}>
+            <div style={{ ...full, scale: '-1 1' }}>
+              <PartArt option={mouth} colors={eff} />
+            </div>
+          </Layer>
+        )}
         {eyes && (
           <Layer key={`eyes-${eyes.id}`} part="eyes" style={pct(facePlace(body, 'eyes', eyes.id), Z.eyes)} extra="blink">
             <PartArt option={eyes} colors={eff} />
+          </Layer>
+        )}
+        {eyes && twin && (
+          <Layer key={`eyes2-${eyes.id}`} part="eyes" style={pct(mirrored(facePlace(body, 'eyes', eyes.id)), Z.eyes)} extra="blink">
+            <div style={{ ...full, scale: '-1 1' }}>
+              <PartArt option={eyes} colors={eff} />
+            </div>
           </Layer>
         )}
       </div>

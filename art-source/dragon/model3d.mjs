@@ -16,7 +16,8 @@
  *   filled and outlined but inside an earlier solid (a belly, an eyelid), or filled with no
  *   outline (a highlight, a snout, cheeks, pupils) — painted on that solid's skin
  *   a line with no fill — a tube: wing bones, fingers, lashes, belly stripes
- *   a white outlined circle among the eyes — an eyeball, a ball of its own
+ *   a white outlined circle among the eyes — an eyeball, a ball of its own; an almond-shaped
+ *   eye, named an eyeball in the drawing, is a plump almond of its own instead
  *   the mouth — drawn flat, in front of z = 0: the game lays it on whichever face wears it,
  *   so it follows that face's curve; only what sticks out (fire, bubbles, a tongue) is solid
  *
@@ -109,6 +110,8 @@ async function read(file) {
       continue;
     }
     const a = attrsOf(m[3]);
+    // one outline drawn only for the flat picture: the 3D is built from the separate shapes
+    if (/\bonly-2d\b/.test(a.class ?? '')) continue;
     let d = a.d;
     if (m[2] !== 'path') {
       const cx = +a.cx;
@@ -117,7 +120,10 @@ async function read(file) {
       const ry = +(a.ry ?? a.r);
       d = `M ${cx - rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx + rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx - rx} ${cy} Z`;
     }
-    rows[row].push({
+    // a filled path drawn as several closed pieces (a row of teeth, three claws) is that many
+    // pieces: an outline is only ever one shape, and only the first tooth came out in 3D
+    const pieces = a.fill && a.fill !== 'none' && m[2] === 'path' ? d.split(/(?=M)/).filter((x) => x.trim()) : [d];
+    for (const d of pieces) rows[row].push({
       tag: m[2],
       d,
       fill: a.fill && a.fill !== 'none' ? a.fill : null,
@@ -420,6 +426,20 @@ function line(p, front = () => 0, radius = p.sw / 2) {
 }
 
 /* ------------------------------------------------------------- a whole piece */
+/** A lofted body whose bottom follows its outline's own bottom edge, waves and all. */
+function hem(solid) {
+  const down = sections(solid.pts, 'x');
+  const p = solid.geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const bottom = down(p.getX(i))[1];
+    if (-p.getY(i) > bottom) p.setY(i, -bottom);
+  }
+  p.needsUpdate = true;
+  solid.geo.computeVertexNormals();
+  const front = solid.front;
+  return { ...solid, front: (x, y) => (y > down(x)[1] ? -Infinity : front(x, y)) };
+}
+
 /** How much of an outline lies inside another. */
 function insideShare(p, host) {
   const { pts } = outline(p);
@@ -539,23 +559,35 @@ function build(row, els, gradients) {
     // the mouth is drawn flat: only what sticks out of the face is solid
     if (row === 'mouth') {
       const first = i === 0;
-      const out = !first && p.fill && hosts[0] && insideShare(p, hosts[0]) < 0.85;
+      // what lies outside the mouth sticks out of it (a tongue); a tooth stands on the edge of
+      // the lip, pointing in, and is painted like the rest of the mouth — so it is the middle
+      // of a shape that decides, not how much of its outline is in
+      const middle = p.fill && outline(p).box.getCenter(new T.Vector2());
+      const out = !first && p.fill && hosts[0] && !inside(middle.x, middle.y, hosts[0].pts);
       if (p.fill && (first || !out)) {
         const flat = { ...outline(p), front: () => 0 };
         add(decal(p, () => 0, 1 + i * 0.3), p, `${name}_flat`, root);
         if (first) hosts.push(flat);
       } else if (p.fill) {
         const solid = p.tag === 'path' ? roundedSolid(p, 0.7, true) : ball(p);
-        add(solid.geo, p, `${name}_solid`, root);
+        if (/dragon-tongue/.test(p.cls)) {
+          // a snake's tongue hangs from the mouth in a group of its own, so it can flick
+          const g = new T.Group();
+          g.name = 'Tongue';
+          g.userData.pivot = [(solid.box.min.x + solid.box.max.x) / 2, solid.box.min.y, 0];
+          root.add(g);
+          add(solid.geo, p, `${name}_tongue`, g);
+        } else add(solid.geo, p, `${name}_solid`, root);
       } else if (p.stroke) add(line(p, () => 1.5, p.sw * 0.45), p, `${name}_line`, root);
       return;
     }
     // a white outlined circle among the eyes is an eyeball, in a group of its own
-    if (row === 'eyes' && p.tag === 'circle' && p.fill?.toLowerCase() === '#ffffff' && p.stroke && p.r >= 25) {
+    const almond = /dragon-eyeball/.test(p.cls);
+    if (row === 'eyes' && (almond || (p.tag === 'circle' && p.fill?.toLowerCase() === '#ffffff' && p.stroke && p.r >= 25))) {
       const g = new T.Group();
       g.name = `Eye${eyes.length ? 'R' : 'L'}`;
       root.add(g);
-      const b = ball(p);
+      const b = almond ? roundedSolid(p, 0.7, true) : ball(p);
       add(b.geo, p, `${name}_ball`, g);
       const c = b.box.getCenter(new T.Vector2());
       g.userData.centre = [c.x, c.y];
@@ -582,9 +614,14 @@ function build(row, els, gradients) {
     if (row === 'wings') solid = roundedSolid(p, 0.22);
     else if (row === 'eyes') solid = roundedSolid(p, 0.5, true);
     else if (/url\(#(fin|flame|wing)\)/.test(p.fill)) solid = roundedSolid(p, 0.45, true);
+    // the purple one is a little ghost: round like any body, and its bottom then cut along the
+    // wavy hem (lofted alone, the hem came out straight; as a pillow it was a square cushion)
+    else if (/dragon-ghost/.test(p.cls)) solid = hem(loft(p, 0.82));
     else if (winding(p)) solid = roundedSolid(p, 0.85, true);
     else solid = loft(p, row === 'body' ? 0.82 : 0.9);
-    add(solid.geo, p, `${name}_solid`, group);
+    // a brow and a little flying heart are named, so the game can tilt one and float the other
+    const kind = /dragon-brow/.test(p.cls) ? 'brow' : /dragon-heart/.test(p.cls) ? 'heart' : 'solid';
+    add(solid.geo, p, `${name}_${kind}`, group);
     hosts.push(solid);
   });
   return { root, hosts, eyes };

@@ -1530,3 +1530,71 @@ pequeno".
 - Conferido: quatro bocas nos quatro corpos em 2D e 3D; no jogo, vermelho com fogo e azul com
   bolhas, de frente e de três quartos; glTF 0 erros e 0 avisos; `npm run build` passa.
 - Tamanho: `mouth-fire.glb` 1,3 MB (71 mil triângulos), `mouth-teeth.glb` 0,36 MB.
+
+## Dragão: duas cabeças, fantasma, asas Spiky, olhos puxados, dentes, língua de cobra e espinhos — 11 de outubro de 2026
+
+Pedido: tirar os chifres do vermelho e dar duas cabeças, com garras nos pés; o roxo sem
+patinhas, como um fantasma; mudar a asa Spiky (parecida com a Bat); olhos Happy puxados;
+boca Silly com língua afiada de cobra; Smile com vários dentes afiados; rabo Arrow com
+triângulos em cima.
+
+- [x] **Vermelho (`2-Blaze.svg`):** corpo redondo com dois pescoços e duas cabeças (cada uma
+      com focinho, bochechas, brilho e uma cristinha amarela; sem chifres) e pés com três
+      garras curvas. Os olhos e a boca do desenho continuam no meio: o jogo os coloca nas
+      duas cabeças (`TWIN_HEADS` em `Dragon2D.tsx`): a da direita na cara medida, a da
+      esquerda espelhada, para o fogo e as bolhas saírem para fora. Nas cabeças a boca fica
+      a 0,7 do tamanho, senão o fogo saía da folha. No 3D, a segunda cara é a mesma peça num
+      grupo com `scale x = -1` (x = 0 é o meio do desenho).
+- [x] **Roxo (`4-Pip.svg`):** sem pés; o corpo termina numa barra com cinco ondas, um pouco
+      aberta embaixo, como um fantasminha. No 3D o corpo é redondo (loft) e a parte de baixo é
+      cortada pelas ondas do desenho (`hem` em `model3d.mjs`); como almofada (`roundedSolid`)
+      ficava uma caixa.
+- [x] **Asa Spiky (id `feather`):** um leque de cinco pontas afiadas com um osso em cada.
+- [x] **Olhos Happy (id `cute`):** amendoados, com o canto de fora para cima e um risquinho
+      de delineado; íris grande. O globo é um caminho com `class="dragon-eyeball"`:
+      `gen.cjs` o mede como globo (centro e largura dos olhos) e `model3d.mjs` o faz como uma
+      amêndoa com volume.
+- [x] **Smile (id `smile`):** sorriso largo com sete dentes afiados em cima e cinco embaixo.
+- [x] **Silly (id `tongue`):** língua comprida, fina e bifurcada, como de cobra.
+- [x] **Rabo Arrow (id `lightning`):** cinco espinhos amarelos ao longo de cima do rabo.
+- [x] **Gerador 3D:** um caminho com várias pecinhas fechadas (dentes, garras, unhas) agora
+      vira várias peças; antes só a primeira aparecia no 3D. Um dente encostado na borda da
+      boca é pintado (só o que fica mais da metade fora da boca, como a língua, tem volume);
+      antes os dentes viravam volumes e a boca Smile chegava a 3,3 MB.
+- Conferido: as quatro fileiras nos quatro corpos em 2D e 3D; vermelho e verde de perto, de
+  frente e de três quartos; roxo de frente, três quartos e costas; glTF 0 erros e 0 avisos;
+  `npm run build` passa.
+- Os nomes nos cartões e as frases não mudaram (Happy, Smile, Silly, Spiky, Arrow; "a red
+  body"). IDs iguais, então os dragões salvos continuam abrindo.
+
+## Dragão: ajustes juntos com a Clara (cores dos olhos, contorno único, língua mexendo) — 11 de outubro de 2026
+
+Pedido: no 2D, o de duas cabeças sem traço entre o corpo e as cabeças; dentes do Smile
+acompanhando o contorno da boca; olhos coloridos (Happy laranja, Brave vermelho-escuro,
+Sleepy azul-escuro, Sparkly rosa-choque); coraçõezinhos voando em volta do rabo Heart. No 3D,
+os risquinhos pretos desgrudados do corpo, a sobrancelha "do angry" mais inclinada, a língua
+de cobra se mexendo e as asas do verde mais baixas.
+
+- [x] **Contorno único do vermelho:** no 2D, corpo, pescoços e cabeças são um caminho só
+      (`class="only-2d"`); no 3D continuam peças separadas (`class="only-3d"`), que dão
+      cabeças redondas. `gen.cjs` ignora `only-3d`; `model3d.mjs` ignora `only-2d`.
+- [x] **Dentes do Smile:** sete em cima e cinco embaixo, cada um em pé na curva de verdade
+      dos lábios, apontando para dentro da boca.
+- [x] **Íris coloridas** com uma pupila escura no meio (0,55 do raio): Happy `#FF8A1F`,
+      Brave `#A0172E`, Sleepy `#1F3F9E`, Sparkly `#FF1F8E`.
+- [x] **Rabo Heart:** quatro coraçõezinhos rosa em volta do grande; no 2D sobem e descem
+      (`dragon-heart-*`), no 3D voam em volta (`_heart`, em `Tail`).
+- [x] **3D:**
+      - Cílios e o risquinho de delineado ficam 9 unidades fora da pele (`LASH_LIFT`).
+      - Sobrancelhas do Brave giram mais 0,22 rad com a ponta de dentro para baixo
+        (`BROW_TILT`). Entendi "angry" como o Brave, o único olho de dragão com sobrancelha
+        brava; se era o monstro, ainda falta.
+      - Língua de cobra: grupo `Tongue` preso no alto; a cada 2,4 s sai e entra algumas
+        vezes, balançando.
+      - Asas 24 unidades mais baixas no corpo verde (`WING_DROP_3D`).
+- [x] **Gerador 3D:** o que decide se uma pecinha da boca tem volume é o meio dela estar fora
+      da boca (antes, a parte do contorno dentro). Os dentes na curva encostavam mais na borda
+      e viravam volumes; a boca Smile tinha ido a 2,6 MB.
+- Conferido: olhos e rabos nos quatro corpos em 2D; vermelho de perto em 2D; os quatro
+  dragões em 3D, de frente e de três quartos; verde com Brave, Silly e Heart de perto em 3D;
+  glTF 0 erros e 0 avisos; `npm run build` passa.

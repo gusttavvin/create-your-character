@@ -79,30 +79,30 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   },
   "eyes:cute": {
     "box": [
-      162,
-      154,
-      196,
-      84
+      129.5,
+      143.5,
+      261,
+      86.31
     ],
     "core": [
-      162,
-      154,
-      196,
-      84
+      146,
+      155.64,
+      228,
+      74.17
     ]
   },
   "mouth:smile": {
     "box": [
-      220,
-      276,
-      80,
-      38
+      212,
+      272.15,
+      96,
+      48.3
     ],
     "core": [
-      220,
-      276,
-      80,
-      38
+      212,
+      274,
+      96,
+      46
     ]
   },
   "tail:fire": {
@@ -120,21 +120,21 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   "wings:feather": {
     "box": [
       8,
-      57.5,
+      180,
       504,
-      294.5
+      202
     ],
     "root": [
-      200,
-      296
+      204,
+      361
     ]
   },
   "body:chubby": {
     "box": [
       84,
-      42,
+      78,
       352,
-      547.5
+      529.5
     ]
   },
   "eyes:fierce": {
@@ -228,9 +228,9 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   "tail:leaf": {
     "box": [
       344,
-      354.13,
-      128.69,
-      149.71
+      310.05,
+      159.79,
+      193.79
     ],
     "root": [
       346,
@@ -251,10 +251,10 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   },
   "body:spiky": {
     "box": [
-      86,
+      72,
       85.49,
-      348,
-      472.51
+      376,
+      478.51
     ]
   },
   "eyes:star": {
@@ -276,7 +276,7 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
       224,
       342,
       72,
-      46
+      99.5
     ],
     "core": [
       224,
@@ -328,10 +328,13 @@ export function Tail1({ className, view }: DragonPartProps) {
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
+        <path fill="#FFC93D" d="M353.6 458.4 L363.9 442.4 L373.6 458.7 Z" />
+        <path fill="#FFC93D" d="M373.5 459 L380.6 442.1 L393.2 455.3 Z" />
+        <path fill="#FFC93D" d="M391.9 455.9 L395.2 438.7 L410.1 447.8 Z" />
+        <path fill="#FFC93D" d="M408.5 449.1 L407.9 432.3 L424.2 436.6 Z" />
+        <path fill="#FFC93D" d="M423.1 437.9 L419.1 422.3 L435.2 421.9 Z" />
         <path fill={`url(#${skinId})`} d="M318 452 C372 470 416 460 438 420 C446 404 448 392 446 380 L464 384 C468 406 462 430 450 450 C424 494 366 508 314 494 Z" />
         <path fill="#FFC93D" d="M454 326 C472 344 486 362 484 380 C472 388 462 386 454 380 C446 386 434 388 422 380 C422 362 436 344 454 326 Z" />
-        <path fill="#FFC93D" d="M392 470 L408 448 L414 474 Z" />
-        <path fill="#FFC93D" d="M420 446 L440 430 L438 458 Z" />
       </g>
     </Part>
   );
@@ -415,16 +418,20 @@ export function Body1({ className, view }: DragonPartProps) {
 
 export function Eyes1({ className, view }: DragonPartProps) {
   return (
-    <Part box={view ?? '162 154 196 84'} className={className}>
+    <Part box={view ?? '129.5 143.5 261 86.31'} className={className}>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        <circle fill="#FFFFFF" cx="204" cy="196" r="40" />
-        <circle fill="#12224A" stroke="none" cx="210" cy="202" r="24" />
-        <circle fill="#FFFFFF" stroke="none" cx="200" cy="190" r="9" />
-        <circle fill="#FFFFFF" stroke="none" cx="219" cy="212" r="4" />
-        <circle fill="#FFFFFF" cx="316" cy="196" r="40" />
-        <circle fill="#12224A" stroke="none" cx="310" cy="202" r="24" />
-        <circle fill="#FFFFFF" stroke="none" cx="300" cy="190" r="9" />
-        <circle fill="#FFFFFF" stroke="none" cx="319" cy="212" r="4" />
+        <path className="dragon-eyeball" fill="#FFFFFF" d="M252 218 C244 168 196 148 148 162 C154 216 204 244 252 218 Z" />
+        <circle fill="#FF8A1F" stroke="none" cx="206" cy="197" r="24" />
+        <circle fill="#12224A" stroke="none" cx="206" cy="197" r="13.2" />
+        <circle fill="#FFFFFF" stroke="none" cx="197" cy="187" r="9" />
+        <circle fill="#FFFFFF" stroke="none" cx="216" cy="208" r="4" />
+        <path fill="none" strokeWidth="5" d="M150 162 L132 146" />
+        <path className="dragon-eyeball" fill="#FFFFFF" d="M268 218 C276 168 324 148 372 162 C366 216 316 244 268 218 Z" />
+        <circle fill="#FF8A1F" stroke="none" cx="314" cy="197" r="24" />
+        <circle fill="#12224A" stroke="none" cx="314" cy="197" r="13.2" />
+        <circle fill="#FFFFFF" stroke="none" cx="323" cy="187" r="9" />
+        <circle fill="#FFFFFF" stroke="none" cx="304" cy="208" r="4" />
+        <path fill="none" strokeWidth="5" d="M370 162 L388 146" />
       </g>
     </Part>
   );
@@ -432,11 +439,10 @@ export function Eyes1({ className, view }: DragonPartProps) {
 
 export function Mouth1({ className, view }: DragonPartProps) {
   return (
-    <Part box={view ?? '220 276 80 38'} className={className}>
+    <Part box={view ?? '212 272.15 96 48.3'} className={className}>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        <path fill="#D8486E" d="M222 278 C240 292 280 292 298 278 C294 302 278 312 260 312 C242 312 226 302 222 278 Z" />
-        <path fill="#FFFFFF" strokeWidth="3" d="M236 284 L243 298 L250 287 Z" />
-        <path fill="#FF8FAE" stroke="none" d="M246 304 C252 298 268 298 274 304 C270 309 250 309 246 304 Z" />
+        <path fill="#D8486E" d="M214 276 C238 296 282 296 306 276 C302 304 284 318 260 318 C236 318 218 304 214 276 Z" />
+        <path fill="#FFFFFF" strokeWidth="2.5" d="M220.2 281.9 L230.1 273.4 L229.2 286.4 Z M231.6 285.1 L232.9 298.1 L241.1 288 Z M243 288.4 L246.3 301 L252.9 289.9 Z M255 290 L260 302 L265 290 Z M267.1 289.9 L273.7 301 L277 288.4 Z M278.9 288 L287.1 298.1 L288.4 285.1 Z M290.8 286.4 L289.9 273.4 L299.8 281.9 Z M302.3 293.6 L291.1 292.8 L297.1 302.2 Z M289.1 310.3 L279.8 304.2 L280.5 315.3 Z M270.7 318.2 L264.8 308.8 L260.8 319.2 Z M239.5 315.3 L240.2 304.2 L230.9 310.3 Z M222.9 302.2 L228.9 292.8 L217.7 293.6 Z" />
       </g>
     </Part>
   );
@@ -473,7 +479,7 @@ export function Wings2({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const wingId = `wings-wing-${k}`;
   return (
-    <Part box={view ?? '8 57.5 504 294.5'} className={className}>
+    <Part box={view ?? '8 180 504 202'} className={className}>
       <defs>
         <linearGradient id={wingId} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0" stopColor="#FFC27A" />
@@ -481,20 +487,10 @@ export function Wings2({ className, view }: DragonPartProps) {
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        <path fill={`url(#${wingId})`} d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62 C40 100 36 142 10 176 C48 176 66 208 44 258 C82 252 104 282 96 326 C132 318 164 326 196 350 Z" />
-        <path fill="none" strokeWidth="3" d="M108 110 C80 132 46 154 10 176" />
-        <path fill="none" strokeWidth="3" d="M108 110 C92 158 70 208 44 258" />
-        <path fill="none" strokeWidth="3" d="M108 110 C104 182 100 254 96 326" />
-        <path fill="none" stroke="#B8232A" strokeWidth="9" d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62" />
-        <path fill="none" strokeWidth="2" d="M200 300 C170 232 136 160 108 110 C88 86 60 70 26 62" />
-        <path fill="#FFF6E4" strokeWidth="3" d="M106 108 L100 88 L116 100 Z" />
-        <path fill={`url(#${wingId})`} d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62 C480 100 484 142 510 176 C472 176 454 208 476 258 C438 252 416 282 424 326 C388 318 356 326 324 350 Z" />
-        <path fill="none" strokeWidth="3" d="M412 110 C440 132 474 154 510 176" />
-        <path fill="none" strokeWidth="3" d="M412 110 C428 158 450 208 476 258" />
-        <path fill="none" strokeWidth="3" d="M412 110 C416 182 420 254 424 326" />
-        <path fill="none" stroke="#B8232A" strokeWidth="9" d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62" />
-        <path fill="none" strokeWidth="2" d="M320 300 C350 232 384 160 412 110 C432 86 460 70 494 62" />
-        <path fill="#FFF6E4" strokeWidth="3" d="M414 108 L420 88 L404 100 Z" />
+        <path fill={`url(#${wingId})`} d="M204 380 C180 362 150 352 120 352 L10 336 L100 320 L18 250 L110 286 L56 182 L134 264 L124 190 L170 284 C186 310 198 344 204 380 Z" />
+        <path fill="none" stroke="#B8232A" strokeWidth="5" d="M180 336 L30 336 M180 336 L40 256 M180 336 L72 200 M180 336 L128 210" />
+        <path fill={`url(#${wingId})`} d="M316 380 C340 362 370 352 400 352 L510 336 L420 320 L502 250 L410 286 L464 182 L386 264 L396 190 L350 284 C334 310 322 344 316 380 Z" />
+        <path fill="none" stroke="#B8232A" strokeWidth="5" d="M340 336 L490 336 M340 336 L480 256 M340 336 L448 200 M340 336 L392 210" />
       </g>
     </Part>
   );
@@ -503,19 +499,14 @@ export function Wings2({ className, view }: DragonPartProps) {
 export function Body2({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `body-skin-${k}`;
-  const hornId = `body-horn-${k}`;
   const bellyId = `body-belly-${k}`;
   return (
-    <Part box={view ?? '84 42 352 547.5'} className={className}>
+    <Part box={view ?? '84 78 352 529.5'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="0" stopColor="#FF9A7E" />
           <stop offset="0.55" stopColor="#FF5A4E" />
           <stop offset="1" stopColor="#D9342F" />
-        </linearGradient>
-        <linearGradient id={hornId} x1="0.2" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#FFF6E4" />
-          <stop offset="1" stopColor="#FFD9A6" />
         </linearGradient>
         <linearGradient id={bellyId} x1="0.3" y1="0" x2="0.7" y2="1">
           <stop offset="0" stopColor="#FFF4C8" />
@@ -523,24 +514,32 @@ export function Body2({ className, view }: DragonPartProps) {
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        <path fill={`url(#${skinId})`} d="M142 548 C142 524 168 512 196 512 C224 512 250 524 250 548 C252 562 244 572 232 570 C226 578 214 578 210 570 C204 578 188 578 182 570 C178 578 166 578 160 570 C148 572 140 562 142 548 Z" />
-        <path fill={`url(#${skinId})`} d="M270 548 C270 524 296 512 324 512 C352 512 378 524 378 548 C380 562 372 572 360 570 C354 578 342 578 338 570 C332 578 316 578 310 570 C306 578 294 578 288 570 C276 572 268 562 270 548 Z" />
-        <path fill="#FFF6E4" strokeWidth="3" d="M166 574 L171 586 L177 574 Z M191 576 L196 588 L202 576 Z M215 574 L221 586 L226 574 Z" />
-        <path fill="#FFF6E4" strokeWidth="3" d="M294 574 L299 586 L305 574 Z M319 576 L324 588 L330 576 Z M343 574 L349 586 L354 574 Z" />
-        <path fill="#FFD93D" d="M236 104 L246 74 L258 100 Z" />
-        <path fill="#FFD93D" d="M252 100 L262 66 L274 100 Z" />
-        <path fill="#FFD93D" d="M268 102 L280 76 L288 106 Z" />
-        <path fill={`url(#${hornId})`} d="M192 132 C160 112 148 76 164 44 C176 76 198 98 224 108 Z" />
-        <path fill={`url(#${hornId})`} d="M328 132 C360 112 372 76 356 44 C344 76 322 98 296 108 Z" />
-        <path fill={`url(#${skinId})`} d="M260 96 C334 96 374 142 374 200 C374 238 364 262 352 280 C410 318 434 396 434 452 C434 514 358 540 260 540 C162 540 86 514 86 452 C86 396 110 318 168 280 C156 262 146 238 146 200 C146 142 186 96 260 96 Z" />
-        <path fill="#FFE2D6" stroke="none" d="M170 160 C176 132 200 112 226 108 C238 108 240 120 228 124 C208 130 194 144 188 166 C184 176 168 172 170 160 Z" />
-        <path fill={`url(#${bellyId})`} d="M260 360 C330 360 376 398 376 448 C376 494 330 520 260 520 C190 520 144 494 144 448 C144 398 190 360 260 360 Z" />
-        <path fill="none" stroke="#E0A93A" strokeWidth="3" d="M196 398 Q260 410 324 398 M166 432 Q260 448 354 432 M162 466 Q260 482 358 466 M178 498 Q260 512 342 498" />
-        <ellipse fill="#FFB49A" stroke="none" cx="260" cy="244" rx="66" ry="34" />
-        <ellipse fill="#9E2324" stroke="none" cx="242" cy="230" rx="6" ry="4" />
-        <ellipse fill="#9E2324" stroke="none" cx="278" cy="230" rx="6" ry="4" />
-        <ellipse fill="#FF9BB8" stroke="none" cx="182" cy="232" rx="16" ry="10" />
-        <ellipse fill="#FF9BB8" stroke="none" cx="338" cy="232" rx="16" ry="10" />
+        <path fill={`url(#${skinId})`} d="M146 548 C146 522 172 508 202 508 C232 508 258 522 258 548 C258 566 246 574 230 574 L174 574 C158 574 146 566 146 548 Z" />
+        <path fill={`url(#${skinId})`} d="M374 548 C374 522 348 508 318 508 C288 508 262 522 262 548 C262 566 274 574 290 574 L346 574 C362 574 374 566 374 548 Z" />
+        <path fill="#FFF6E4" strokeWidth="3" d="M162 568 C156 580 150 590 142 600 C158 596 172 586 182 572 Z M194 574 C194 586 192 596 188 606 C202 600 210 590 212 574 Z M226 572 C232 582 236 592 238 602 C248 592 250 580 244 568 Z" />
+        <path fill="#FFF6E4" strokeWidth="3" d="M358 568 C364 580 370 590 378 600 C362 596 348 586 338 572 Z M326 574 C326 586 328 596 332 606 C318 600 310 590 308 574 Z M294 572 C288 582 284 592 282 602 C272 592 270 580 276 568 Z" />
+        <path fill="#FFD93D" d="M188 112 L180 88 L170 108 Z" />
+        <path fill="#FFD93D" d="M332 112 L340 88 L350 108 Z" />
+        <path fill="#FFD93D" d="M174 106 L164 80 L154 106 Z" />
+        <path fill="#FFD93D" d="M346 106 L356 80 L366 106 Z" />
+        <path fill="#FFD93D" d="M158 110 L146 90 L142 116 Z" />
+        <path fill="#FFD93D" d="M362 110 L374 90 L378 116 Z" />
+        <path fill="#FFE2D6" stroke="none" d="M222 146 C218 126 202 112 184 110 C176 110 174 118 182 120 C196 124 206 134 210 148 C214 156 224 154 222 146 Z" />
+        <path fill="#FFE2D6" stroke="none" d="M298 146 C302 126 318 112 336 110 C344 110 346 118 338 120 C324 124 314 134 310 148 C306 156 296 154 298 146 Z" />
+        <path className="only-2d" fill={`url(#${skinId})`} d="M260 254 C276 254 290 256 298 260 C296 250 297 238 300 228 C280 214 272 192 276 168 C282 128 314 104 350 104 C390 104 420 132 420 172 C420 204 400 226 376 236 C378 252 382 270 388 288 C416 320 432 380 434 432 C436 510 360 540 260 540 C160 540 84 510 86 432 C88 380 104 320 132 288 C138 270 142 252 144 236 C120 226 100 204 100 172 C100 132 130 104 170 104 C206 104 238 128 244 168 C248 192 240 214 220 228 C223 238 224 250 222 260 C230 256 244 254 260 254 Z" />
+        <path fill="#FFE2D6" stroke="none" d="M128 380 C136 340 164 306 200 292 C212 290 214 300 204 306 C176 322 156 348 148 382 C144 394 126 392 128 380 Z" />
+        <path fill={`url(#${bellyId})`} d="M260 340 C330 340 376 384 376 440 C376 494 330 520 260 520 C190 520 144 494 144 440 C144 384 190 340 260 340 Z" />
+        <path fill="none" stroke="#E0A93A" strokeWidth="3" d="M190 374 Q260 386 330 374 M160 410 Q260 426 360 410 M152 446 Q260 462 368 446 M166 482 Q260 498 354 482" />
+        <ellipse fill="#FFB49A" stroke="none" cx="172" cy="200" rx="44" ry="24" />
+        <ellipse fill="#FFB49A" stroke="none" cx="348" cy="200" rx="44" ry="24" />
+        <ellipse fill="#9E2324" stroke="none" cx="160" cy="192" rx="5" ry="3.5" />
+        <ellipse fill="#9E2324" stroke="none" cx="184" cy="192" rx="5" ry="3.5" />
+        <ellipse fill="#9E2324" stroke="none" cx="336" cy="192" rx="5" ry="3.5" />
+        <ellipse fill="#9E2324" stroke="none" cx="360" cy="192" rx="5" ry="3.5" />
+        <ellipse fill="#FF9BB8" stroke="none" cx="220" cy="198" rx="11" ry="7" />
+        <ellipse fill="#FF9BB8" stroke="none" cx="124" cy="198" rx="11" ry="7" />
+        <ellipse fill="#FF9BB8" stroke="none" cx="300" cy="198" rx="11" ry="7" />
+        <ellipse fill="#FF9BB8" stroke="none" cx="396" cy="198" rx="11" ry="7" />
       </g>
     </Part>
   );
@@ -551,15 +550,17 @@ export function Eyes2({ className, view }: DragonPartProps) {
     <Part box={view ?? '182 136.47 156 79.53'} className={className}>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <circle fill="#FFFFFF" cx="218" cy="182" r="32" />
-        <circle fill="#12224A" stroke="none" cx="224" cy="188" r="19" />
+        <circle fill="#A0172E" stroke="none" cx="224" cy="188" r="19" />
+        <circle fill="#12224A" stroke="none" cx="224" cy="188" r="10.5" />
         <circle fill="#FFFFFF" stroke="none" cx="216" cy="178" r="7" />
         <circle fill="#FFFFFF" stroke="none" cx="231" cy="196" r="3" />
         <circle fill="#FFFFFF" cx="302" cy="182" r="32" />
-        <circle fill="#12224A" stroke="none" cx="296" cy="188" r="19" />
+        <circle fill="#A0172E" stroke="none" cx="296" cy="188" r="19" />
+        <circle fill="#12224A" stroke="none" cx="296" cy="188" r="10.5" />
         <circle fill="#FFFFFF" stroke="none" cx="288" cy="178" r="7" />
         <circle fill="#FFFFFF" stroke="none" cx="303" cy="196" r="3" />
-        <path fill="#9E2324" d="M184 142 C204 134 228 140 248 156 C230 152 206 150 186 154 Z" />
-        <path fill="#9E2324" d="M336 142 C316 134 292 140 272 156 C290 152 314 150 334 154 Z" />
+        <path className="dragon-brow" fill="#9E2324" d="M184 142 C204 134 228 140 248 156 C230 152 206 150 186 154 Z" />
+        <path className="dragon-brow" fill="#9E2324" d="M336 142 C316 134 292 140 272 156 C290 152 314 150 334 154 Z" />
       </g>
     </Part>
   );
@@ -704,12 +705,14 @@ export function Eyes3({ className, colors = {}, view }: DragonPartProps) {
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <circle fill="#FFFFFF" cx="206" cy="210" r="36" />
-        <circle fill="#12224A" stroke="none" cx="210" cy="222" r="20" />
+        <circle fill="#1F3F9E" stroke="none" cx="210" cy="222" r="20" />
+        <circle fill="#12224A" stroke="none" cx="210" cy="222" r="11" />
         <circle fill="#FFFFFF" stroke="none" cx="203" cy="216" r="6" />
         <path fill={`url(#${skinId})`} d="M172 198 A36 36 0 0 1 240 198 Q206 190 172 198 Z" />
         <path fill="none" strokeWidth="3" d="M176 200 L166 194 M186 196 L180 186" />
         <circle fill="#FFFFFF" cx="314" cy="210" r="36" />
-        <circle fill="#12224A" stroke="none" cx="310" cy="222" r="20" />
+        <circle fill="#1F3F9E" stroke="none" cx="310" cy="222" r="20" />
+        <circle fill="#12224A" stroke="none" cx="310" cy="222" r="11" />
         <circle fill="#FFFFFF" stroke="none" cx="303" cy="216" r="6" />
         <path fill={`url(#${skinId})`} d="M280 198 A36 36 0 0 1 348 198 Q314 190 280 198 Z" />
         <path fill="none" strokeWidth="3" d="M344 200 L354 194 M334 196 L340 186" />
@@ -762,7 +765,7 @@ export function Tail4({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
   const skinId = `tail-skin-${k}`;
   return (
-    <Part box={view ?? '344 354.13 128.69 149.71'} className={className}>
+    <Part box={view ?? '344 310.05 159.79 193.79'} className={className}>
       <defs>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="0" stopColor="#D2B4FF" />
@@ -774,6 +777,10 @@ export function Tail4({ className, view }: DragonPartProps) {
         <path fill={`url(#${skinId})`} d="M352 474 C394 490 430 474 438 438 C440 426 440 416 436 406 L452 402 C458 416 458 434 454 448 C442 494 392 510 346 498 Z" />
         <path fill="#FF7FC4" d="M444 410 C428 400 414 384 418 368 C422 356 436 354 444 364 C452 352 468 354 470 368 C474 384 460 400 444 410 Z" />
         <path fill="#FFD1EA" stroke="none" d="M426 372 C428 364 434 362 438 366 C434 370 430 374 426 372 Z" />
+        <path className="dragon-heart dragon-heart-1" fill="#FF7FC4" strokeWidth="2.5" d="M404 353 C402 351 393 345 394 340 C395 334 403 334 404 339.6 C405 334 413 334 414 340 C415 345 406 351 404 353 Z" />
+        <path className="dragon-heart dragon-heart-2" fill="#FF9AD5" strokeWidth="2.5" d="M484 341.2 C482.4 339.6 475.2 334.8 476 330.8 C476.8 326 483.2 326 484 330.5 C484.8 326 491.2 326 492 330.8 C492.8 334.8 485.6 339.6 484 341.2 Z" />
+        <path className="dragon-heart dragon-heart-3" fill="#FF5FB0" strokeWidth="2.5" d="M496 393.9 C494.7 392.6 488.9 388.6 489.5 385.4 C490.1 381.5 495.4 381.5 496 385.1 C496.6 381.5 501.9 381.5 502.5 385.4 C503.1 388.6 497.3 392.6 496 393.9 Z" />
+        <path className="dragon-heart dragon-heart-4" fill="#FFB3DE" strokeWidth="2.5" d="M452 320.9 C450.9 319.9 445.9 316.6 446.5 313.8 C447.1 310.5 451.4 310.5 452 313.6 C452.6 310.5 456.9 310.5 457.5 313.8 C458.1 316.6 453.1 319.9 452 320.9 Z" />
       </g>
     </Part>
   );
@@ -806,20 +813,20 @@ export function Wings4({ className, view }: DragonPartProps) {
 
 export function Body4({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
-  const skinId = `body-skin-${k}`;
   const hornId = `body-horn-${k}`;
+  const skinId = `body-skin-${k}`;
   const bellyId = `body-belly-${k}`;
   return (
-    <Part box={view ?? '86 85.49 348 472.51'} className={className}>
+    <Part box={view ?? '72 85.49 376 478.51'} className={className}>
       <defs>
+        <linearGradient id={hornId} x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stopColor="#FFF6E4" />
+          <stop offset="1" stopColor="#FFD9A6" />
+        </linearGradient>
         <linearGradient id={skinId} x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="0" stopColor="#D2B4FF" />
           <stop offset="0.55" stopColor="#A77BFF" />
           <stop offset="1" stopColor="#7C4FE0" />
-        </linearGradient>
-        <linearGradient id={hornId} x1="0.2" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#FFF6E4" />
-          <stop offset="1" stopColor="#FFD9A6" />
         </linearGradient>
         <linearGradient id={bellyId} x1="0.3" y1="0" x2="0.7" y2="1">
           <stop offset="0" stopColor="#FFF2FB" />
@@ -827,22 +834,14 @@ export function Body4({ className, view }: DragonPartProps) {
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-        <ellipse fill={`url(#${skinId})`} cx="208" cy="530" rx="42" ry="26" />
-        <ellipse fill={`url(#${skinId})`} cx="312" cy="530" rx="42" ry="26" />
-        <circle fill="#FF9BB8" stroke="none" cx="190" cy="542" r="6" />
-        <circle fill="#FF9BB8" stroke="none" cx="208" cy="547" r="6" />
-        <circle fill="#FF9BB8" stroke="none" cx="226" cy="542" r="6" />
-        <circle fill="#FF9BB8" stroke="none" cx="294" cy="542" r="6" />
-        <circle fill="#FF9BB8" stroke="none" cx="312" cy="547" r="6" />
-        <circle fill="#FF9BB8" stroke="none" cx="330" cy="542" r="6" />
         <path fill={`url(#${hornId})`} d="M188 156 C176 132 176 108 188 90 C204 106 214 128 216 148 Z" />
         <path fill={`url(#${hornId})`} d="M332 156 C344 132 344 108 332 90 C316 106 306 128 304 148 Z" />
         <path fill="#A77BFF" d="M252 128 C240 104 252 84 274 88 C262 96 260 108 270 120 Z" />
         <path fill={`url(#${skinId})`} d="M140 410 C114 418 102 440 112 456 C124 468 144 458 152 440 Z" />
         <path fill={`url(#${skinId})`} d="M380 410 C406 418 418 440 408 456 C396 468 376 458 368 440 Z" />
-        <path fill={`url(#${skinId})`} d="M260 120 C372 120 432 204 432 320 C432 448 362 530 260 530 C158 530 88 448 88 320 C88 204 148 120 260 120 Z" />
+        <path className="dragon-ghost" fill={`url(#${skinId})`} d="M260 120 C372 120 432 204 432 320 C432 410 438 470 446 528 Q408.8 590 371.6 534 Q334.4 590 297.2 534 Q260 590 222.8 534 Q185.6 590 148.4 534 Q111.2 590 74 528 C82 470 88 410 88 320 C88 204 148 120 260 120 Z" />
         <path fill="#F3EAFF" stroke="none" d="M138 214 C148 176 178 146 214 138 C228 136 230 150 214 156 C188 166 168 188 158 220 C152 232 136 228 138 214 Z" />
-        <path fill={`url(#${bellyId})`} d="M260 384 C318 384 352 418 352 456 C352 494 316 514 260 514 C204 514 168 494 168 456 C168 418 202 384 260 384 Z" />
+        <path fill={`url(#${bellyId})`} d="M260 372 C318 372 352 404 352 438 C352 474 316 494 260 494 C204 494 168 474 168 438 C168 404 202 372 260 372 Z" />
         <circle fill="#8E62EE" stroke="none" cx="356" cy="214" r="12" />
         <circle fill="#8E62EE" stroke="none" cx="380" cy="244" r="7" />
         <circle fill="#8E62EE" stroke="none" cx="146" cy="380" r="9" />
@@ -860,13 +859,15 @@ export function Eyes4({ className, view }: DragonPartProps) {
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <path fill="none" strokeWidth="4" d="M158 248 L144 238 M166 236 L156 222 M180 228 L176 212" />
         <circle fill="#FFFFFF" cx="202" cy="276" r="46" />
-        <circle fill="#12224A" stroke="none" cx="206" cy="282" r="31" />
+        <circle fill="#FF1F8E" stroke="none" cx="206" cy="282" r="31" />
+        <circle fill="#12224A" stroke="none" cx="206" cy="282" r="17.1" />
         <circle fill="#FFFFFF" stroke="none" cx="194" cy="268" r="11" />
         <circle fill="#FFFFFF" stroke="none" cx="218" cy="296" r="5" />
         <path fill="#FFFFFF" stroke="none" d="M222 260 L225 268 L233 271 L225 274 L222 282 L219 274 L211 271 L219 268 Z" />
         <path fill="none" strokeWidth="4" d="M362 248 L376 238 M354 236 L364 222 M340 228 L344 212" />
         <circle fill="#FFFFFF" cx="318" cy="276" r="46" />
-        <circle fill="#12224A" stroke="none" cx="314" cy="282" r="31" />
+        <circle fill="#FF1F8E" stroke="none" cx="314" cy="282" r="31" />
+        <circle fill="#12224A" stroke="none" cx="314" cy="282" r="17.1" />
         <circle fill="#FFFFFF" stroke="none" cx="302" cy="268" r="11" />
         <circle fill="#FFFFFF" stroke="none" cx="326" cy="296" r="5" />
         <path fill="#FFFFFF" stroke="none" d="M330 260 L333 268 L341 271 L333 274 L330 282 L327 274 L319 271 L327 268 Z" />
@@ -877,11 +878,10 @@ export function Eyes4({ className, view }: DragonPartProps) {
 
 export function Mouth4({ className, view }: DragonPartProps) {
   return (
-    <Part box={view ?? '224 342 72 46'} className={className}>
+    <Part box={view ?? '224 342 72 99.5'} className={className}>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <path fill="#A8355A" d="M226 344 C244 358 276 358 294 344 C292 366 278 376 260 376 C242 376 228 366 226 344 Z" />
-        <path fill="#FF8FAE" d="M246 368 C244 392 276 392 274 368 C266 374 254 374 246 368 Z" />
-        <path fill="none" strokeWidth="2.5" d="M260 372 L260 384" />
+        <path className="dragon-tongue" fill="#E8457A" strokeWidth="3" d="M252 366 C252 384 254 398 256 410 L240 440 L260 420 L280 440 L264 410 C266 398 268 384 268 366 Z" />
       </g>
     </Part>
   );
