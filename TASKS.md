@@ -1494,3 +1494,39 @@ cor!"
       - 3D: `Dragon3D.tsx` não pinta mais o material "Skin" do rabo.
 - Conferido em `dragon-review.html?row=tail` e `dragon-review-3d.html?row=tail` (os quatro
   rabos nos quatro corpos). `npm run build` passa.
+
+## Dragão: fogo e bolhas maiores e mais "de verdade" — 11 de outubro de 2026
+
+Pedido: "melhorar as bubbles e o fire, deixar mais real, mais 3d, melhorar também no 2d, tá
+pequeno".
+
+- [x] **2D (desenhos `2-Blaze.svg` e `3-Splash.svg`):**
+      - Fogo: um sopro de cerca de 225 × 150 (antes 86 × 54), em quatro camadas (laranja-
+        vermelho por fora, laranja, amarelo e um miolo creme), com três faíscas. Gradiente
+        novo `blast`; o rabo de fogo continua com o `flame` dele.
+      - Bolhas: seis (antes duas), de raio 12 a 38, translúcidas (gradiente `bubble`,
+        `fill-opacity`), contorno azul, brilho branco em arco, um pontinho de luz e um
+        toque de arco-íris rosa.
+      - O fogo e as bolhas têm `class` no desenho (`dragon-flame-*`, `dragon-ember-*`,
+        `dragon-bubble-*`); `gen.cjs` passa a levar `class` e `fill-opacity` para o JSX.
+      - Animação no CSS (só na folha, não nos cartões): as camadas do fogo tremulam cada uma
+        no seu ritmo, faíscas e bolhas sobem e descem fora de compasso. Usa `scale` e
+        `translate`, nunca `transform`.
+      - A boca continua centralizada pela boca em si (o "miolo"), então o fogo e as bolhas
+        maiores não a tiram do lugar.
+- [x] **3D (`model3d.mjs` e `Dragon3D.tsx`):**
+      - Fogo: grupo `Fire` preso no canto da boca; cada camada é um volume que sai da camada
+        de trás, então o miolo amarelo aparece de frente. O fogo brilha com luz própria
+        (emissivo; só com a luz de fora parecia papel amassado), vira um pouco na nossa
+        direção (−0,4 rad), começa um pouco dentro da boca (na ponta fina ficava um vão),
+        tremula camada por camada, e as faíscas sobem e descem.
+      - Bolhas: cada uma é uma esfera de verdade (`Bubble1`…`Bubble6`), transparente
+        (material `Bubble`, opacidade 0,38, azul claro — no tom do meio eram bolas brancas
+        no papel branco), com o brilho e o arco-íris por cima. Balançam e se deformam de leve
+        como sabão.
+      - Os grupos que se mexem ficam no ponto de giro deles (`pivot` no gerador).
+      - Um tropeço: o código procurava o fogo e as bolhas só no primeiro nível do arquivo, e
+        eles estão um nível abaixo; sem isso, ficavam achatados na cara e parados.
+- Conferido: quatro bocas nos quatro corpos em 2D e 3D; no jogo, vermelho com fogo e azul com
+  bolhas, de frente e de três quartos; glTF 0 erros e 0 avisos; `npm run build` passa.
+- Tamanho: `mouth-fire.glb` 1,3 MB (71 mil triângulos), `mouth-teeth.glb` 0,36 MB.

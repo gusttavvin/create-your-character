@@ -13,6 +13,11 @@
       <stop offset="0" stop-color="#B6F7EF"/>
       <stop offset="1" stop-color="#45CFE0"/>
     </linearGradient>
+    <linearGradient id="bubble" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.5" stop-color="#DDF6FF"/>
+      <stop offset="1" stop-color="#A6E2FF"/>
+    </linearGradient>
   </defs>
   <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
     <!-- tail, ending in a fish's fin -->
@@ -67,9 +72,26 @@
     <!-- a little round mouth blowing bubbles -->
     <ellipse fill="#A8355A" cx="260" cy="280" rx="15" ry="17"/>
     <ellipse fill="#FF8FAE" stroke="none" cx="260" cy="288" rx="9" ry="6"/>
-    <circle fill="#E8F8FF" stroke-width="3" cx="300" cy="288" r="10"/>
-    <circle fill="#E8F8FF" stroke-width="3" cx="320" cy="272" r="6"/>
-    <circle fill="#FFFFFF" stroke="none" cx="297" cy="284" r="3"/>
+    <circle class="dragon-bubble dragon-bubble-1" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="3" cx="318" cy="291" r="22.8"/>
+    <path class="dragon-bubble dragon-bubble-1" fill="#FFFFFF" stroke="none" d="M303.1 287 Q304.9 277.9 314 276.1 Q310 283 303.1 287 Z"/>
+    <circle class="dragon-bubble dragon-bubble-1" fill="#FFFFFF" stroke="none" cx="321.6" cy="277.4" r="2.5"/>
+    <path class="dragon-bubble dragon-bubble-1" fill="none" stroke="#FF9AD5" stroke-width="2.5" d="M333 296.4 Q333.8 306.8 323.4 306"/>
+    <circle class="dragon-bubble dragon-bubble-2" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="3" cx="388" cy="263" r="38.5"/>
+    <path class="dragon-bubble dragon-bubble-2" fill="#FFFFFF" stroke="none" d="M362.6 256.1 Q365.6 240.6 381.1 237.6 Q374.4 249.4 362.6 256.1 Z"/>
+    <circle class="dragon-bubble dragon-bubble-2" fill="#FFFFFF" stroke="none" cx="394.1" cy="239.9" r="4.3"/>
+    <path class="dragon-bubble dragon-bubble-2" fill="none" stroke="#FF9AD5" stroke-width="2.5" d="M413.4 272.3 Q414.6 289.6 397.3 288.4"/>
+    <circle class="dragon-bubble dragon-bubble-3" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="3" cx="465" cy="214" r="28"/>
+    <path class="dragon-bubble dragon-bubble-3" fill="#FFFFFF" stroke="none" d="M446.6 209.1 Q448.8 197.8 460.1 195.6 Q455 204 446.6 209.1 Z"/>
+    <circle class="dragon-bubble dragon-bubble-3" fill="#FFFFFF" stroke="none" cx="469.5" cy="197.3" r="3.1"/>
+    <path class="dragon-bubble dragon-bubble-3" fill="none" stroke="#FF9AD5" stroke-width="2.5" d="M483.4 220.6 Q484.4 233.4 471.6 232.4"/>
+    <circle class="dragon-bubble dragon-bubble-4" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="3" cx="514" cy="158" r="17.5"/>
+    <path class="dragon-bubble dragon-bubble-4" fill="#FFFFFF" stroke="none" d="M502.5 154.9 Q503.9 147.9 510.9 146.5 Q507.9 151.9 502.5 154.9 Z"/>
+    <circle class="dragon-bubble dragon-bubble-4" fill="#FFFFFF" stroke="none" cx="516.8" cy="147.5" r="1.9"/>
+    <path class="dragon-bubble dragon-bubble-4" fill="none" stroke="#FF9AD5" stroke-width="2.5" d="M525.5 162.3 Q526.1 170.1 518.3 169.5"/>
+    <circle class="dragon-bubble dragon-bubble-5" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="2.5" cx="444" cy="147.5" r="12.3"/>
+    <path class="dragon-bubble dragon-bubble-5" fill="#FFFFFF" stroke="none" d="M436 145.4 Q436.9 140.4 441.9 139.5 Q439.6 143.1 436 145.4 Z"/>
+    <circle class="dragon-bubble dragon-bubble-6" fill="url(#bubble)" fill-opacity="0.8" stroke="#3E9AD6" stroke-width="2.5" cx="535" cy="245.5" r="12.3"/>
+    <path class="dragon-bubble dragon-bubble-6" fill="#FFFFFF" stroke="none" d="M527 243.4 Q527.9 238.4 532.9 237.5 Q530.6 241.1 527 243.4 Z"/>
 
     <!-- cheeks -->
     <ellipse fill="#FF9BB8" stroke="none" cx="168" cy="262" rx="18" ry="11"/>

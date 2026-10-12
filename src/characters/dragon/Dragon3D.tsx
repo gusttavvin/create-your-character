@@ -1,7 +1,7 @@
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Box3, BufferGeometry, Group, Material, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { Box3, BufferGeometry, Group, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type { ColorMap, PartMap } from '../types';
 import { dragonColors } from './config';
 import { dragonPlacement, type DragonMove } from './Dragon2D';
@@ -175,18 +175,60 @@ function Mouth({ id, body, move }: { id: string; body: string; move: DragonMove 
     const cx = (core[0] + core[2] / 2) * move.k + move.tx;
     const cy = (core[1] + core[3] / 2) * move.k + move.ty;
     const at = Math.max(0, surface(cx, cy));
+    const out = ((at + 4) * U) / move.k;
+    // the fire and each bubble move on their own, standing out from the mouth as one piece
+    const movers: Object3D[] = [];
     made.root.traverse((o) => {
-      if (!(o instanceof Mesh)) return;
-      if (o.name.endsWith('_solid')) o.position.z += ((at + 4) * U) / move.k;
+      if (o.name === 'Fire' || /^Bubble\d+$/.test(o.name)) movers.push(o);
+    });
+    for (const g of movers) g.position.z += out;
+    // the fire's root comes to a thin point in 3D, which left a gap at the corner of the mouth:
+    // it starts a little inside the mouth instead
+    const fire = movers.find((g) => g.name === 'Fire');
+    if (fire) fire.position.x -= 10 * U;
+    made.root.traverse((o) => {
+      if (!(o instanceof Mesh) || movers.includes(o.parent!)) return;
+      if (o.name.endsWith('_solid')) o.position.z += out;
       // in front of the snout and cheeks painted on the face, which sit a little proud of it
       else layOn(o, move, surface, 4);
+    });
+    for (const g of movers) g.userData.rest = g.position.clone();
+    // fire gives off its own light: lit only from outside, it looked like crumpled paper
+    made.root.getObjectByName('Fire')?.traverse((o) => {
+      if (o instanceof Mesh && o.material instanceof MeshStandardMaterial) {
+        o.material.emissive.copy(o.material.color);
+        o.material.emissiveIntensity = 0.75;
+      }
     });
     const outer = new Group();
     outer.add(made.root);
     place(outer, move);
-    return { ...made, outer };
+    return { ...made, outer, movers };
   }, [scene, body, id, move]);
   useDispose(made);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    made.movers.forEach((g, i) => {
+      const rest = g.userData.rest as Vector3;
+      if (g.name === 'Fire') {
+        // turned out towards us from the corner of the mouth, so it is a blast, not a sticker
+        g.rotation.y = -0.4 + Math.sin(t * 2.6) * 0.06;
+        g.children.forEach((m, n) => {
+          if (m.name.endsWith('_ember')) {
+            m.position.y = Math.sin(t * 4 + n) * 0.012;
+            return;
+          }
+          // each layer flickers at its own pace, the hot middle fastest
+          m.scale.set(1 + Math.sin(t * (9 + n * 3) + n) * 0.07, 1 + Math.sin(t * (11 + n * 3) + n * 2) * 0.09, 1);
+        });
+        return;
+      }
+      // bubbles bob up and down out of step, and wobble like soap
+      const w = Math.sin(t * 3 + i * 1.7) * 0.05;
+      g.position.set(rest.x, rest.y + Math.sin(t * 1.4 + i * 1.3) * 0.02, rest.z);
+      g.scale.set(1 + w, 1 - w, 1 + w);
+    });
+  });
   return <primitive object={made.outer} dispose={null} />;
 }
 

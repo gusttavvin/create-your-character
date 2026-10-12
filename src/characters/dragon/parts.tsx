@@ -154,9 +154,9 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   "mouth:fire": {
     "box": [
       226,
-      250,
-      150,
-      63.45
+      202.4,
+      305.75,
+      152.2
     ],
     "core": [
       226,
@@ -214,9 +214,9 @@ export const DRAGON_PIECES: Record<string, DragonPiece> = {
   "mouth:teeth": {
     "box": [
       243,
-      261,
-      84.5,
-      38.5
+      133.95,
+      305.55,
+      181.35
     ],
     "core": [
       243,
@@ -567,22 +567,27 @@ export function Eyes2({ className, view }: DragonPartProps) {
 
 export function Mouth2({ className, view }: DragonPartProps) {
   const k = useId().replace(/:/g, '');
-  const flameId = `mouth-flame-${k}`;
+  const blastId = `mouth-blast-${k}`;
   return (
-    <Part box={view ?? '226 250 150 63.45'} className={className}>
+    <Part box={view ?? '226 202.4 305.75 152.2'} className={className}>
       <defs>
-        <linearGradient id={flameId} x1="0" y1="1" x2="0.4" y2="0">
-          <stop offset="0" stopColor="#FF5A1F" />
-          <stop offset="0.6" stopColor="#FFB02E" />
-          <stop offset="1" stopColor="#FFE45C" />
+        <linearGradient id={blastId} x1="0" y1="0.5" x2="1" y2="0.5">
+          <stop offset="0" stopColor="#FFB02E" />
+          <stop offset="0.55" stopColor="#FF6A1F" />
+          <stop offset="1" stopColor="#E8341C" />
         </linearGradient>
       </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <path fill="#A8355A" d="M228 252 C244 262 276 262 292 252 C290 272 278 282 260 282 C242 282 230 272 228 252 Z" />
         <path fill="#FFFFFF" strokeWidth="3" d="M238 256 L244 268 L250 258 Z" />
         <path fill="#FFFFFF" strokeWidth="3" d="M270 258 L276 268 L282 256 Z" />
-        <path fill={`url(#${flameId})`} d="M288 270 C308 280 330 276 342 262 C340 274 346 280 356 276 C352 290 362 298 374 296 C360 312 334 316 314 306 C302 300 292 288 288 270 Z" />
-        <path fill="#FFE45C" stroke="none" d="M300 280 C314 286 326 284 334 276 C334 288 342 294 350 294 C338 304 320 304 308 296 Z" />
+        <path className="dragon-flame dragon-flame-1" fill={`url(#${blastId})`} d="M288 256.4 C306.2 243.4 327 238.2 345.2 243.4 C350.4 225.2 366 209.6 389.4 204.4 C381.6 222.6 384.2 238.2 394.6 246 C410.2 225.2 433.6 214.8 457 217.4 C441.4 233 441.4 248.6 449.2 259 C470 248.6 493.4 251.2 511.6 261.6 C493.4 272 485.6 285 490.8 300.6 C472.6 308.4 454.4 311 438.8 308.4 C449.2 324 449.2 339.6 438.8 352.6 C423.2 339.6 402.4 331.8 384.2 331.8 C368.6 344.8 347.8 350 327 342.2 C306.2 331.8 293.2 311 288 287.6 C285.4 277.2 285.4 266.8 288 256.4 Z" />
+        <path className="dragon-flame dragon-flame-2" fill="#FF8A2A" stroke="none" d="M295.8 261.6 C314 251.2 332.2 248.6 350.4 256.4 C360.8 240.8 376.4 233 392 230.4 C386.8 246 389.4 256.4 399.8 261.6 C418 246 438.8 240.8 457 243.4 C446.6 256.4 446.6 266.8 454.4 274.6 C472.6 272 485.6 274.6 496 279.8 C480.4 287.6 472.6 295.4 472.6 305.8 C457 308.4 441.4 305.8 428.4 300.6 C431 313.6 428.4 324 420.6 331.8 C407.6 321.4 392 316.2 376.4 318.8 C355.6 329.2 327 326.6 308.8 311 C298.4 300.6 293.2 282.4 295.8 261.6 Z" />
+        <path className="dragon-flame dragon-flame-3" fill="#FFD23F" stroke="none" d="M303.6 269.4 C321.8 261.6 342.6 261.6 358.2 269.4 C371.2 259 386.8 253.8 399.8 253.8 C397.2 264.2 399.8 272 407.6 277.2 C423.2 269.4 438.8 266.8 451.8 272 C441.4 279.8 441.4 287.6 446.6 292.8 C431 298 415.4 298 402.4 295.4 C402.4 303.2 397.2 311 389.4 316.2 C376.4 308.4 360.8 308.4 347.8 311 C329.6 313.6 314 303.2 306.2 290.2 C301 282.4 301 274.6 303.6 269.4 Z" />
+        <path className="dragon-flame dragon-flame-4" fill="#FFF6C9" stroke="none" d="M311.4 277.2 C327 272 345.2 272 360.8 279.8 C376.4 274.6 392 274.6 405 282.4 C392 290.2 371.2 292.8 355.6 292.8 C340 298 324.4 295.4 314 287.6 C311.4 285 310.1 281.1 311.4 277.2 Z" />
+        <circle className="dragon-ember dragon-ember-1" fill="#FFB02E" strokeWidth="2.5" cx="501.2" cy="222.6" r="7.8" />
+        <circle className="dragon-ember dragon-ember-2" fill="#FF7A2A" strokeWidth="2.5" cx="524.6" cy="308.4" r="5.9" />
+        <circle className="dragon-ember dragon-ember-3" fill="#FFD23F" strokeWidth="2.5" cx="472.6" cy="342.2" r="4.5" />
       </g>
     </Part>
   );
@@ -714,14 +719,40 @@ export function Eyes3({ className, colors = {}, view }: DragonPartProps) {
 }
 
 export function Mouth3({ className, view }: DragonPartProps) {
+  const k = useId().replace(/:/g, '');
+  const bubbleId = `mouth-bubble-${k}`;
   return (
-    <Part box={view ?? '243 261 84.5 38.5'} className={className}>
+    <Part box={view ?? '243 133.95 305.55 181.35'} className={className}>
+      <defs>
+        <linearGradient id={bubbleId} x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.5" stopColor="#DDF6FF" />
+          <stop offset="1" stopColor="#A6E2FF" />
+        </linearGradient>
+      </defs>
       <g stroke={INK} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
         <ellipse fill="#A8355A" cx="260" cy="280" rx="15" ry="17" />
         <ellipse fill="#FF8FAE" stroke="none" cx="260" cy="288" rx="9" ry="6" />
-        <circle fill="#E8F8FF" strokeWidth="3" cx="300" cy="288" r="10" />
-        <circle fill="#E8F8FF" strokeWidth="3" cx="320" cy="272" r="6" />
-        <circle fill="#FFFFFF" stroke="none" cx="297" cy="284" r="3" />
+        <circle className="dragon-bubble dragon-bubble-1" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="3" cx="318" cy="291" r="22.8" />
+        <path className="dragon-bubble dragon-bubble-1" fill="#FFFFFF" stroke="none" d="M303.1 287 Q304.9 277.9 314 276.1 Q310 283 303.1 287 Z" />
+        <circle className="dragon-bubble dragon-bubble-1" fill="#FFFFFF" stroke="none" cx="321.6" cy="277.4" r="2.5" />
+        <path className="dragon-bubble dragon-bubble-1" fill="none" stroke="#FF9AD5" strokeWidth="2.5" d="M333 296.4 Q333.8 306.8 323.4 306" />
+        <circle className="dragon-bubble dragon-bubble-2" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="3" cx="388" cy="263" r="38.5" />
+        <path className="dragon-bubble dragon-bubble-2" fill="#FFFFFF" stroke="none" d="M362.6 256.1 Q365.6 240.6 381.1 237.6 Q374.4 249.4 362.6 256.1 Z" />
+        <circle className="dragon-bubble dragon-bubble-2" fill="#FFFFFF" stroke="none" cx="394.1" cy="239.9" r="4.3" />
+        <path className="dragon-bubble dragon-bubble-2" fill="none" stroke="#FF9AD5" strokeWidth="2.5" d="M413.4 272.3 Q414.6 289.6 397.3 288.4" />
+        <circle className="dragon-bubble dragon-bubble-3" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="3" cx="465" cy="214" r="28" />
+        <path className="dragon-bubble dragon-bubble-3" fill="#FFFFFF" stroke="none" d="M446.6 209.1 Q448.8 197.8 460.1 195.6 Q455 204 446.6 209.1 Z" />
+        <circle className="dragon-bubble dragon-bubble-3" fill="#FFFFFF" stroke="none" cx="469.5" cy="197.3" r="3.1" />
+        <path className="dragon-bubble dragon-bubble-3" fill="none" stroke="#FF9AD5" strokeWidth="2.5" d="M483.4 220.6 Q484.4 233.4 471.6 232.4" />
+        <circle className="dragon-bubble dragon-bubble-4" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="3" cx="514" cy="158" r="17.5" />
+        <path className="dragon-bubble dragon-bubble-4" fill="#FFFFFF" stroke="none" d="M502.5 154.9 Q503.9 147.9 510.9 146.5 Q507.9 151.9 502.5 154.9 Z" />
+        <circle className="dragon-bubble dragon-bubble-4" fill="#FFFFFF" stroke="none" cx="516.8" cy="147.5" r="1.9" />
+        <path className="dragon-bubble dragon-bubble-4" fill="none" stroke="#FF9AD5" strokeWidth="2.5" d="M525.5 162.3 Q526.1 170.1 518.3 169.5" />
+        <circle className="dragon-bubble dragon-bubble-5" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="2.5" cx="444" cy="147.5" r="12.3" />
+        <path className="dragon-bubble dragon-bubble-5" fill="#FFFFFF" stroke="none" d="M436 145.4 Q436.9 140.4 441.9 139.5 Q439.6 143.1 436 145.4 Z" />
+        <circle className="dragon-bubble dragon-bubble-6" fill={`url(#${bubbleId})`} fillOpacity="0.8" stroke="#3E9AD6" strokeWidth="2.5" cx="535" cy="245.5" r="12.3" />
+        <path className="dragon-bubble dragon-bubble-6" fill="#FFFFFF" stroke="none" d="M527 243.4 Q527.9 238.4 532.9 237.5 Q530.6 241.1 527 243.4 Z" />
       </g>
     </Part>
   );

@@ -64,8 +64,8 @@
   },
   {
     "piece": "mouth-fire",
-    "bytes": 999152,
-    "triangles": 55382,
+    "bytes": 1291376,
+    "triangles": 70838,
     "errors": 0,
     "warnings": 0
   },
@@ -99,8 +99,8 @@
   },
   {
     "piece": "mouth-teeth",
-    "bytes": 169392,
-    "triangles": 6952,
+    "bytes": 358036,
+    "triangles": 13691,
     "errors": 0,
     "warnings": 0
   },

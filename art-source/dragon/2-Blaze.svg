@@ -22,6 +22,11 @@
       <stop offset="0.6" stop-color="#FFB02E"/>
       <stop offset="1" stop-color="#FFE45C"/>
     </linearGradient>
+    <linearGradient id="blast" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0" stop-color="#FFB02E"/>
+      <stop offset="0.55" stop-color="#FF6A1F"/>
+      <stop offset="1" stop-color="#E8341C"/>
+    </linearGradient>
   </defs>
   <g stroke="#0B1B3B" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
     <!-- tail, with a flame for a tip -->
@@ -81,12 +86,17 @@
     <path fill="#9E2324" d="M184 142 C204 134 228 140 248 156 C230 152 206 150 186 154 Z"/>
     <path fill="#9E2324" d="M336 142 C316 134 292 140 272 156 C290 152 314 150 334 154 Z"/>
 
-    <!-- mouth: open wide, a puff of fire coming out -->
+    <!-- mouth: open wide, a big puff of fire coming out -->
     <path fill="#A8355A" d="M228 252 C244 262 276 262 292 252 C290 272 278 282 260 282 C242 282 230 272 228 252 Z"/>
     <path fill="#FFFFFF" stroke-width="3" d="M238 256 L244 268 L250 258 Z"/>
     <path fill="#FFFFFF" stroke-width="3" d="M270 258 L276 268 L282 256 Z"/>
-    <path fill="url(#flame)" d="M288 270 C308 280 330 276 342 262 C340 274 346 280 356 276 C352 290 362 298 374 296 C360 312 334 316 314 306 C302 300 292 288 288 270 Z"/>
-    <path fill="#FFE45C" stroke="none" d="M300 280 C314 286 326 284 334 276 C334 288 342 294 350 294 C338 304 320 304 308 296 Z"/>
+    <path class="dragon-flame dragon-flame-1" fill="url(#blast)" d="M288 256.4 C306.2 243.4 327 238.2 345.2 243.4 C350.4 225.2 366 209.6 389.4 204.4 C381.6 222.6 384.2 238.2 394.6 246 C410.2 225.2 433.6 214.8 457 217.4 C441.4 233 441.4 248.6 449.2 259 C470 248.6 493.4 251.2 511.6 261.6 C493.4 272 485.6 285 490.8 300.6 C472.6 308.4 454.4 311 438.8 308.4 C449.2 324 449.2 339.6 438.8 352.6 C423.2 339.6 402.4 331.8 384.2 331.8 C368.6 344.8 347.8 350 327 342.2 C306.2 331.8 293.2 311 288 287.6 C285.4 277.2 285.4 266.8 288 256.4 Z"/>
+    <path class="dragon-flame dragon-flame-2" fill="#FF8A2A" stroke="none" d="M295.8 261.6 C314 251.2 332.2 248.6 350.4 256.4 C360.8 240.8 376.4 233 392 230.4 C386.8 246 389.4 256.4 399.8 261.6 C418 246 438.8 240.8 457 243.4 C446.6 256.4 446.6 266.8 454.4 274.6 C472.6 272 485.6 274.6 496 279.8 C480.4 287.6 472.6 295.4 472.6 305.8 C457 308.4 441.4 305.8 428.4 300.6 C431 313.6 428.4 324 420.6 331.8 C407.6 321.4 392 316.2 376.4 318.8 C355.6 329.2 327 326.6 308.8 311 C298.4 300.6 293.2 282.4 295.8 261.6 Z"/>
+    <path class="dragon-flame dragon-flame-3" fill="#FFD23F" stroke="none" d="M303.6 269.4 C321.8 261.6 342.6 261.6 358.2 269.4 C371.2 259 386.8 253.8 399.8 253.8 C397.2 264.2 399.8 272 407.6 277.2 C423.2 269.4 438.8 266.8 451.8 272 C441.4 279.8 441.4 287.6 446.6 292.8 C431 298 415.4 298 402.4 295.4 C402.4 303.2 397.2 311 389.4 316.2 C376.4 308.4 360.8 308.4 347.8 311 C329.6 313.6 314 303.2 306.2 290.2 C301 282.4 301 274.6 303.6 269.4 Z"/>
+    <path class="dragon-flame dragon-flame-4" fill="#FFF6C9" stroke="none" d="M311.4 277.2 C327 272 345.2 272 360.8 279.8 C376.4 274.6 392 274.6 405 282.4 C392 290.2 371.2 292.8 355.6 292.8 C340 298 324.4 295.4 314 287.6 C311.4 285 310.1 281.1 311.4 277.2 Z"/>
+    <circle class="dragon-ember dragon-ember-1" fill="#FFB02E" stroke-width="2.5" cx="501.2" cy="222.6" r="7.8"/>
+    <circle class="dragon-ember dragon-ember-2" fill="#FF7A2A" stroke-width="2.5" cx="524.6" cy="308.4" r="5.9"/>
+    <circle class="dragon-ember dragon-ember-3" fill="#FFD23F" stroke-width="2.5" cx="472.6" cy="342.2" r="4.5"/>
 
     <!-- cheeks -->
     <ellipse fill="#FF9BB8" stroke="none" cx="182" cy="232" rx="16" ry="10"/>

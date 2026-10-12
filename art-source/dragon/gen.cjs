@@ -234,6 +234,9 @@ const JSX_NAME = {
   'stroke-linejoin': 'strokeLinejoin',
   'stroke-linecap': 'strokeLinecap',
   'stop-color': 'stopColor',
+  'fill-opacity': 'fillOpacity',
+  // the fire and the bubbles are named so the stylesheet can make them flicker and float
+  class: 'className',
 };
 
 /**

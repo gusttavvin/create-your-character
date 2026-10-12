@@ -1085,6 +1085,87 @@ body.is-dragging {
   animation: wingbeat-right 1.6s ease-in-out infinite;
 }
 
+/* the dragon's fire flickers out from the mouth, each layer at its own pace */
+@keyframes flame-flicker {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  35% {
+    scale: 1.08 0.93;
+  }
+  70% {
+    scale: 0.95 1.07;
+  }
+}
+
+.char2d.is-animated .dragon-flame {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: flame-flicker 0.7s ease-in-out infinite;
+}
+
+.char2d.is-animated .dragon-flame-2 {
+  animation-duration: 0.6s;
+  animation-delay: -0.2s;
+}
+
+.char2d.is-animated .dragon-flame-3 {
+  animation-duration: 0.5s;
+  animation-delay: -0.35s;
+}
+
+.char2d.is-animated .dragon-flame-4 {
+  animation-duration: 0.45s;
+}
+
+/* sparks and bubbles drift up and down, each one out of step with the next */
+@keyframes float-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 2px -7px;
+  }
+}
+
+.char2d.is-animated .dragon-ember {
+  animation: float-bob 0.9s ease-in-out infinite;
+}
+
+.char2d.is-animated .dragon-ember-2 {
+  animation-delay: -0.3s;
+}
+
+.char2d.is-animated .dragon-ember-3 {
+  animation-delay: -0.6s;
+}
+
+.char2d.is-animated .dragon-bubble {
+  animation: float-bob 2.4s ease-in-out infinite;
+}
+
+.char2d.is-animated .dragon-bubble-2 {
+  animation-delay: -0.5s;
+}
+
+.char2d.is-animated .dragon-bubble-3 {
+  animation-delay: -1s;
+}
+
+.char2d.is-animated .dragon-bubble-4 {
+  animation-delay: -1.5s;
+}
+
+.char2d.is-animated .dragon-bubble-5 {
+  animation-delay: -1.9s;
+}
+
+.char2d.is-animated .dragon-bubble-6 {
+  animation-delay: -0.8s;
+}
+
 .char2d.is-animated .dress-sway {
   animation: sway 3.6s ease-in-out infinite;
 }

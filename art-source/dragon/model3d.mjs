@@ -124,6 +124,10 @@ async function read(file) {
       stroke: a.stroke === 'none' ? null : (a.stroke ?? INK),
       sw: +(a['stroke-width'] ?? sw),
       r: +(a.r ?? 0),
+      cx: +(a.cx ?? 0),
+      cy: +(a.cy ?? 0),
+      // the fire's layers and sparks, and each bubble with its shine, are named in the drawing
+      cls: a.class ?? '',
       dx: 0,
       dy: 0,
     });
@@ -136,14 +140,19 @@ const materials = new Map();
 /** A painted colour; skin is named so the game can repaint a tail or an eyelid to its body. */
 function material(fill, gradients) {
   const grad = /^url\(#(.+)\)$/.exec(fill ?? '');
-  const colour = grad ? gradients[grad[1]][1] ?? gradients[grad[1]][0] : fill;
-  const name = grad?.[1] === 'skin' ? 'Skin' : `Paint_${colour.replace('#', '')}`;
+  // a bubble takes the blue edge of its gradient: in its paler middle colour it was a white
+  // ball on the white paper
+  const colour = grad?.[1] === 'bubble' ? gradients.bubble.at(-1) : grad ? gradients[grad[1]][1] ?? gradients[grad[1]][0] : fill;
+  const name = grad?.[1] === 'skin' ? 'Skin' : grad?.[1] === 'bubble' ? 'Bubble' : `Paint_${colour.replace('#', '')}`;
   const key = `${name}|${colour}`;
   if (!materials.has(key)) {
+    const bubble = name === 'Bubble';
     const m = new T.MeshStandardMaterial({
       color: colour,
-      roughness: colour.toLowerCase() === '#ffffff' ? 0.28 : 0.58,
+      roughness: bubble ? 0.05 : colour.toLowerCase() === '#ffffff' ? 0.28 : 0.58,
       metalness: 0,
+      // a bubble is soap: the face shows through it
+      ...(bubble ? { transparent: true, opacity: 0.38 } : {}),
     });
     m.name = name;
     materials.set(key, m);
@@ -469,6 +478,64 @@ function build(row, els, gradients) {
   };
   els.forEach((p, i) => {
     const name = `${row}_${i}`;
+    // a bubble is a whole ball of soap, standing out from the mouth; its shine and its touch of
+    // rainbow lie on the front of it. Each bubble is a group of its own, so it can bob.
+    if (row === 'mouth' && /dragon-bubble/.test(p.cls)) {
+      const n = /dragon-bubble-(\d+)/.exec(p.cls)[1];
+      let g = groups[`Bubble${n}`];
+      if (!g) {
+        g = groups[`Bubble${n}`] = new T.Group();
+        g.name = `Bubble${n}`;
+        root.add(g);
+        // standing out by most of its size, so it floats in front of the face
+        const z = p.r * 0.9;
+        g.userData.pivot = [p.cx, p.cy, z];
+        const ball = new T.SphereGeometry(p.r, 32, 24);
+        ball.translate(p.cx, -p.cy, z);
+        add(ball, p, `${name}_bubble`, g);
+        g.userData.front = (x, y) => {
+          const f = p.r * p.r - (x - p.cx) ** 2 - (y - p.cy) ** 2;
+          return f >= 0 ? z + Math.sqrt(f) : -Infinity;
+        };
+        return;
+      }
+      if (p.fill) add(decal(p, g.userData.front, 0.6), p, `${name}_shine`, g);
+      else add(line(p, g.userData.front, p.sw * 0.4), p, `${name}_sheen`, g);
+      return;
+    }
+    // the fire comes out in layers, each one standing out of the one behind it, so the hot
+    // yellow middle shows from the front; sparks are little balls. All of it is one group
+    // hinged at the corner of the mouth, so the game can turn it out towards us and flicker it.
+    if (row === 'mouth' && /dragon-(flame|ember)/.test(p.cls)) {
+      let g = groups.Fire;
+      if (!g) {
+        g = groups.Fire = new T.Group();
+        g.name = 'Fire';
+        const { box } = outline(p);
+        g.userData.pivot = [box.min.x, (box.min.y + box.max.y) / 2, 0];
+        g.userData.layers = [];
+        root.add(g);
+      }
+      if (/dragon-ember/.test(p.cls)) {
+        const b = new T.SphereGeometry(p.r, 16, 12);
+        b.translate(p.cx, -p.cy, 0);
+        add(b, p, `${name}_ember`, g);
+        return;
+      }
+      const layers = g.userData.layers;
+      const solid = roundedSolid(p, layers.length ? 0.5 : 0.75, true);
+      const behind = layers.at(-1);
+      if (behind) {
+        const c = solid.box.getCenter(new T.Vector2());
+        const lift = Math.max(0, behind.front(c.x, c.y) - solid.front(c.x, c.y) * 0.4);
+        solid.geo.translate(0, 0, lift);
+        const own = solid.front;
+        solid.front = (x, y) => own(x, y) + lift;
+      }
+      layers.push(solid);
+      add(solid.geo, p, `${name}_flame`, g);
+      return;
+    }
     // the mouth is drawn flat: only what sticks out of the face is solid
     if (row === 'mouth') {
       const first = i === 0;
@@ -530,6 +597,16 @@ function toMetres(root) {
       o.geometry.translate(-260, 620, 0);
       o.geometry.scale(UNIT, UNIT, UNIT);
     }
+  });
+  // a group that moves on its own (a bubble, the fire) stands at its pivot, with its meshes
+  // drawn about it, so turning or scaling it happens about that point
+  root.traverse((o) => {
+    const p = o.userData.pivot;
+    if (!p) return;
+    const at = new T.Vector3((p[0] - 260) * UNIT, (620 - p[1]) * UNIT, p[2] * UNIT);
+    for (const c of o.children) if (c.isMesh) c.geometry.translate(-at.x, -at.y, -at.z);
+    o.position.copy(at);
+    o.userData = {};
   });
 }
 
