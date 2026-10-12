@@ -1598,3 +1598,87 @@ de cobra se mexendo e as asas do verde mais baixas.
 - Conferido: olhos e rabos nos quatro corpos em 2D; vermelho de perto em 2D; os quatro
   dragões em 3D, de frente e de três quartos; verde com Brave, Silly e Heart de perto em 3D;
   glTF 0 erros e 0 avisos; `npm run build` passa.
+
+## Princesa: as quatro princesas da Clara, recortadas em peças (2D) — 12 de outubro de 2026
+
+Pedido: refazer a princesa no padrão do monstro e do dragão. Duas tentativas desenhadas à
+mão (quatro princesas "Snow, Sunny, Coral, Luna", depois traçadas de uma referência) ficaram
+simples e feias para a Clara ("está assustador"). Ela mandou quatro imagens de princesa e
+pediu: "faça exatamente igual, sem tentar facilitar". Escolhas dela:
+
+- **Fileiras:** vestido, cabelo, olhos, boca e habilidade. A coroa não é escolhida: vem com o
+  cabelo. A cor da pele é escolhida para qualquer combinação.
+- **Vestidos:** o verde e o rosa como nas imagens; o azul vira **cauda de sereia**; o roxo
+  fica **curto, até os joelhos**.
+- **Olhos:** mudam o jeito de olhar e a cor, e um é idêntico ao das imagens.
+- **Bocas:** sorrisos variados.
+- **Habilidades:** falar com animais, neve, espaço e flores (a 4ª ela escolheu: flores).
+
+Como foi feito:
+
+- [x] **As imagens dela** ficam em `art-source/princess/reference/` (blue, green, pink,
+      purple; 1024 × 1536).
+- [x] **Recorte (`art-source/princess/cut.cjs`):** não redesenha nada, corta as imagens.
+      Precisa da biblioteca de imagens sharp, fora do site:
+      `npm i --no-save sharp@0.33.5`.
+      - **Alinhamento:** cada imagem é alinhada com a rosa. Pelo rosto, para o cabelo:
+        `align.json`, calculado por busca de escala e deslocamento que casam os contornos
+        de olhos, nariz e boca. Pelo decote e pela largura das mangas, para o vestido:
+        pontos medidos à mão. As proporções do corpo variam entre as imagens (no verde, as
+        mangas são menores e mais altas), por isso **cada vestido leva os braços e as mãos da
+        sua própria imagem**; só a cabeça vem da rosa.
+      - **Separação:** cada pixel é cabelo, vestido, rosto, olhos ou boca pela cor e pelo
+        lugar. A cor do cabelo é definida por imagem; as caixas dos olhos e da boca nunca são
+        cabelo; perto do corpo só há cabelo onde a imagem tem trança.
+      - **Contorno:** o contorno escuro vai para todas as peças que ele encosta, então cada
+        peça leva o contorno inteiro. Só é contorno o escuro marrom ou cinza: verde, azul ou
+        roxo escuros são sombras do vestido.
+      - **Fundo:** é o que tem a cor do fundo e encosta na borda, mais as manchas grandes de
+        preto puro presas entre cabelo e pescoço.
+      - **Partes escondidas, preenchidas:** o rosto embaixo do cabelo, dos olhos e da boca
+        (pele lisa); a sobrancelha esquerda, coberta por uma mecha na imagem rosa (espelho
+        da direita); o lado direito do vestido verde, que a trança cobria, é o espelho do
+        esquerdo inteiro (só tapar o buraco deixava os contornos das florzinhas e um degrau).
+      - **Pescoço e colo vêm sempre da cabeça,** que fica embaixo do vestido; o vestido só
+        traz os braços. Com pele de duas imagens diferentes aparecia uma emenda no colo.
+      - **Linha do queixo:** o marrom dela é da cor de alguns cabelos, então era chamado de
+        cabelo e sumia do rosto (o queixo ficava "arrepiado") e aparecia solto no cabelo de
+        outra imagem. Agora o escuro colado na pele, na parte de baixo do rosto
+        (`jawLine`), é sempre do rosto e nunca do cabelo; e o rosto não é preenchido abaixo
+        dele.
+      - **Cabelo loiro:** as linhas cor de mel entre as mechas não tinham dono e viravam
+        buracos brancos; agora são do cabelo. Nas outras imagens só o redor dos olhos (e
+        não a caixa inteira) fica fora do cabelo, senão uma mecha ao lado do olho era cortada.
+      - **Cabelo em duas camadas:** em volta do rosto, na frente da cabeça; nas costas, atrás
+        do vestido e dos braços. A trança fica na frente. As duas se sobrepõem 20 pixels onde
+        se encontram, senão aparecia uma linha fina atravessando o cabelo.
+      - **Sereia:** fica a primeira camada de cortinas azul-escuras com o dourado, o corpete,
+        as mangas e os braços; embaixo, uma cauda desenhada (escamas, cinto dourado,
+        nadadeira).
+      - **Curto:** a saia roxa é cortada numa barra ondulada com dourado e uma rendinha; por
+        baixo, pernas e sapatilhas desenhadas.
+      - **Olhos:** 1 Brown, o da imagem; 2 Blue, íris azul com brilhos de estrela; 3 Green,
+        íris verde e piscadinha; 4 Purple, íris roxa com brilhos de coração.
+      - **Bocas:** 1 Smile, a da imagem; desenhadas: 2 Laugh, 3 Wow, 4 Silly.
+      - **Habilidades desenhadas no estilo das imagens:** passarinho, coelhinho e borboleta;
+        flocos de neve; planeta com anel e lua; flores.
+      - **Pele:** rosto e braços em 4 tons (Light, Tan, Brown, Dark), cada um uma imagem.
+      - **Saída:** `public/princess/*.webp` (de 4 a 100 KB cada) e
+        `src/characters/princess/pieces.json` (a caixa de cada peça, para o cartão).
+- [x] **Jogo:** `pieces.tsx` (cartões que dão zoom na peça; olhos e boca aparecem sobre o
+      rosto, o cabelo sobre a cabeça), `Princess2D.tsx` (empilha as imagens: cabelo de trás,
+      cabeça, vestido, olhos, boca, cabelo da frente, habilidade) e `config.ts` (nomes:
+      Green, Pink, Mermaid, Short / Braid, Long, Bob, Bun / Brown, Blue, Green, Purple /
+      Smile, Laugh, Wow, Silly / Animals, Snow, Space, Flowers). IDs antigos mantidos; a
+      fileira de item virou "Power" com o mesmo id (`accessory`).
+- [x] **Páginas locais:** `princess-trace.html` (imagem e desenho, lado a lado ou
+      sobrepostos, com grade) e `princess-compose.html` (as camadas montadas; `?mix=`
+      hair, dress, skin, eyes, mouth, power).
+- Conferido: as quatro remontadas iguais às imagens; todos os cabelos em todos os vestidos;
+  os 4 tons; olhos, bocas e habilidades; no jogo, cartões, frase ("My princess has long brown
+  hair, sparkly blue eyes and a big laugh. She is wearing a mermaid tail. She can make
+  snow!") e o 3D antigo abrindo sem erro; `npm run build` passa.
+
+Falta:
+- [ ] **3D novo.** O 3D atual é o antigo e mostra as peças antigas.
+- [ ] Com o cabelo "None" aparecem uns fiozinhos de cabelo nas laterais da testa.

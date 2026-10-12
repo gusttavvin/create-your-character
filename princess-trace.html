@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="UTF-8" /><title>Princess tracing — local only</title>
+  <style>
+    body { margin: 0; background: #ddd; font-family: system-ui; }
+    .row { display: flex; gap: 6px; padding: 6px; }
+    svg { background: #fff; height: calc(100vh - 12px); }
+  </style>
+  <!--
+    Compares a drawing in art-source/princess with Clara's reference picture, in the
+    reference's own pixels (1024 by 1536).
+      ?ref=pink|green|blue|purple   which reference
+      ?svg=1-Rose                   which drawing (art-source/princess/<svg>.svg)
+      ?view=x,y,w,h                 the part to look at
+      ?mode=side|over               side by side (default) or one over the other
+      ?a=0.5                        how strongly the drawing shows over the reference
+  -->
+  <div class="row" id="row"></div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const pic = (n) => (n.includes('/') ? `/art-source/princess/${n}` : `/art-source/princess/reference/${n}.webp`);
+    const ref = pic(q.get('ref') || 'pink');
+    const drawing = q.get('svg') ? `/art-source/princess/${q.get('svg')}.svg?${Date.now()}` : null;
+    const view = (q.get('view') || '0,0,1024,1536').split(',').join(' ');
+    const a = q.get('a') || '0.55';
+    const img = (href, op = 1) => `<image href="${href}" x="0" y="0" width="1024" height="1536" opacity="${op}" />`;
+    // ?grid=50: a grid every 50 pixels of the reference, numbered, to read coordinates off
+    const step = +(q.get('grid') || 0);
+    let grid = '';
+    if (step)
+      for (let v = 0; v <= 1536; v += step) {
+        const major = v % (step * 2) === 0;
+        if (v <= 1024) grid += `<line x1="${v}" y1="0" x2="${v}" y2="1536" stroke="${major ? '#e0006a' : '#00a0e0'}" stroke-width="${major ? 1 : 0.6}" opacity="0.6"/>`;
+        grid += `<line x1="0" y1="${v}" x2="1024" y2="${v}" stroke="${major ? '#e0006a' : '#00a0e0'}" stroke-width="${major ? 1 : 0.6}" opacity="0.6"/>`;
+        if (major) {
+          const [vx, vy] = view.split(' ').map(Number);
+          if (v <= 1024) grid += `<text x="${v + 2}" y="${vy + 12}" font-size="11" fill="#e0006a">${v}</text>`;
+          grid += `<text x="${vx + 2}" y="${v - 2}" font-size="11" fill="#e0006a">${v}</text>`;
+        }
+      }
+    const panel = (inner) => `<svg viewBox="${view}" xmlns="http://www.w3.org/2000/svg">${inner}${grid}</svg>`;
+    const row = document.getElementById('row');
+    // ?ref2=green: a second reference over the first, to see whether the two line up
+    const ref2 = q.get('ref2') ? img(pic(q.get('ref2')), a) : '';
+    if (q.get('mode') === 'over') row.innerHTML = panel(img(ref) + ref2 + (drawing ? img(drawing, a) : ''));
+    else row.innerHTML = panel(img(ref)) + (drawing ? panel(img(drawing)) : '');
+  </script>
+</html>

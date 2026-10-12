@@ -1,22 +1,72 @@
-import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type PartMap } from '../types';
+import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type ColorMap, type PartMap } from '../types';
+import { pieceCard, TONES, type SkinTone } from './pieces';
 import * as P from './parts';
+
+/**
+ * The princess, cut from the four princesses Clara sent (art-source/princess/reference): a
+ * green and a pink ball gown, the blue one made a mermaid's tail and the purple one short;
+ * a red braid, long brown hair, a black bob and a blonde bun, each with its own tiara (the
+ * crown comes with the hair and is not chosen); eyes that look different and are coloured
+ * differently, the first just like the pictures'; smiles; and a power.
+ *
+ * Clara wanted the skin chosen for every princess, whatever she wears: her face and arms are
+ * drawn in the skin the child picks, everything else in the colours it was drawn in.
+ */
+const SKIN_SWATCHES: { id: SkinTone; label: string; value: string }[] = [
+  { id: 'light', label: 'Light', value: '#FDC59B' },
+  { id: 'tan', label: 'Tan', value: '#E4A074' },
+  { id: 'brown', label: 'Brown', value: '#B2724A' },
+  { id: 'dark', label: 'Dark', value: '#72462C' },
+];
+
+function rgb(hex: string) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** The tone nearest a chosen colour: a princess saved with an older palette gets the closest. */
+export function toneOf(chosen?: string): SkinTone {
+  if (!chosen) return 'light';
+  const [r, g, b] = rgb(chosen);
+  let best: SkinTone = 'light';
+  let far = Infinity;
+  for (const s of SKIN_SWATCHES) {
+    const [r2, g2, b2] = rgb(s.value);
+    const d = (r - r2) ** 2 + (g - g2) ** 2 + (b - b2) ** 2;
+    if (d < far) [best, far] = [s.id, d];
+  }
+  return best;
+}
+
+/** What a princess is drawn in: the skin the child picked. */
+export function princessColors(_parts: PartMap, chosen: ColorMap): ColorMap {
+  const tone = toneOf(chosen.skin);
+  return { skin: SKIN_SWATCHES[TONES.indexOf(tone)].value, tone };
+}
+
+const card = (row: string, id: string) => pieceCard(row, id);
 
 export const PRINCESS: CharacterDefinition = {
   kind: 'princess',
   noun: 'Princess',
   title: 'Create Your Princess',
   emoji: '👸',
+  /*
+   * Like the monster and the dragon: names a six-year-old knows, numbered 1 to 4 so the class
+   * can call a card out. The ids are the old princess's, so a princess saved before still
+   * opens, with the new pieces.
+   */
+  numbered: true,
   categories: [
     {
       id: 'dress',
       label: 'Dress',
       color: '#FF6EC7',
       options: [
-        // the four silhouettes: wide, short, tail, stepped — the word says the shape
-        { id: 'gown', label: 'Ball Gown', phrase: 'a big ball gown', Svg: P.DressGown },
-        { id: 'aline', label: 'Short', phrase: 'a short dress with a bow', Svg: P.DressAline },
-        { id: 'mermaid', label: 'Mermaid', phrase: 'a long mermaid dress', Svg: P.DressMermaid },
-        { id: 'star', label: 'Star', phrase: 'a star dress', Svg: P.DressStar },
+        { id: 'gown', label: 'Green', phrase: 'a green ball gown', Svg: card('dress', 'gown') },
+        { id: 'aline', label: 'Pink', phrase: 'a pink ball gown', Svg: card('dress', 'aline') },
+        { id: 'mermaid', label: 'Mermaid', phrase: 'a mermaid tail', Svg: card('dress', 'mermaid') },
+        { id: 'star', label: 'Short', phrase: 'a short purple dress', Svg: card('dress', 'star') },
       ],
     },
     {
@@ -25,22 +75,10 @@ export const PRINCESS: CharacterDefinition = {
       color: '#FF8A2A',
       optional: true,
       options: [
-        { id: 'long', label: 'Long', phrase: 'long hair', Svg: P.HairLong },
-        { id: 'braids', label: 'Braids', phrase: 'two braids', Svg: P.HairBraids },
-        { id: 'bun', label: 'Bun', phrase: 'a bun', Svg: P.HairBun },
-        { id: 'curly', label: 'Curly', phrase: 'curly hair', Svg: P.HairCurly },
-      ],
-    },
-    {
-      id: 'crown',
-      label: 'Crown',
-      color: '#FFD93D',
-      optional: true,
-      options: [
-        { id: 'tiara', label: 'Tiara', phrase: 'a tiara', Svg: P.CrownTiara },
-        { id: 'gold', label: 'Crown', phrase: 'a golden crown', Svg: P.CrownGold },
-        { id: 'flowers', label: 'Flowers', phrase: 'a flower crown', Svg: P.CrownFlowers },
-        { id: 'bow', label: 'Bow', phrase: 'a big bow', Svg: P.CrownBow },
+        { id: 'braids', label: 'Braid', phrase: 'a red braid', Svg: card('hair', 'braids') },
+        { id: 'long', label: 'Long', phrase: 'long brown hair', Svg: card('hair', 'long') },
+        { id: 'curly', label: 'Bob', phrase: 'a black bob', Svg: card('hair', 'curly') },
+        { id: 'bun', label: 'Bun', phrase: 'a blonde bun', Svg: card('hair', 'bun') },
       ],
     },
     {
@@ -49,10 +87,10 @@ export const PRINCESS: CharacterDefinition = {
       color: '#4FC3FF',
       optional: true,
       options: [
-        { id: 'sparkly', label: 'Sparkly', phrase: 'sparkly eyes', Svg: P.EyesSparkly },
-        { id: 'happy', label: 'Happy', phrase: 'happy eyes', Svg: P.EyesHappy },
-        { id: 'wink', label: 'Wink', phrase: 'a wink', Svg: P.EyesWink },
-        { id: 'sleepy', label: 'Sleepy', phrase: 'sleepy eyes', Svg: P.EyesSleepy },
+        { id: 'sparkly', label: 'Brown', phrase: 'brown eyes', Svg: card('eyes', 'sparkly') },
+        { id: 'happy', label: 'Blue', phrase: 'sparkly blue eyes', Svg: card('eyes', 'happy') },
+        { id: 'wink', label: 'Green', phrase: 'green eyes and a wink', Svg: card('eyes', 'wink') },
+        { id: 'sleepy', label: 'Purple', phrase: 'purple eyes with hearts', Svg: card('eyes', 'sleepy') },
       ],
     },
     {
@@ -61,80 +99,46 @@ export const PRINCESS: CharacterDefinition = {
       color: '#7ED957',
       optional: true,
       options: [
-        { id: 'smile', label: 'Smile', phrase: 'a sweet smile', Svg: P.MouthSmile },
-        { id: 'laugh', label: 'Laugh', phrase: 'a big laugh', Svg: P.MouthLaugh },
-        { id: 'oh', label: 'Oh!', phrase: 'a surprised mouth', Svg: P.MouthOh },
-        { id: 'tongue', label: 'Tongue', phrase: 'a silly tongue', Svg: P.MouthTongue },
+        { id: 'smile', label: 'Smile', phrase: 'a sweet smile', Svg: card('mouth', 'smile') },
+        { id: 'laugh', label: 'Laugh', phrase: 'a big laugh', Svg: card('mouth', 'laugh') },
+        { id: 'oh', label: 'Wow', phrase: 'a surprised mouth', Svg: card('mouth', 'oh') },
+        { id: 'tongue', label: 'Silly', phrase: 'a silly tongue', Svg: card('mouth', 'tongue') },
       ],
     },
     {
       id: 'accessory',
-      label: 'Item',
+      label: 'Power',
       color: '#A77BFF',
       optional: true,
       options: [
-        { id: 'wand', label: 'Wand', phrase: 'a magic wand', Svg: P.AccessoryWand },
-        { id: 'book', label: 'Book', phrase: 'a book', Svg: P.AccessoryBook },
-        { id: 'scepter', label: 'Scepter', phrase: 'a scepter', Svg: P.AccessoryScepter },
-        { id: 'kitten', label: 'Kitten', phrase: 'a kitten', Svg: P.AccessoryKitten },
+        { id: 'kitten', label: 'Animals', phrase: 'talk to animals', Svg: card('accessory', 'kitten') },
+        { id: 'wand', label: 'Snow', phrase: 'make snow', Svg: card('accessory', 'wand') },
+        { id: 'scepter', label: 'Space', phrase: 'fly to the stars', Svg: card('accessory', 'scepter') },
+        { id: 'book', label: 'Flowers', phrase: 'make flowers grow', Svg: card('accessory', 'book') },
       ],
     },
   ],
-  colorSlots: [
-    {
-      id: 'skin',
-      label: 'Skin',
-      swatches: [
-        { id: 'light', label: 'Light', value: '#FCE1C8' },
-        { id: 'tan', label: 'Tan', value: '#F2BE8E' },
-        { id: 'brown', label: 'Brown', value: '#B7783F' },
-        { id: 'dark', label: 'Dark', value: '#6E3F1E' },
-      ],
-    },
-    {
-      id: 'hair',
-      label: 'Hair color',
-      swatches: [
-        { id: 'blonde', label: 'Blonde', value: '#FFC93C' },
-        { id: 'brown', label: 'Brown', value: '#8B4513' },
-        { id: 'black', label: 'Black', value: '#2B1B12' },
-        { id: 'red', label: 'Red', value: '#D2461F' },
-        { id: 'pink', label: 'Pink', value: '#FF6EC7' },
-        { id: 'blue', label: 'Blue', value: '#4FC3FF' },
-      ],
-    },
-    {
-      id: 'dress',
-      label: 'Dress color',
-      swatches: [
-        { id: 'pink', label: 'Pink', value: '#FF6EC7' },
-        { id: 'blue', label: 'Blue', value: '#4FC3FF' },
-        { id: 'teal', label: 'Teal', value: '#2ED8C3' },
-        { id: 'purple', label: 'Purple', value: '#A77BFF' },
-        { id: 'yellow', label: 'Yellow', value: '#FFD93D' },
-        { id: 'red', label: 'Red', value: '#FF6B78' },
-        { id: 'green', label: 'Green', value: '#7ED957' },
-        { id: 'white', label: 'White', value: '#F4F6FF' },
-      ],
-    },
-  ],
-  defaultParts: { dress: 'gown', hair: 'long', crown: 'tiara', eyes: 'sparkly', mouth: 'smile', accessory: 'wand' },
+  colorSlots: [{ id: 'skin', label: 'Skin', swatches: SKIN_SWATCHES.map(({ id, label, value }) => ({ id, label, value })) }],
+  colorsFor: princessColors,
+  defaultParts: { dress: 'gown', hair: 'braids', eyes: 'sparkly', mouth: 'smile', accessory: 'kitten' },
   defaultColors: {},
   sentence: (parts: PartMap, name?: string) => {
     const who = name ? `Princess ${name}` : 'My princess';
-    const has = listPhrases(phrasesOf(PRINCESS, parts, ['hair', 'crown', 'eyes', 'mouth']));
+    const has = listPhrases(phrasesOf(PRINCESS, parts, ['hair', 'eyes', 'mouth']));
     const dress = pickOption(PRINCESS, 'dress', parts.dress)?.phrase;
-    const item = pickOption(PRINCESS, 'accessory', parts.accessory)?.phrase;
+    const power = pickOption(PRINCESS, 'accessory', parts.accessory)?.phrase;
     const lines = [has ? `${who} has ${has}.` : ''];
-    if (dress && item) lines.push(`She is wearing ${dress} and holding ${item}.`);
-    else if (dress) lines.push(`She is wearing ${dress}.`);
-    else if (item) lines.push(`She is holding ${item}.`);
+    if (dress) lines.push(`She is wearing ${dress}.`);
+    if (power) lines.push(`She can ${power}!`);
     const out = lines.filter(Boolean).join(' ');
     return out || `${who} is still just an idea!`;
   },
 };
 
-/** Effective colors: user choice, else the option's own default color. */
+/**
+ * The colours the old 3D princess (Princess3D) is built in, until she is remade from the new
+ * pictures: the skin picked, and the old pieces' own dress and hair colours.
+ */
 export function resolvePrincessColors(parts: PartMap, colors: Record<string, string>) {
   return {
     skin: colors.skin || P.PRINCESS_DEFAULTS.skin,

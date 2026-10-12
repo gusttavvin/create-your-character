@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="UTF-8" /><title>Princess layers — local only</title>
+  <style>
+    body { margin: 0; font-family: system-ui; background: #eef3f8; }
+    .grid { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 6px; padding: 6px; }
+    .cell { position: relative; aspect-ratio: 1024 / 1536; background: #fff; border-radius: 8px; overflow: hidden; }
+    .cell img { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .cell b { position: absolute; left: 4px; top: 2px; font-size: 11px; z-index: 9; }
+  </style>
+  <!-- The cut pieces in public/princess stacked as the game stacks them. ?mix=hair|dress|skin|eyes|mouth|power
+       shows the four of that row on each princess; no mix shows the four as they were drawn. -->
+  <div class="grid" id="g"></div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    if (q.get('cols')) document.body.style.setProperty('--cols', q.get('cols'));
+    const ROWS = {
+      hair: ['braids', 'long', 'curly', 'bun'],
+      dress: ['gown', 'aline', 'mermaid', 'star'],
+      skin: ['light', 'tan', 'brown', 'dark'],
+      eyes: ['sparkly', 'happy', 'wink', 'sleepy'],
+      mouth: ['smile', 'laugh', 'oh', 'tongue'],
+      power: ['kitten', 'wand', 'scepter', 'book'],
+    };
+    const cell = (p) =>
+      `<div class="cell"><b>${Object.values(p).join(' ')}</b>` +
+      [`hair-${p.hair}-back`, `head-${p.skin}`, `dress-${p.dress}-${p.skin}`, `eyes-${p.eyes}`, `mouth-${p.mouth}`, `hair-${p.hair}-front`, p.power ? `power-${p.power}` : '']
+        .filter(Boolean)
+        .map((f) => `<img src="/princess/${f}.webp?${Date.now()}" onerror="this.remove()">`)
+        .join('') +
+      '</div>';
+    const mix = q.get('mix');
+    const cells = [];
+    // ?p=hair,dress,skin,eyes,mouth,power: just that one princess
+    if (q.get('p')) {
+      const [hair, dress, skin, eyes, mouth, power] = q.get('p').split(',');
+      cells.push({ hair, dress, skin, eyes, mouth, power });
+    } else
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < (mix ? 4 : 1); j++) {
+        const p = { hair: ROWS.hair[i], dress: ROWS.dress[i], skin: 'light', eyes: 'sparkly', mouth: 'smile', power: '' };
+        if (mix) p[mix] = ROWS[mix][j];
+        cells.push(p);
+      }
+    document.getElementById('g').innerHTML = cells.map(cell).join('');
+  </script>
+</html>

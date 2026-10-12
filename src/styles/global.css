@@ -1142,6 +1142,11 @@ body.is-dragging {
   animation-delay: -0.6s;
 }
 
+/* the princess's power drifts gently round her */
+.char2d.is-animated .power-float {
+  animation: float-bob 3s ease-in-out infinite;
+}
+
 .char2d.is-animated .dragon-heart {
   animation: float-bob 1.8s ease-in-out infinite;
 }
