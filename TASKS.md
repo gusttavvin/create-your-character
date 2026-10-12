@@ -1710,6 +1710,48 @@ olhos.
       então outro vestido (com mangas e braços em outro lugar) não mostra buraco no cabelo.
 - [x] **Restos soltos** no vestido (pontas de cacho no ombro) e no cabelo de trás saem.
 
+### Rodada 3 (12 de outubro de 2026): a cabeça inteira
+
+Pedido: ao escolher só o vestido aparece a cabeça, que precisa ter todos os contornos; parte
+do contorno dela estava no cabelo e nos olhos; o alto da cabeça estava "rabiscado".
+
+- [x] **Cabeça inteira (`wholeHead`):** o alto da cabeça estava escondido pelo cabelo da
+      rosa, então é desenhado: crânio redondo (`SKULL`) com contorno, e orelhas com
+      contorno. Do meio dos olhos para baixo, o queixo e o pescoço são os da imagem. Acima
+      dos olhos a imagem tinha as sombras do cabelo (o "rabiscado"); ali fica pele lisa,
+      com uma passagem suave. A argolinha do brinco da rosa não entra mais na cabeça.
+- [x] **Olhos:** ficam só as partes que chegam no olho (`keepTouching`). Antes vinham junto
+      pedaços do contorno do rosto e pontas de mechas.
+- [x] **Pontinhos claros** embaixo dos olhos são preenchidos (bochecha tem que ser rosada).
+- [x] **Cabelo preto:** a mecha que passa sobre a sobrancelha e ao lado do olho esquerdo
+      tinha um corte reto. Nas outras imagens, o contorno perto dos olhos não é mais "só dos
+      olhos" (os olhos delas não são usados), e a ponta de uma mecha perto do olho ou da
+      sobrancelha continua sendo cabelo.
+
+### Rodada 4: luzes no cabelo
+
+Pedido: cabelo 1 com luzes vermelhas; 2 sem luzes; 3 cacheado (não mais liso) com luzes
+azul-escuras; 4 como está.
+
+- [x] **Luzes (`LIGHTS`, `lights()` em `cut.cjs`):** as mechas mais claras de cada cabelo
+      ganham a cor, mais forte quanto mais clara a mecha, mantendo a sombra; o escuro e o
+      contorno ficam. Trança: vermelho vivo. Cabelo preto: azul-escuro.
+- [x] **Cabelo 3 cacheado (`art-source/princess/curly.cjs`):** a primeira tentativa
+      (topo liso da imagem + cachos colados abaixo das orelhas) foi recusada: "o cabelo tem
+      que ser todo cacheado, desde a raiz até em baixo, incluindo a parte de trás", e com
+      "cachos de verdade". Agora o cabelo inteiro é desenhado; da imagem azul só ficam a
+      coroa e os brincos, por cima dos cachos.
+      - **Cada cacho é uma mola:** o fio dá voltas em torno de um eixo que cai da cabeça
+        (`spring`); a metade de trás de cada volta é desenhada antes, mais escura, e a da
+        frente por cima, com a luz azul-escura e um brilho fino. As voltas afinam e
+        estreitam até a ponta.
+      - **No alto da cabeça:** fileiras de cachinhos enrolados vistos de cima (`coil`), da
+        coroa até a testa, as de baixo por cima das de cima.
+      - **Atrás:** massa escura atrás da cabeça e seis molas de cada lado caindo até os
+        ombros (camada de trás); duas molas de cada lado na frente das orelhas (camada da
+        frente).
+      - Cartão "3 Curly", frase "curly black hair" (id `curly` mantido).
+
 Falta:
 - [ ] **3D novo.** O 3D atual é o antigo e mostra as peças antigas.
 - [ ] Com o cabelo "None" aparecem uns fiozinhos de cabelo nas laterais da testa.

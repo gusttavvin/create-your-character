@@ -5,7 +5,7 @@ import * as P from './parts';
 /**
  * The princess, cut from the four princesses Clara sent (art-source/princess/reference): a
  * green and a pink ball gown, the blue one made a mermaid's tail and the purple one short;
- * a red braid, long brown hair, a black bob and a blonde bun, each with its own tiara (the
+ * a red braid, long brown hair, curly black hair and a blonde bun, each with its own tiara (the
  * crown comes with the hair and is not chosen); eyes that look different and are coloured
  * differently, the first just like the pictures'; smiles; and a power.
  *
@@ -77,7 +77,7 @@ export const PRINCESS: CharacterDefinition = {
       options: [
         { id: 'braids', label: 'Braid', phrase: 'a red braid', Svg: card('hair', 'braids') },
         { id: 'long', label: 'Long', phrase: 'long brown hair', Svg: card('hair', 'long') },
-        { id: 'curly', label: 'Bob', phrase: 'a black bob', Svg: card('hair', 'curly') },
+        { id: 'curly', label: 'Curly', phrase: 'curly black hair', Svg: card('hair', 'curly') },
         { id: 'bun', label: 'Bun', phrase: 'a blonde bun', Svg: card('hair', 'bun') },
       ],
     },

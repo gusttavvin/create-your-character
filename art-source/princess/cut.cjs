@@ -186,6 +186,7 @@ const L = { head: 1, eyes: 2, mouth: 4, hair: 8, dress: 16, skin: 32, brow: 64 }
 const BROW_BOXES = [[370, 364, 464, 426], [560, 364, 654, 426]];
 /** How far into the dark outline each piece reaches from its own pixels. */
 const REACH = { [L.head]: 10, [L.eyes]: 30, [L.mouth]: 10, [L.hair]: 12, [L.dress]: 10, [L.skin]: 10 };
+const nearEye = (x, y) => [427, 597].some((cx) => ((x - cx) / 70) ** 2 + ((y - 490) / 62) ** 2 < 1);
 const inInnerFace = (x, y) => ((x - 512) / 150) ** 2 + ((y - 478) / 160) ** 2 < 1;
 function split(img, pic, part) {
   const n = W * H;
@@ -237,7 +238,7 @@ function split(img, pic, part) {
     // her eyes are never hair (a brown iris is the colour of brown hair); her brows and the
     // line of her mouth are not either
     // (in the other pictures, only round her eyes: a lock beside an eye is still hair)
-    const eyeBox = pic === PINK ? EYE_BOXES.some((bx) => inBox(x, y, bx)) : [427, 597].some((cx) => ((x - cx) / 70) ** 2 + ((y - 490) / 62) ** 2 < 1);
+    const eyeBox = pic === PINK ? EYE_BOXES.some((bx) => inBox(x, y, bx)) : nearEye(x, y);
     const feature = eyeBox ||inBox(x, y, MOUTH_BOX) || (FEATURES.some((bx) => inBox(x, y, bx)) && isDark);
     const body = [...(pic.useBody ? BODY : []), ...(pic.body ?? [])].some((bx, k) => inBox(x, y, bx) && !(pic.hairOver ?? []).includes(k));
     // a brow: not skin, with skin a little above it and a little below it (a lock of hair
@@ -267,6 +268,52 @@ function split(img, pic, part) {
       if (l < 110 && (h <= 50 || h >= 320 || mx - mn < 0.3 * mx)) { dark[i] = 1; continue; }
       lab[i] = L.dress;
       continue;
+    }
+  }
+
+  if (pic !== PINK) {
+    // the tip of a lock reaching in by her eye or over her brow is hair all the same (a short
+    // way in: further in is her lashes)
+    let front = [];
+    const depth = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (lab[i] & L.hair) front.push(i);
+    for (let d = 1; d <= 40 && front.length; d++) {
+      const next = [];
+      for (const i of front) {
+        const x = i % W;
+        for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
+          if (j < 0 || j >= n || depth[j] || lab[j] & L.hair || bgmask[j]) continue;
+          const jx = j % W, jy = (j / W) | 0;
+          const r = img[j * 4], g = img[j * 4 + 1], b = img[j * 4 + 2];
+          const l = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (!(nearEye(jx, jy) || FEATURES.slice(0, 2).some((bx) => inBox(jx, jy, bx))) || !pic.hair(r, g, b, l, hue(r, g, b), jx, jy)) continue;
+          depth[j] = d;
+          lab[j] = L.hair;
+          dark[j] = 0;
+          next.push(j);
+        }
+      }
+      front = next;
+    }
+  }
+
+  if (pic !== PINK) {
+    // what looked like a brow but touches her hair is the end of a lock lying over it
+    const seen = new Uint8Array(n);
+    for (let s0 = 0; s0 < n; s0++) {
+      if (seen[s0] || lab[s0] !== L.brow) continue;
+      const blob = [s0];
+      seen[s0] = 1;
+      let hair = false;
+      for (let k = 0; k < blob.length; k++) {
+        const i = blob[k], x = i % W;
+        for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
+          if (j < 0 || j >= n) continue;
+          if (lab[j] & L.hair) hair = true;
+          if (!seen[j] && lab[j] === L.brow) { seen[j] = 1; blob.push(j); }
+        }
+      }
+      if (hair) for (const i of blob) lab[i] = L.hair;
     }
   }
 
@@ -350,7 +397,7 @@ function split(img, pic, part) {
     if (!dark[i]) continue;
     const x = i % W, y = (i / W) | 0;
     // her lids and lashes are the eyes', the line of her smile is the mouth's
-    if (EYE_BOXES.some((bx) => inBox(x, y, bx)) && out[i] & L.eyes) out[i] = L.eyes;
+    if (pic === PINK && EYE_BOXES.some((bx) => inBox(x, y, bx)) && out[i] & L.eyes) out[i] = L.eyes;
     else if (inBox(x, y, MOUTH_BOX)) out[i] = L.mouth;
     else if (!out[i] && inFace(x, y)) out[i] = L.head | L.skin;
   }
@@ -405,6 +452,73 @@ async function raster(body) {
   const { data } = await sharp(svgOf(body)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return new Uint8ClampedArray(data);
 }
+/**
+ * Her whole head, for when no hair is on it (and under any hair): the top of her head was
+ * hidden by the pink one's hair, so it is drawn, round, with its outline and her ears; her
+ * face from her eyes down, her jaw and her neck are the picture's.
+ */
+const SKULL = 'M360 552 C330 430 372 298 512 298 C652 298 694 430 664 552';
+async function wholeHead(face, jaw, plain) {
+  const skin = `rgb(${plain.map(Math.round).join(',')})`;
+  const ear = (cx, s) =>
+    `<ellipse cx="${cx}" cy="528" rx="24" ry="34" fill="${skin}" stroke="${INK}" stroke-width="9"/>` +
+    `<path d="M${cx + s * 8} 506 Q${cx - s * 9} 524 ${cx + s * 5} 550" fill="none" stroke="#E5A47E" stroke-width="6" stroke-linecap="round"/>`;
+  const back = await raster(ear(338, 1) + ear(686, -1) + `<path d="${SKULL} Z" fill="${skin}"/>`);
+  const line = await raster(`<path d="${SKULL}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/>`);
+  // (well inside it: by the sides of her face the picture has hair over it)
+  const inside = await raster(`<path d="${SKULL} Z" fill="#fff"/><path d="${SKULL}" fill="none" stroke="#000" stroke-width="60"/>`);
+  // where her jaw is drawn, row by row (the line round her face, not an earring by it)
+  const jawImg = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) if (jaw[i]) jawImg[i * 4 + 3] = 255;
+  keepTouching(jawImg, (x, y) => y > 620 && Math.abs(x - 512) < 40);
+  const jx0 = new Int32Array(H).fill(W), jx1 = new Int32Array(H).fill(-1);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if (jawImg[i * 4 + 3] && y >= 540) { if (x < jx0[y]) jx0[y] = x; if (x > jx1[y]) jx1[y] = x; }
+  }
+  // and no further out than a line's width past the inside of that line
+  const lum = (i) => 0.299 * face[i * 4] + 0.587 * face[i * 4 + 1] + 0.114 * face[i * 4 + 2];
+  for (let y = 548; y < 640; y++) {
+    let a = 430, b = 594;
+    while (a > 300 && !(face[(y * W + a) * 4 + 3] && lum(y * W + a) < 90)) a--;
+    while (b < 724 && !(face[(y * W + b) * 4 + 3] && lum(y * W + b) < 90)) b++;
+    jx0[y] = Math.max(jx0[y], a - 12);
+    jx1[y] = Math.min(jx1[y], b + 12);
+  }
+  const upper = new Uint8ClampedArray(W * H * 4), lower = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    if (!face[i * 4 + 3]) continue;
+    const x = i % W, y = (i / W) | 0;
+    let k = 0, to = upper;
+    if (y >= 640 || (y >= 548 && x >= jx0[y] && x <= jx1[y])) { k = 1; to = lower; }
+    // above her eyes the picture has the shadows of the hair: plain skin there, faded in
+    else if (y < 548 && inside[i * 4] > 128 && y >= 440) k = Math.min(1, (y - 440) / 30);
+    if (!k) continue;
+    for (let c = 0; c < 3; c++) to[i * 4 + c] = face[i * 4 + c];
+    to[i * 4 + 3] = face[i * 4 + 3] * k;
+  }
+  return over(lower, over(line, over(upper, back)));
+}
+
+/** Keeps only the patches of a picture that reach into the places given. */
+function keepTouching(img, at) {
+  const seen = new Uint8Array(W * H);
+  for (let s0 = 0; s0 < W * H; s0++) {
+    if (seen[s0] || !img[s0 * 4 + 3]) continue;
+    const blob = [s0];
+    seen[s0] = 1;
+    let hit = false;
+    for (let k = 0; k < blob.length; k++) {
+      const i = blob[k], x = i % W;
+      if (!hit && at(x, (i / W) | 0)) hit = true;
+      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W])
+        if (j >= 0 && j < W * H && !seen[j] && img[j * 4 + 3]) { seen[j] = 1; blob.push(j); }
+    }
+    if (!hit) for (const i of blob) img[i * 4 + 3] = 0;
+  }
+  return img;
+}
+
 /** a over b, both RGBA, a's alpha honoured */
 function over(a, b) {
   const o = new Uint8ClampedArray(b);
@@ -590,6 +704,87 @@ function rgb(h, s, l) {
   const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
   return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
 }
+/* ---------------------------------------------------- the black hair made curly */
+/**
+ * Clara wanted the black hair curly from the roots to the ends, front and back, with dark blue
+ * lights: it is drawn (curly.cjs). From the picture only its tiara and its earrings are kept,
+ * in front of the curls.
+ */
+async function curly(front) {
+  const { curlySvg } = require('./curly.cjs');
+  const { back, front: drawn } = curlySvg();
+  // the tiara: the biggest patch of gold and gems up top, with its outline
+  const bright = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const y = (i / W) | 0;
+    if (y > 270 || !front[i * 4 + 3]) continue;
+    const r = front[i * 4], g = front[i * 4 + 1], b = front[i * 4 + 2];
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx - mn > 60 || mx > 150) bright[i] = 1;
+  }
+  const lum = (i) => 0.299 * front[i * 4] + 0.587 * front[i * 4 + 1] + 0.114 * front[i * 4 + 2];
+  grow(bright, 9, (j) => front[j * 4 + 3] && lum(j) < 40);
+  const tiara = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) if (bright[i]) for (let c = 0; c < 4; c++) tiara[i * 4 + c] = front[i * 4 + c];
+  let biggest = 0;
+  {
+    // only the tiara itself, not a light in the hair beside it
+    const seen = new Uint8Array(W * H);
+    const blobs = [];
+    for (let s0 = 0; s0 < W * H; s0++) {
+      if (seen[s0] || !tiara[s0 * 4 + 3]) continue;
+      const blob = [s0];
+      seen[s0] = 1;
+      for (let k = 0; k < blob.length; k++) {
+        const i = blob[k], x = i % W;
+        for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W])
+          if (j >= 0 && j < W * H && !seen[j] && tiara[j * 4 + 3]) { seen[j] = 1; blob.push(j); }
+      }
+      blobs.push(blob);
+      biggest = Math.max(biggest, blob.length);
+    }
+    for (const blob of blobs) if (blob.length < biggest) for (const i of blob) tiara[i * 4 + 3] = 0;
+  }
+  // the earrings: blue and gold by her ears, with their outline
+  const ear = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if (y < 530 || y > 660 || !(Math.abs(x - 342) < 30 || Math.abs(x - 682) < 30) || !front[i * 4 + 3]) continue;
+    const r = front[i * 4], g = front[i * 4 + 1], b = front[i * 4 + 2];
+    if (b > r + 30 || (r > 150 && g > 110)) ear[i] = 1;
+  }
+  grow(ear, 5, (j) => front[j * 4 + 3] && lum(j) < 60);
+  const earrings = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) if (ear[i]) for (let c = 0; c < 4; c++) earrings[i * 4 + c] = front[i * 4 + c];
+  return [over(earrings, over(tiara, await raster(drawn))), await raster(back)];
+}
+
+/**
+ * Coloured lights in her hair (Clara's idea): the lighter locks take a colour, more the lighter
+ * they are, keeping their shading; the dark of the hair and its outline stay as they were.
+ */
+const LIGHTS = {
+  green: { hue: 350, sat: 0.92, lo: 86, hi: 112, lift: 1.12, max: 0.62 },
+  blue: { hue: 222, sat: 0.66, lo: 38, hi: 70, lift: 1.55, max: 0.32 },
+};
+function lights(img, pic, L0) {
+  for (let i = 0; i < W * H; i++) {
+    if (img[i * 4 + 3] < 250) continue;
+    const x = i % W, y = (i / W) | 0;
+    if (y < 260) continue; // her tiara
+    const r = img[i * 4], g = img[i * 4 + 1], b = img[i * 4 + 2];
+    const l = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (!pic.hair(r, g, b, l, hue(r, g, b), x, y)) continue;
+    let w = Math.min(1, Math.max(0, (l - L0.lo) / (L0.hi - L0.lo)));
+    w = w * w * (3 - 2 * w);
+    if (!w) continue;
+    const [, , ll] = hsl(r, g, b);
+    const c = rgb(L0.hue, L0.sat, Math.min(L0.max, ll * L0.lift));
+    for (let k = 0; k < 3; k++) img[i * 4 + k] = img[i * 4 + k] * (1 - w) + c[k] * w;
+  }
+  return img;
+}
+
 /** Her irises and pupils turned another colour; the white, the lid and the lashes stay. */
 function recolour(img, h2, s2) {
   const o = new Uint8ClampedArray(img);
@@ -841,6 +1036,7 @@ else if (require.main === module)
       // the line of her jaw and cheeks is her face's: her face is in front of the hair behind it
       const jaw = jawLine(headImg, head.lab);
       for (let i = 0; i < W * H; i++) if (jaw[i]) hair[i * 4 + 3] = 0;
+      if (LIGHTS[name]) lights(hair, pic, LIGHTS[name]);
       const hairFront = new Uint8ClampedArray(hair), hairBack = new Uint8ClampedArray(hair);
       // the two layers overlap a little where they meet, so no seam shows between them
       for (let i = 0; i < W * H; i++) {
@@ -873,9 +1069,11 @@ else if (require.main === module)
           hairBack[i * 4 + 3] = 255;
         }
       }
-      await write(`hair-${n}-back.webp`, hairBack);
-      await write(`hair-${n}-front.webp`, hairFront);
-      boxes[`hair:${n}`] = boxOf(hairBack, hairFront);
+      let [hf, hb] = [hairFront, hairBack];
+      if (name === 'blue') [hf, hb] = await curly(hairFront);
+      await write(`hair-${n}-back.webp`, hb);
+      await write(`hair-${n}-front.webp`, hf);
+      boxes[`hair:${n}`] = boxOf(hb, hf);
 
       // the dress, with her arms and hands; what her braid hid is the other side's mirror
       const dressImgOnly = pick(dressImg, dress.lab, L.dress);
@@ -956,7 +1154,7 @@ else if (require.main === module)
           } else {
             if (!under(x, y)) continue;
             // keep her cheeks, which reach under her eyes
-            if (headOnly[i * 4 + 3] && isSkin(r, g, b) && hue(r, g, b) < 14) continue;
+            if (headOnly[i * 4 + 3] && isSkin(r, g, b) && hue(r, g, b) < 14 && r - g > 45) continue;
           }
           headOnly[i * 4] = plain[0]; headOnly[i * 4 + 1] = plain[1]; headOnly[i * 4 + 2] = plain[2]; headOnly[i * 4 + 3] = 255;
           hole.push(i);
@@ -974,9 +1172,12 @@ else if (require.main === module)
             if (k) { headOnly[i * 4] = s0 / k; headOnly[i * 4 + 1] = s1 / k; headOnly[i * 4 + 2] = s2 / k; }
           }
         fillFrom(headOnly, (x, y) => inFace(x, y) && y < chinAt[x]);
+        const whole = await wholeHead(headOnly, jaw, plain);
         const all = new Uint8Array(W * H).fill(1);
-        for (const tone of Object.keys(TONES)) await write(`head-${tone}.webp`, toned(headOnly, all, tone));
-        const eyes = pick(headImg, head.lab, L.eyes);
+        for (const tone of Object.keys(TONES)) await write(`head-${tone}.webp`, toned(whole, all, tone));
+        // her eyes, and nothing else the outline round them reached: bits of the line of her
+        // face, the end of a lock of hair
+        const eyes = keepTouching(pick(headImg, head.lab, L.eyes), (x, y) => [427, 597].some((cx) => ((x - cx) / 60) ** 2 + ((y - 492) / 52) ** 2 < 1));
         const mouth = pick(headImg, head.lab, L.mouth);
         const allEyes = { 1: eyes, ...(await eyesVariants(eyes)) };
         const allMouths = { 1: mouth, ...(await mouths()) };
