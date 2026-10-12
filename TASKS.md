@@ -1752,6 +1752,48 @@ azul-escuras; 4 como está.
         frente).
       - Cartão "3 Curly", frase "curly black hair" (id `curly` mantido).
 
+### Rodada 5: o colo acompanha o vestido
+
+Pedido: no vestido verde "o vestido não acompanha o colo". O colo e os ombros vinham sempre
+da rosa, que tem ombros mais baixos e largos: o contorno do ombro dela aparecia dentro do
+decote verde, e sobravam risquinhos do ombro da verde.
+
+- [x] **Cada vestido traz o próprio colo e ombros** (da sua imagem, com o contorno). A
+      cabeça traz só o pescoço até `NECK_CUT` (648) e é cortada logo abaixo.
+- [x] **Vestidos descidos (`DROP`):** verde 15, azul 24, roxo 20 pixels, para o pescoço
+      de cada um se abrir nos ombros na mesma altura que o da rosa.
+- [x] **Pele igual:** a pele de cada vestido é ajustada para a cor da rosa. Logo abaixo do
+      pescoço a sombra é a da rosa, passando suave para a do vestido (a sombra do queixo
+      das outras imagens fica mais baixa e virava uma faixa escura).
+- [x] **`over()` corrigido:** juntar uma camada sobre um fundo transparente escurecia os
+      pixels meio transparentes (a faixa escura no pescoço da sereia e do curto). Agora
+      melhora também as bordas de tudo que é desenhado (cauda, pernas, cachos, poderes).
+
+### Rodada 6: lábios, habilidades em movimento, vestidos em outras cores
+
+- [x] **Sobrancelhas fora dos cabelos:** trança e coque traziam as sobrancelhas das suas
+      imagens. Agora o escuro com pele acima e abaixo, perto das sobrancelhas, sai do cabelo
+      (só os olhos trazem sobrancelha).
+- [x] **Cacheado com orelhas:** os cachos da frente passam atrás das orelhas; o brinco fica
+      pendurado nelas.
+- [x] **Bocas com lábios** (`mouths()` em `cut.cjs`): Smile com lábios fechados sorrindo,
+      Laugh com lábios em volta da boca aberta, Silly com a língua entre os lábios. Wow
+      ficou como estava.
+- [x] **"Power" virou "Abilities"**, e elas se mexem em volta dela
+      (`src/characters/princess/abilities.tsx`, SVG com animação própria):
+      - **Animals:** três passarinhos batendo as asas e voando em volta dela.
+      - **Snow:** flocos caindo e girando, com brilhos piscando.
+      - **Space:** planeta, lua e estrelas girando em volta dela, e estrelinhas piscando.
+      - **Flowers:** flores em volta dela que se abrem e fecham.
+      - O que gira é desenhado duas vezes: atrás dela (tudo) e na frente (só a metade de
+        baixo do caminho), então passa por trás dela. Parado (`animate=false`, cartões e
+        galeria) cada coisa fica num ponto fixo.
+      - Os `power-*.webp` antigos não são mais usados pelo jogo.
+- [x] **Vestidos:** a sereia ficou vermelha; o curto ficou azul (sapatilhas também); o rosa
+      ficou mais justo (a saia se fecha abaixo das mãos, `fitted()`) e com as cortinas em
+      roxo (`shiftHue()`). Frases: "a pink and purple dress", "a red mermaid tail",
+      "a short blue dress".
+
 Falta:
 - [ ] **3D novo.** O 3D atual é o antigo e mostra as peças antigas.
 - [ ] Com o cabelo "None" aparecem uns fiozinhos de cabelo nas laterais da testa.

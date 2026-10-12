@@ -134,6 +134,39 @@ function warpTo(src, k, a, b, bg) {
 }
 
 /* ---------------------------------------------------------------- what a colour is */
+/**
+ * A dress in another colour: the pixels whose hue (and lightness, and height) pass are turned
+ * to the hue given, keeping how light and how strong they were; skin and gold stay.
+ */
+function shiftHue(img, which, to, sat = 1) {
+  const o = new Uint8ClampedArray(img);
+  for (let i = 0; i < W * H; i++) {
+    if (!img[i * 4 + 3]) continue;
+    const r = img[i * 4], g = img[i * 4 + 1], b = img[i * 4 + 2];
+    const [h, s0, l] = hsl(r, g, b);
+    if (s0 < 0.12 || !which(h, l, (i / W) | 0)) continue;
+    const c = rgb(to, Math.min(1, s0 * sat), l);
+    o[i * 4] = c[0]; o[i * 4 + 1] = c[1]; o[i * 4 + 2] = c[2];
+  }
+  return o;
+}
+/** The pink dress made closer to her: its skirt drawn in below her hands, less at the hem than a ball gown. */
+function fitted(img) {
+  const o = new Uint8ClampedArray(img.length);
+  const Y0 = 1020, Y1 = 1380;
+  for (let y = 0; y < H; y++) {
+    const t = Math.min(1, Math.max(0, (y - Y0) / (Y1 - Y0)));
+    const k = 1 - 0.3 * t * t * (3 - 2 * t);
+    for (let x = 0; x < W; x++) {
+      const sx = 512 + (x - 512) / k;
+      const o4 = (y * W + x) * 4;
+      if (sx < 0 || sx >= W - 1) continue;
+      const x0 = Math.floor(sx), f = sx - x0, a = (y * W + x0) * 4, b = a + 4;
+      for (let c = 0; c < 4; c++) o[o4 + c] = img[a + c] * (1 - f) + img[b + c] * f;
+    }
+  }
+  return o;
+}
 function hue(r, g, b) {
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
   if (mx === mn) return 0;
@@ -177,6 +210,14 @@ const inFace = (x, y) => ((x - 512) / 168) ** 2 + ((y - 470) / 168) ** 2 < 1 || 
 
 /* --------------------------------------------------------------- splitting a picture */
 const DARK = 72;
+/**
+ * Where her neck meets her shoulders. Above it her neck is her head's (the pink picture's);
+ * below it her chest and shoulders are the dress's own, from its own picture, since each
+ * princess's shoulders and neckline are drawn differently. Each dress is lowered (DROP) so
+ * that its neck widens into its shoulders at the same height as the pink one's.
+ */
+const NECK_CUT = 648;
+const DROP = { pink: 0, green: 15, blue: 24, purple: 20 };
 /**
  * Labels every pixel of a lined-up picture: 0 nothing, and bit flags for the pieces it goes
  * into (a pixel of outline may go into more than one).
@@ -257,7 +298,9 @@ function split(img, pic, part) {
     if (y > 540 && y < 632 && (Math.abs(x - 342) < 28 || Math.abs(x - 682) < 28) && !isSkin(r, g, b)) { lab[i] = L.hair; continue; }
     if (isSkin(r, g, b)) {
       // (in a dress, skin is her arms', or a pale shine on the cloth; her neck goes below)
-      if (part === 'dress') { lab[i] = y < 640 ? L.head | L.skin : L.dress | L.skin; continue; }
+      // (in a dress, skin is her chest's, shoulders' and arms', or a pale shine on the cloth;
+      // her neck above where it widens is her head's)
+      if (part === 'dress') { lab[i] = y < NECK_CUT ? L.head | L.skin : L.dress | L.skin; continue; }
       const neck = y < 780 && Math.abs(x - 512) < 190;
       lab[i] = (y < 640 || neck ? L.head : L.dress) | L.skin;
       continue;
@@ -341,18 +384,7 @@ function split(img, pic, part) {
   }
 
   if (part === 'dress') {
-    // her neck and the skin above the neckline are her head's, always: the head lies under the
-    // dress, whose neckline covers it, so the skin there is one skin whatever she wears. That
-    // skin is what joins the middle of her chest, shaded edges and all; a pale shine on a
-    // sleeve or on the bodice is cloth.
-    const fleshy = (i) => {
-      const r = img[i * 4], g = img[i * 4 + 1], b = img[i * 4 + 2];
-      const l = 0.299 * r + 0.587 * g + 0.114 * b, h = hue(r, g, b);
-      return !bgmask[i] && !dark[i] && (isSkin(r, g, b) || (h >= 5 && h <= 34 && l >= 100 && r > g && g > b));
-    };
-    const neck = flood([[512, Math.round(pic.neckAt) - 12]], (i) => fleshy(i) && i < (pic.neckAt + 60) * W);
-    for (let i = 0; i < n; i++) if (neck[i]) lab[i] = 0;
-    // and a small patch of skin colour is a shine on the cloth, not her skin
+    // a small patch of skin colour is a shine on the cloth, not her skin
     const seen = new Uint8Array(n);
     for (let s0 = 0; s0 < n; s0++) {
       if (seen[s0] || !(lab[s0] & L.skin && lab[s0] & L.dress)) continue;
@@ -525,8 +557,10 @@ function over(a, b) {
   for (let i = 0; i < W * H; i++) {
     const al = a[i * 4 + 3] / 255;
     if (!al) continue;
-    for (let c = 0; c < 3; c++) o[i * 4 + c] = a[i * 4 + c] * al + b[i * 4 + c] * (1 - al);
-    o[i * 4 + 3] = Math.max(b[i * 4 + 3], a[i * 4 + 3]);
+    // (b's colour counts as much as b is there: over a clear pixel, a keeps its own colour)
+    const bl = (b[i * 4 + 3] / 255) * (1 - al), out = al + bl;
+    for (let c = 0; c < 3; c++) o[i * 4 + c] = (a[i * 4 + c] * al + b[i * 4 + c] * bl) / out;
+    o[i * 4 + 3] = out * 255;
   }
   return o;
 }
@@ -756,7 +790,13 @@ async function curly(front) {
   grow(ear, 5, (j) => front[j * 4 + 3] && lum(j) < 60);
   const earrings = new Uint8ClampedArray(W * H * 4);
   for (let i = 0; i < W * H; i++) if (ear[i]) for (let c = 0; c < 4; c++) earrings[i * 4 + c] = front[i * 4 + c];
-  return [over(earrings, over(tiara, await raster(drawn))), await raster(back)];
+  // her ears show: the curls in front go behind them
+  const fr = await raster(drawn);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if ([338, 686].some((cx) => ((x - cx) / 31) ** 2 + ((y - 526) / 42) ** 2 < 1)) fr[i * 4 + 3] = 0;
+  }
+  return [over(earrings, over(tiara, fr)), await raster(back)];
 }
 
 /**
@@ -835,19 +875,39 @@ async function eyesVariants(eyes) {
 }
 
 const MOUTH_COLOUR = '#B4553A';
+/**
+ * Her mouths, with real lips (Clara asked for them): rosy lips with a soft line round them,
+ * a shine on the lower lip, and the dark of the mouth between.
+ */
+const LIP = '#E8697A', LIP_DARK = '#B9445A', LIP_SHINE = '#FFC2CB', MOUTH_IN = '#7A2230';
+const lipShine = (x, y, w) => `<path d="M${x - w} ${y} Q${x} ${y - 3} ${x + w} ${y}" fill="none" stroke="${LIP_SHINE}" stroke-width="4" stroke-linecap="round"/>`;
 async function mouths() {
+  const cx = 514;
   return {
-    // 2: a big laugh, with teeth and a tongue
-    2: await raster(`<path d="M480 554 Q514 562 548 554 Q546 596 514 600 Q482 596 480 554 Z" fill="#9C3434" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>
-      <path d="M486 559 Q514 566 542 559 L540 571 Q514 577 488 571 Z" fill="#FFFFFF"/>
-      <path d="M494 590 Q514 576 534 590 Q526 598 514 598 Q502 598 494 590 Z" fill="#F2899B"/>`),
+    // 1: a sweet smile: closed lips curving up at the corners
+    1: await raster(`
+      <path d="M480 559 Q514 589 548 559 Q541 588 514 592 Q487 588 480 559 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M480 559 Q491 554 503 557 Q509 552 514 556 Q519 552 525 557 Q537 554 548 559 Q514 586 480 559 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M477 557 Q514 590 551 557" fill="none" stroke="${MOUTH_IN}" stroke-width="4" stroke-linecap="round"/>
+      ${lipShine(cx, 584, 9)}`),
+    // 2: a big laugh: lips round an open mouth, teeth and a tongue
+    2: await raster(`
+      <path d="M476 558 Q514 566 552 558 Q550 600 514 604 Q478 600 476 558 Z" fill="${MOUTH_IN}"/>
+      <path d="M484 563 Q514 570 544 563 L542 574 Q514 580 486 574 Z" fill="#FFFFFF"/>
+      <path d="M494 594 Q514 580 534 594 Q526 602 514 602 Q502 602 494 594 Z" fill="#F2899B"/>
+      <path d="M470 556 Q480 547 494 550 Q505 545 514 550 Q523 545 534 550 Q548 547 558 556 Q552 562 544 562 Q514 570 484 562 Q476 562 470 556 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M470 556 Q474 604 514 610 Q554 604 558 556 Q552 560 549 566 Q546 600 514 602 Q482 600 479 566 Q476 560 470 556 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      ${lipShine(cx, 606, 12)}`),
     // 3: "wow!": a little round mouth
     3: await raster(`<ellipse cx="514" cy="572" rx="14" ry="17" fill="#9C3434" stroke="${INK}" stroke-width="5"/>
       <path d="M504 582 Q514 574 524 582 Q520 588 514 588 Q508 588 504 582 Z" fill="#F2899B"/>`),
-    // 4: silly, with her tongue out
-    4: await raster(`<path d="M500 570 Q500 600 514 600 Q528 600 528 570 Z" fill="#F2899B" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>
-      <path d="M514 574 L514 592" stroke="#D85F74" stroke-width="3" stroke-linecap="round"/>
-      <path d="M482 562 Q514 586 546 562" fill="none" stroke="${MOUTH_COLOUR}" stroke-width="6" stroke-linecap="round"/>`),
+    // 4: silly: her tongue out between smiling lips
+    4: await raster(`
+      <path d="M480 559 Q514 589 548 559 Q541 588 514 592 Q487 588 480 559 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M480 559 Q491 554 503 557 Q509 552 514 556 Q519 552 525 557 Q537 554 548 559 Q514 586 480 559 Z" fill="${LIP}" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M477 557 Q514 590 551 557" fill="none" stroke="${MOUTH_IN}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M500 574 Q498 612 514 614 Q530 612 528 574 Q514 580 500 574 Z" fill="#F48A9C" stroke="${LIP_DARK}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M514 582 L514 604" stroke="#D85F74" stroke-width="3" stroke-linecap="round"/>`),
   };
 }
 
@@ -1017,6 +1077,7 @@ else if (require.main === module)
     const T = JSON.parse(fs.readFileSync(path.join(REF, 'align.json'), 'utf8'));
     fs.mkdirSync(OUT, { recursive: true });
     if (DEBUG) fs.mkdirSync(DEBUG, { recursive: true });
+    let headImgPink = null;
     for (const name of Object.keys(PICS)) {
       const pic = PICS[name];
       pic.neckAt = PINK.neck;
@@ -1025,7 +1086,8 @@ else if (require.main === module)
       const t = T[name]?.head;
       const headImg = t ? warp(src, t.s, t.tx, t.ty, pic.bg) : src;
       const k = pic.span / PINK.span;
-      const dressImg = warpTo(src, k, [512, PINK.neck], [512, pic.neck], pic.bg);
+      const dressImg = warpTo(src, k, [512, PINK.neck + DROP[name]], [512, pic.neck], pic.bg);
+      if (name === 'pink') headImgPink = headImg;
       const head = split(headImg, pic, 'head');
       const dress = split(dressImg, pic, 'dress');
 
@@ -1033,6 +1095,23 @@ else if (require.main === module)
       // arms and dress (but a braid over her shoulder stays in front)
       const front = (x, y) => y < 640 || (pic.hairArea ?? []).some((bx) => inBox(x, y, bx));
       const hair = pick(headImg, head.lab, L.hair);
+      // her brows are her eyes' (brows.webp), never her hair's: a picture's own brows come out
+      if (name !== 'pink') {
+        const lumH = (i) => 0.299 * headImg[i * 4] + 0.587 * headImg[i * 4 + 1] + 0.114 * headImg[i * 4 + 2];
+        const isSk = (i) => isSkin(headImg[i * 4], headImg[i * 4 + 1], headImg[i * 4 + 2]);
+        const brow = new Uint8Array(W * H);
+        for (const [x0, y0, x1, y1] of BROW_BOXES)
+          for (let y = y0 - 10; y < y1 + 10; y++)
+            for (let x = x0 - 12; x < x1 + 12; x++) {
+              const i = y * W + x;
+              if (isSk(i) || lumH(i) > 150) continue;
+              let up = false, down = false;
+              for (let k = 1; k <= 18; k++) { if (isSk(i - k * W)) up = true; if (isSk(i + k * W)) down = true; }
+              if (up && down) brow[i] = 1;
+            }
+        grow(brow, 3, (j) => lumH(j) < 150 && !isSkin(headImg[j * 4], headImg[j * 4 + 1], headImg[j * 4 + 2]));
+        for (let i = 0; i < W * H; i++) if (brow[i]) hair[i * 4 + 3] = 0;
+      }
       // the line of her jaw and cheeks is her face's: her face is in front of the hair behind it
       const jaw = jawLine(headImg, head.lab);
       for (let i = 0; i < W * H; i++) if (jaw[i]) hair[i * 4 + 3] = 0;
@@ -1077,6 +1156,29 @@ else if (require.main === module)
 
       // the dress, with her arms and hands; what her braid hid is the other side's mirror
       const dressImgOnly = pick(dressImg, dress.lab, L.dress);
+      // where it meets her neck its skin fades in, so her neck and her chest are one (its
+      // outline does not fade: it carries on the line of her neck)
+      for (let i = 0; i < W * H; i++) {
+        const x = i % W, y = (i / W) | 0;
+        if (Math.abs(x - 512) >= 110 || y >= NECK_CUT + 10) continue;
+        const ink = Math.abs(x - 512) > 18 && 0.299 * dressImg[i * 4] + 0.587 * dressImg[i * 4 + 1] + 0.114 * dressImg[i * 4 + 2] < 110;
+        if (y < NECK_CUT) dressImgOnly[i * 4 + 3] = 0;
+        else if (!ink) dressImgOnly[i * 4 + 3] *= (y - NECK_CUT) / 10;
+      }
+      // and her skin in it is the pink one's skin, whatever picture it came from
+      const skinAt = (img) => {
+        const s0 = [0, 0, 0];
+        let k0 = 0;
+        for (let y = NECK_CUT; y < NECK_CUT + 14; y++)
+          for (let x = 500; x < 524; x++) {
+            const i = y * W + x;
+            if (!isSkin(img[i * 4], img[i * 4 + 1], img[i * 4 + 2])) continue;
+            for (let c = 0; c < 3; c++) s0[c] += img[i * 4 + c];
+            k0++;
+          }
+        return s0.map((v) => v / Math.max(1, k0));
+      };
+      const ownSkin = skinAt(dressImg), pinkSkin = skinAt(headImgPink ?? dressImg);
       // and nothing loose round it: the ends of a lock of hair on a shoulder, bits of outline
       dropSpecks(dressImgOnly, 2500);
       for (const bx of pic.mirrorFill ?? []) mirrorFill(dressImgOnly, bx);
@@ -1085,11 +1187,27 @@ else if (require.main === module)
       // the mirrored part keeps its own skin flags
       for (const bx of pic.mirrorFill ?? [])
         for (let y = bx[1]; y < bx[3]; y++) for (let x = bx[0]; x < bx[2]; x++) skinMask[y * W + x] = skinMask[y * W + 1023 - x];
+      for (let i = 0; i < W * H; i++)
+        if (skinMask[i]) for (let c = 0; c < 3; c++) dressImgOnly[i * 4 + c] = Math.min(255, dressImgOnly[i * 4 + c] * (pinkSkin[c] / ownSkin[c]));
+      // just below her neck, the shading is the pink one's (another picture has the shadow of
+      // its chin lower down), fading into the dress's own
+      for (let y = NECK_CUT; y < NECK_CUT + 26; y++)
+        for (let x = 452; x < 572; x++) {
+          const i = y * W + x;
+          const p = headImgPink;
+          // (in the middle of her neck, whatever it is: a shadow there is the other picture's chin's)
+          if (!(skinMask[i] || (Math.abs(x - 512) < 20 && dressImgOnly[i * 4 + 3])) || !isSkin(p[i * 4], p[i * 4 + 1], p[i * 4 + 2])) continue;
+          const w = 1 - (y - NECK_CUT) / 26;
+          for (let c = 0; c < 3; c++) dressImgOnly[i * 4 + c] = dressImgOnly[i * 4 + c] * (1 - w) + p[i * 4 + c] * w;
+        }
       // the blue one becomes the mermaid dress, the purple one the short dress
-      const made = name === 'blue' ? await mermaid(dressImgOnly, skinMask) : dressImgOnly;
+      let made = name === 'blue' ? await mermaid(dressImgOnly, skinMask) : dressImgOnly;
+      // Clara's colours: the mermaid red, the short dress blue, the pink one fitted, with purple
+      if (name === 'blue') made = shiftHue(made, (h) => h >= 185 && h <= 255, 352);
+      if (name === 'pink') made = fitted(shiftHue(made, (h, l, y) => y > 830 && (h >= 318 || h <= 2) && l < 0.86, 278, 0.95));
       for (const tone of Object.keys(TONES)) {
         let out = toned(made, skinMask, tone);
-        if (name === 'purple') out = await short(out, skinMask, tone);
+        if (name === 'purple') out = shiftHue(await short(out, skinMask, tone), (h) => h >= 250 && h <= 320, 212, 1.45);
         await write(`dress-${DRESSES[name]}-${tone}.webp`, out);
         if (tone === 'light') boxes[`dress:${DRESSES[name]}`] = boxOf(out);
       }
@@ -1173,6 +1291,8 @@ else if (require.main === module)
           }
         fillFrom(headOnly, (x, y) => inFace(x, y) && y < chinAt[x]);
         const whole = await wholeHead(headOnly, jaw, plain);
+        // below her neck, every dress brings its own chest and shoulders
+        for (let i = NECK_CUT * W + 14 * W; i < W * H; i++) whole[i * 4 + 3] = 0;
         const all = new Uint8Array(W * H).fill(1);
         for (const tone of Object.keys(TONES)) await write(`head-${tone}.webp`, toned(whole, all, tone));
         // her eyes, and nothing else the outline round them reached: bits of the line of her
@@ -1180,7 +1300,7 @@ else if (require.main === module)
         const eyes = keepTouching(pick(headImg, head.lab, L.eyes), (x, y) => [427, 597].some((cx) => ((x - cx) / 60) ** 2 + ((y - 492) / 52) ** 2 < 1));
         const mouth = pick(headImg, head.lab, L.mouth);
         const allEyes = { 1: eyes, ...(await eyesVariants(eyes)) };
-        const allMouths = { 1: mouth, ...(await mouths()) };
+        const allMouths = await mouths();
         for (const [k, img] of Object.entries(allEyes)) { await write(`eyes-${EYES[k]}.webp`, img); boxes[`eyes:${EYES[k]}`] = boxOf(img, brows); }
         for (const [k, img] of Object.entries(allMouths)) { await write(`mouth-${MOUTHS[k]}.webp`, img); boxes[`mouth:${MOUTHS[k]}`] = boxOf(img); }
         for (const [k, img] of Object.entries(await powers())) { await write(`power-${POWERS[k]}.webp`, img); boxes[`accessory:${POWERS[k]}`] = boxOf(img); }

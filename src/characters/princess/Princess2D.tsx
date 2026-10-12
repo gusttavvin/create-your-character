@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { PRINCESS, princessColors } from './config';
 import { boxOf, browsFile, CANVAS, filesOf, hairBack, hairFront, headFile, type SkinTone } from './pieces';
+import { AbilityLayer } from './abilities';
 import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 /**
@@ -10,7 +11,7 @@ import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../typ
  * 1024 by 1536 canvas and already lined up (see pieces.tsx), so here they are simply stacked,
  * back to front: the back of her hair, her head (with her neck), the dress (with her arms and
  * hands; its neckline covers her neck), eyes, mouth, the front of her hair (with the tiara and
- * the earrings) and her power round her.
+ * the earrings) and her ability round her (abilities.tsx).
  */
 const VW = 600;
 const VH = 720;
@@ -20,7 +21,7 @@ const OX = (VW - CANVAS.w * S) / 2;
 const OY = 10;
 /** How far down the canvas the middle of her eyes is: where a blink closes them to. */
 const EYE_LINE = 490;
-const Z = { hairBack: 0, head: 1, dress: 2, eyes: 3, mouth: 4, hairFront: 5, power: 6 };
+const Z = { powerBack: 0, hairBack: 1, head: 2, dress: 3, eyes: 4, mouth: 5, hairFront: 6, power: 7 };
 
 const WHOLE: CSSProperties = {
   position: 'absolute',
@@ -118,11 +119,15 @@ export default function Princess2D({ parts, colors, animate = true, className }:
             <img src={hairFront(hair.id)} alt="" draggable={false} style={IMG} />
           </Layer>
         )}
+        {/* her ability goes round her: the far side of it behind her, the near side in front */}
+        {power && (
+          <Layer key={`powerb-${power.id}`} z={Z.powerBack}>
+            <AbilityLayer id={power.id} side="back" animate={animate} />
+          </Layer>
+        )}
         {power && (
           <Layer key={`power-${power.id}`} part="accessory" z={Z.power}>
-            <div className="power-float" style={{ width: '100%', height: '100%' }}>
-              <img src={filesOf('accessory', power.id, tone)[0]} alt="" draggable={false} style={IMG} />
-            </div>
+            <AbilityLayer id={power.id} side="front" animate={animate} />
           </Layer>
         )}
       </div>

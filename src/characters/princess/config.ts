@@ -1,13 +1,16 @@
 import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type ColorMap, type PartMap } from '../types';
 import { pieceCard, TONES, type SkinTone } from './pieces';
+import { abilityCard } from './abilities';
 import * as P from './parts';
 
 /**
  * The princess, cut from the four princesses Clara sent (art-source/princess/reference): a
- * green and a pink ball gown, the blue one made a mermaid's tail and the purple one short;
+ * green ball gown, the pink one made closer-fitting with purple, the blue one a red mermaid's
+ * tail and the purple one short and blue;
  * a red braid, long brown hair, curly black hair and a blonde bun, each with its own tiara (the
  * crown comes with the hair and is not chosen); eyes that look different and are coloured
- * differently, the first just like the pictures'; smiles; and a power.
+ * differently, the first just like the pictures'; smiling lips; and an ability, moving round
+ * her (abilities.tsx).
  *
  * Clara wanted the skin chosen for every princess, whatever she wears: her face and arms are
  * drawn in the skin the child picks, everything else in the colours it was drawn in.
@@ -64,9 +67,9 @@ export const PRINCESS: CharacterDefinition = {
       color: '#FF6EC7',
       options: [
         { id: 'gown', label: 'Green', phrase: 'a green ball gown', Svg: card('dress', 'gown') },
-        { id: 'aline', label: 'Pink', phrase: 'a pink ball gown', Svg: card('dress', 'aline') },
-        { id: 'mermaid', label: 'Mermaid', phrase: 'a mermaid tail', Svg: card('dress', 'mermaid') },
-        { id: 'star', label: 'Short', phrase: 'a short purple dress', Svg: card('dress', 'star') },
+        { id: 'aline', label: 'Pink', phrase: 'a pink and purple dress', Svg: card('dress', 'aline') },
+        { id: 'mermaid', label: 'Mermaid', phrase: 'a red mermaid tail', Svg: card('dress', 'mermaid') },
+        { id: 'star', label: 'Short', phrase: 'a short blue dress', Svg: card('dress', 'star') },
       ],
     },
     {
@@ -107,14 +110,14 @@ export const PRINCESS: CharacterDefinition = {
     },
     {
       id: 'accessory',
-      label: 'Power',
+      label: 'Abilities',
       color: '#A77BFF',
       optional: true,
       options: [
-        { id: 'kitten', label: 'Animals', phrase: 'talk to animals', Svg: card('accessory', 'kitten') },
-        { id: 'wand', label: 'Snow', phrase: 'make snow', Svg: card('accessory', 'wand') },
-        { id: 'scepter', label: 'Space', phrase: 'fly to the stars', Svg: card('accessory', 'scepter') },
-        { id: 'book', label: 'Flowers', phrase: 'make flowers grow', Svg: card('accessory', 'book') },
+        { id: 'kitten', label: 'Animals', phrase: 'talk to animals', Svg: abilityCard('kitten') },
+        { id: 'wand', label: 'Snow', phrase: 'make snow', Svg: abilityCard('wand') },
+        { id: 'scepter', label: 'Space', phrase: 'fly to the stars', Svg: abilityCard('scepter') },
+        { id: 'book', label: 'Flowers', phrase: 'make flowers grow', Svg: abilityCard('book') },
       ],
     },
   ],
