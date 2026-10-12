@@ -1679,6 +1679,37 @@ Como foi feito:
   hair, sparkly blue eyes and a big laugh. She is wearing a mermaid tail. She can make
   snow!") e o 3D antigo abrindo sem erro; `npm run build` passa.
 
+### Rodada 2 (12 de outubro de 2026, depois de publicar)
+
+Pedidos da Clara: cartões sem o rosto (como no monstro e no dragão); o olho "caía" ao
+piscar; contornos sobrando no cabelo (trança com contorno de braço, longo com contorno do
+vestido) e faltando no vestido (braços do rosa, mão da sereia); sobrancelhas junto com os
+olhos.
+
+- [x] **Cartões:** cada um mostra só a peça (olhos com as sobrancelhas).
+- [x] **Piscar:** o olho fecha em direção ao meio do próprio olho (`transform-origin` na
+      altura dos olhos, `EYE_LINE` em `Princess2D.tsx`). Antes encolhia em direção ao meio
+      da folha inteira, então descia. As sobrancelhas ficam paradas.
+- [x] **Sobrancelhas:** são um rótulo próprio no recorte (escuro com pele logo acima e logo
+      abaixo, dentro de `BROW_BOXES`), viram `brows.webp` e vão com qualquer olho. Saíram da
+      cabeça (preenchida com pele) e dos cabelos das outras imagens, que antes traziam as
+      sobrancelhas delas por cima das da cabeça.
+- [x] **Contornos:** o contorno marrom tem a cor do cabelo castanho. A regra do cabelo da rosa
+      pega agora só marrom com vermelho ≥ 80 (o contorno é mais escuro). Manchas largas
+      desse escuro são sombra do cabelo, não contorno (o contorno é fino). O vestido e os
+      braços alcançam o contorno também pela borda suave. O contorno que o cabelo de trás
+      divide com o vestido é do vestido, e no vestido rosa o corpete não pode ser cabelo
+      (dourado parecido com castanho). Pixels marrons meio-escuros soltos viram contorno
+      de quem estiver ao lado, não vestido.
+- [x] **Pescoço no vestido:** só a pele ligada ao meio do colo sai do vestido. Antes saía
+      tudo que tivesse cor de pele perto do pescoço, e os brilhos claros das mangas do roxo
+      viravam buracos; a sombra da pele no ombro virava linha solta no verde.
+- [x] **Sereia:** a mão leva o contorno inteiro; pedaços da saia de baixo que vinham presos
+      pelo contorno das cortinas saem; o dourado da cortina tem a linha de baixo.
+- [x] **Cabelo comprido:** atrás do corpo ele é preenchido com a sombra do próprio cabelo,
+      então outro vestido (com mangas e braços em outro lugar) não mostra buraco no cabelo.
+- [x] **Restos soltos** no vestido (pontas de cacho no ombro) e no cabelo de trás saem.
+
 Falta:
 - [ ] **3D novo.** O 3D atual é o antigo e mostra as peças antigas.
 - [ ] Com o cabelo "None" aparecem uns fiozinhos de cabelo nas laterais da testa.

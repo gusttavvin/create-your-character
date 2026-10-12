@@ -152,8 +152,8 @@ const isSkin = (r, g, b) => r > 195 && g > 0.66 * r && g - b >= -8 && r - b > 25
  * the two sleeves are).
  */
 const PICS = {
-  pink: { bg: [255, 255, 255], neck: 703.6, span: 365.8, hair: (r, g, b, l, h) => !isSkin(r, g, b) && r < 215 && h >= 4 && h <= 36 && r - b > 35 && l < 165 },
-  green: { bg: [0, 0, 0], bgTol: 30, neck: 681, span: 369.4, hairOver: [2], hairArea: [[596, 520, 800, 950]], mirrorFill: [[560, 560, 1024, 1536]], hairAreaColour: (r, g, b, h) => (r > 200 && g > 190 && b > 150) || (h >= 30 && h <= 60 && r > 190), hair: (r, g, b, l, h) => !isSkin(r, g, b) && (h <= 26 || h >= 350) && r > 95 && g < 125 && r - g > 45 },
+  pink: { bg: [255, 255, 255], neck: 703.6, span: 365.8, body: [[400, 690, 624, 1100]], hair: (r, g, b, l, h) => !isSkin(r, g, b) && r >= 80 && r < 215 && h >= 4 && h <= 36 && r - b > 35 && l < 165 },
+  green: { bg: [0, 0, 0], bgTol: 30, neck: 681, span: 369.4, hairOver: [2], hairArea: [[596, 520, 830, 1010]], mirrorFill: [[560, 560, 1024, 1536]], hairAreaColour: (r, g, b, h) => (r > 200 && g > 190 && b > 150) || (h >= 30 && h <= 60 && r > 190), hair: (r, g, b, l, h) => !isSkin(r, g, b) && (h <= 26 || h >= 350) && r > 95 && g < 125 && r - g > 45 },
   blue: { bg: [0, 0, 0], bgTol: 30, useBody: true, neck: 689.6, span: 363.7, body: [[200, 780, 420, 1060], [604, 780, 824, 1060]], hair: (r, g, b, l, h) => l < 120 && Math.max(r, g, b) - Math.min(r, g, b) < 40 },
   purple: {
     bg: [0, 0, 0], bgTol: 30, useBody: true, neck: 712, span: 341.4,
@@ -181,7 +181,9 @@ const DARK = 72;
  * Labels every pixel of a lined-up picture: 0 nothing, and bit flags for the pieces it goes
  * into (a pixel of outline may go into more than one).
  */
-const L = { head: 1, eyes: 2, mouth: 4, hair: 8, dress: 16, skin: 32 };
+const L = { head: 1, eyes: 2, mouth: 4, hair: 8, dress: 16, skin: 32, brow: 64 };
+/** Where her brows are (in the pink picture; the others are lined up with it). */
+const BROW_BOXES = [[370, 364, 464, 426], [560, 364, 654, 426]];
 /** How far into the dark outline each piece reaches from its own pixels. */
 const REACH = { [L.head]: 10, [L.eyes]: 30, [L.mouth]: 10, [L.hair]: 12, [L.dress]: 10, [L.skin]: 10 };
 const inInnerFace = (x, y) => ((x - 512) / 150) ** 2 + ((y - 478) / 160) ** 2 < 1;
@@ -238,6 +240,12 @@ function split(img, pic, part) {
     const eyeBox = pic === PINK ? EYE_BOXES.some((bx) => inBox(x, y, bx)) : [427, 597].some((cx) => ((x - cx) / 70) ** 2 + ((y - 490) / 62) ** 2 < 1);
     const feature = eyeBox ||inBox(x, y, MOUTH_BOX) || (FEATURES.some((bx) => inBox(x, y, bx)) && isDark);
     const body = [...(pic.useBody ? BODY : []), ...(pic.body ?? [])].some((bx, k) => inBox(x, y, bx) && !(pic.hairOver ?? []).includes(k));
+    // a brow: not skin, with skin a little above it and a little below it (a lock of hair
+    // across the brow has hair above or below it)
+    if (BROW_BOXES.some((bx) => inBox(x, y, bx)) && !isSkin(r, g, b)) {
+      const skinAt = (dy) => { for (let k = 1; k <= 16; k++) { const j = i + dy * k * W; if (isSkin(img[j * 4], img[j * 4 + 1], img[j * 4 + 2])) return true; } return false; };
+      if (skinAt(-1) && skinAt(1)) { lab[i] = L.brow; continue; }
+    }
     if (y < 980 && !feature && !body && pic.hair(r, g, b, l, h, x, y)) { lab[i] = L.hair; continue; }
     if (!feature && (pic.hairArea ?? []).some((bx) => inBox(x, y, bx)) && !isSkin(r, g, b) && !isDark && pic.hairAreaColour(r, g, b, h)) { lab[i] = L.hair; continue; }
     if (isDark) { dark[i] = 1; continue; }
@@ -247,15 +255,69 @@ function split(img, pic, part) {
     // earrings hang by her ears
     if (y > 540 && y < 632 && (Math.abs(x - 342) < 28 || Math.abs(x - 682) < 28) && !isSkin(r, g, b)) { lab[i] = L.hair; continue; }
     if (isSkin(r, g, b)) {
-      // her neck and the skin above the neckline are her head's, always: the head lies under
-      // the dress, whose neckline covers it, so the skin there is one skin whatever she wears
-      if (part === 'dress' && y < pic.neckAt + 60 && Math.abs(x - 512) < 190) continue;
+      // (in a dress, skin is her arms', or a pale shine on the cloth; her neck goes below)
+      if (part === 'dress') { lab[i] = y < 640 ? L.head | L.skin : L.dress | L.skin; continue; }
       const neck = y < 780 && Math.abs(x - 512) < 190;
       lab[i] = (y < 640 || neck ? L.head : L.dress) | L.skin;
       continue;
     }
     if (inFace(x, y) && y > 300) { lab[i] = L.head | L.skin; continue; }
-    if (y > 650 || (y > 596 && Math.abs(x - 512) > 86)) { lab[i] = L.dress; continue; }
+    if (y > 650 || (y > 596 && Math.abs(x - 512) > 86)) {
+      // a brown or grey half-dark is the soft edge of an outline: it goes with what it borders
+      if (l < 110 && (h <= 50 || h >= 320 || mx - mn < 0.3 * mx)) { dark[i] = 1; continue; }
+      lab[i] = L.dress;
+      continue;
+    }
+  }
+
+  {
+    // an outline is thin; a wide patch of the same dark brown is the shadow in her hair
+    const depth = new Uint8Array(n).fill(255);
+    let front = [];
+    for (let i = 0; i < n; i++) if (!dark[i] || bgmask[i]) { depth[i] = 0; front.push(i); }
+    for (let d = 1; d <= 6 && front.length; d++) {
+      const next = [];
+      for (const i of front) {
+        const x = i % W;
+        for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W])
+          if (j >= 0 && j < n && depth[j] === 255) { depth[j] = d; next.push(j); }
+      }
+      front = next;
+    }
+    const shadow = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = i % W, y = (i / W) | 0;
+      if (depth[i] === 255 && y < 980 && !EYE_BOXES.some((bx) => inBox(x, y, bx)) && !inBox(x, y, MOUTH_BOX) && !inInnerFace(x, y)) shadow[i] = 1;
+    }
+    grow(shadow, 6, (j) => dark[j] && !bgmask[j]);
+    for (let i = 0; i < n; i++) if (shadow[i]) { lab[i] = L.hair; dark[i] = 0; }
+  }
+
+  if (part === 'dress') {
+    // her neck and the skin above the neckline are her head's, always: the head lies under the
+    // dress, whose neckline covers it, so the skin there is one skin whatever she wears. That
+    // skin is what joins the middle of her chest, shaded edges and all; a pale shine on a
+    // sleeve or on the bodice is cloth.
+    const fleshy = (i) => {
+      const r = img[i * 4], g = img[i * 4 + 1], b = img[i * 4 + 2];
+      const l = 0.299 * r + 0.587 * g + 0.114 * b, h = hue(r, g, b);
+      return !bgmask[i] && !dark[i] && (isSkin(r, g, b) || (h >= 5 && h <= 34 && l >= 100 && r > g && g > b));
+    };
+    const neck = flood([[512, Math.round(pic.neckAt) - 12]], (i) => fleshy(i) && i < (pic.neckAt + 60) * W);
+    for (let i = 0; i < n; i++) if (neck[i]) lab[i] = 0;
+    // and a small patch of skin colour is a shine on the cloth, not her skin
+    const seen = new Uint8Array(n);
+    for (let s0 = 0; s0 < n; s0++) {
+      if (seen[s0] || !(lab[s0] & L.skin && lab[s0] & L.dress)) continue;
+      const blob = [s0];
+      seen[s0] = 1;
+      for (let k = 0; k < blob.length; k++) {
+        const i = blob[k], x = i % W;
+        for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W])
+          if (j >= 0 && j < n && !seen[j] && lab[j] & L.skin && lab[j] & L.dress) { seen[j] = 1; blob.push(j); }
+      }
+      if (blob.length < 400) for (const i of blob) lab[i] = L.dress;
+    }
   }
 
   // the outline goes with every piece it borders: each piece reaches into the dark outline
@@ -272,7 +334,10 @@ function split(img, pic, part) {
       for (const i of front) {
         const x = i % W;
         for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
-          if (j < 0 || j >= n || !dark[j] || bgmask[j] || dist[j] || out[j] & bit) continue;
+          // (her dress and arms reach through the soft brown edge of the outline too, which may
+          // have been taken for hair, or the line round an arm by her hair breaks up)
+          const soft = (bit === L.dress || bit === L.skin) && lab[j] & L.hair && 0.299 * img[j * 4] + 0.587 * img[j * 4 + 1] + 0.114 * img[j * 4 + 2] < 110;
+          if (j < 0 || j >= n || !(dark[j] || soft) || bgmask[j] || dist[j] || out[j] & bit) continue;
           dist[j] = d;
           out[j] |= bit;
           next.push(j);
@@ -330,7 +395,7 @@ function jawLine(img, lab) {
   return mask;
 }
 
-module.exports = { load, save, warp, warpTo, edges, register, split, pick, PICS, L, W, H, isSkin, hue };
+module.exports = { load, save, warp, warpTo, edges, register, split, pick, PICS, L, W, H, isSkin, hue, PINK: PICS.pink };
 
 /* ------------------------------------------------- the two dresses made from a picture */
 const INK = '#3B2314';
@@ -434,16 +499,29 @@ async function mermaid(img, mask) {
   const isDarkBlue = (i) => img[i * 4 + 3] && img[i * 4 + 2] > 140 && img[i * 4] < 120 && img[i * 4 + 1] < 160;
   const tier = flood([[300, 990], [724, 990], [330, 1010], [694, 1010]], isDarkBlue);
   // the gold trim and the outline round the drapes go with them
-  const near = grow(new Uint8Array(tier), 20, (j) => {
+  const near = grow(new Uint8Array(tier), 34, (j) => {
     const r = img[j * 4], g = img[j * 4 + 1], b = img[j * 4 + 2];
     return img[j * 4 + 3] && (hue(r, g, b) < 60 || r + g + b < 260) && !isDarkBlue(j);
   });
+  // and the outline round her hands
+  // (anything round them that is not the blue of the skirt: the soft edge and the line)
+  const rim = grow(new Uint8Array(mask), 14, (j) => img[j * 4 + 3] && img[j * 4 + 2] <= img[j * 4] + 10);
   const keep = new Uint8ClampedArray(W * H * 4);
   for (let i = 0; i < W * H; i++) {
     const y = (i / W) | 0;
-    if (y < 902 || tier[i] || near[i] || mask[i]) for (let c = 0; c < 4; c++) keep[i * 4 + c] = img[i * 4 + c];
+    if (y < 902 || tier[i] || near[i] || mask[i] || rim[i]) for (let c = 0; c < 4; c++) keep[i * 4 + c] = img[i * 4 + c];
   }
-  return over(dropSpecks(keep, 1500), await raster(tailSvg()));
+  // bits of the skirt below caught by the drapes' outline: without the outline they come
+  // loose, and go; then only the outline round what stays, stays
+  const ink = (i) => Math.max(keep[i * 4], keep[i * 4 + 1], keep[i * 4 + 2]) < 70;
+  const core = new Uint8ClampedArray(keep);
+  for (let i = 0; i < W * H; i++) if (ink(i)) core[i * 4 + 3] = 0;
+  dropSpecks(core, 5000);
+  const kept = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) if (core[i * 4 + 3]) kept[i] = 1;
+  grow(kept, 8, (j) => keep[j * 4 + 3] && ink(j));
+  for (let i = 0; i < W * H; i++) if (!kept[i] && i >= 902 * W) keep[i * 4 + 3] = 0;
+  return over(dropSpecks(keep, 5000), await raster(tailSvg()));
 }
 
 /**
@@ -769,16 +847,40 @@ else if (require.main === module)
         const x = i % W, y = (i / W) | 0;
         if (!front(x, y - 10)) hairFront[i * 4 + 3] = 0;
         if (front(x, y + 10)) hairBack[i * 4 + 3] = 0;
+        // the outline it shares with her dress, arms and neck is theirs: they are in front of it
+        if (head.lab[i] & L.dress) hairBack[i * 4 + 3] = 0;
       }
       const n = HAIRS[name];
       dropSpecks(hairBack, 300);
       dropSpecks(hairFront, 300);
+      // behind her body her hair was hidden: filled in with its shadow, so where another dress's
+      // sleeves and arms are not where this one's were, no hole shows in her hair
+      const tones = [];
+      for (let i = 0; i < W * H; i++) if (hairBack[i * 4 + 3]) tones.push([hairBack[i * 4], hairBack[i * 4 + 1], hairBack[i * 4 + 2]]);
+      tones.sort((a, b) => a[0] + a[1] + a[2] - (b[0] + b[1] + b[2]));
+      // (the shadow, not the outline: a little above the darkest)
+      const shade = tones.length ? tones[Math.floor(tones.length * 0.2)] : [0, 0, 0];
+      // (only hair that falls down her back: short hair behind her neck stays as it was)
+      const longHair = boxOf(hairBack)[1] + boxOf(hairBack)[3] > 800;
+      for (let y = 600; longHair && y < H; y++) {
+        let x0 = -1, x1 = -1;
+        for (let x = 0; x < W; x++) if (hairBack[(y * W + x) * 4 + 3]) { if (x0 < 0) x0 = x; x1 = x; }
+        for (let x = x0 + 1; x0 >= 0 && x < x1; x++) {
+          const i = y * W + x;
+          if (hairBack[i * 4 + 3] === 255) continue;
+          const a = hairBack[i * 4 + 3] / 255;
+          for (let c = 0; c < 3; c++) hairBack[i * 4 + c] = hairBack[i * 4 + c] * a + shade[c] * (1 - a);
+          hairBack[i * 4 + 3] = 255;
+        }
+      }
       await write(`hair-${n}-back.webp`, hairBack);
       await write(`hair-${n}-front.webp`, hairFront);
       boxes[`hair:${n}`] = boxOf(hairBack, hairFront);
 
       // the dress, with her arms and hands; what her braid hid is the other side's mirror
       const dressImgOnly = pick(dressImg, dress.lab, L.dress);
+      // and nothing loose round it: the ends of a lock of hair on a shoulder, bits of outline
+      dropSpecks(dressImgOnly, 2500);
       for (const bx of pic.mirrorFill ?? []) mirrorFill(dressImgOnly, bx);
       const skinMask = new Uint8Array(W * H);
       for (let i = 0; i < W * H; i++) if (dress.lab[i] & L.skin && dress.lab[i] & L.dress) skinMask[i] = 1;
@@ -820,13 +922,17 @@ else if (require.main === module)
           const x = i % W, y = (i / W) | 0;
           if (jaw[i] && y > 590 && y < chinAt[x]) chinAt[x] = y;
         }
-        // a lock of the pink one's hair lies over her left brow: that brow is the right one's mirror
-        const BROW_R = [566, 372, 650, 422];
-        for (let y = BROW_R[1]; y < BROW_R[3]; y++)
-          for (let x = 1024 - BROW_R[2]; x < 1024 - BROW_R[0]; x++) {
+        // her brows go with her eyes; a lock of the pink one's hair lies over her left brow, so
+        // that brow is the right one's mirror
+        const brows = pick(headImg, head.lab, L.brow);
+        const [, BR] = BROW_BOXES;
+        for (let y = BR[1]; y < BR[3]; y++)
+          for (let x = 1024 - BR[2]; x < 1024 - BR[0]; x++) {
             const i = y * W + x, m = y * W + (1024 - x);
-            for (let c = 0; c < 4; c++) headOnly[i * 4 + c] = headOnly[m * 4 + c];
+            for (let c = 0; c < 4; c++) brows[i * 4 + c] = brows[m * 4 + c];
           }
+        dropSpecks(brows, 60);
+        await write('brows.webp', brows);
         // under her eyes and her mouth, plain skin: the colour of her face between her eyes
         const sample = [0, 0, 0];
         let count = 0;
@@ -843,10 +949,15 @@ else if (require.main === module)
         const hole = [];
         for (let i = 0; i < W * H; i++) {
           const x = i % W, y = (i / W) | 0;
-          if (!under(x, y)) continue;
-          // keep her cheeks, which reach under her eyes
           const r = headOnly[i * 4], g = headOnly[i * 4 + 1], b = headOnly[i * 4 + 2];
-          if (headOnly[i * 4 + 3] && isSkin(r, g, b) && hue(r, g, b) < 14) continue;
+          // under her brows, whatever is not skin
+          if (BROW_BOXES.some((bx) => inBox(x, y, bx)) && !under(x, y)) {
+            if (headOnly[i * 4 + 3] && isSkin(r, g, b)) continue;
+          } else {
+            if (!under(x, y)) continue;
+            // keep her cheeks, which reach under her eyes
+            if (headOnly[i * 4 + 3] && isSkin(r, g, b) && hue(r, g, b) < 14) continue;
+          }
           headOnly[i * 4] = plain[0]; headOnly[i * 4 + 1] = plain[1]; headOnly[i * 4 + 2] = plain[2]; headOnly[i * 4 + 3] = 255;
           hole.push(i);
         }
@@ -869,7 +980,7 @@ else if (require.main === module)
         const mouth = pick(headImg, head.lab, L.mouth);
         const allEyes = { 1: eyes, ...(await eyesVariants(eyes)) };
         const allMouths = { 1: mouth, ...(await mouths()) };
-        for (const [k, img] of Object.entries(allEyes)) { await write(`eyes-${EYES[k]}.webp`, img); boxes[`eyes:${EYES[k]}`] = boxOf(img); }
+        for (const [k, img] of Object.entries(allEyes)) { await write(`eyes-${EYES[k]}.webp`, img); boxes[`eyes:${EYES[k]}`] = boxOf(img, brows); }
         for (const [k, img] of Object.entries(allMouths)) { await write(`mouth-${MOUTHS[k]}.webp`, img); boxes[`mouth:${MOUTHS[k]}`] = boxOf(img); }
         for (const [k, img] of Object.entries(await powers())) { await write(`power-${POWERS[k]}.webp`, img); boxes[`accessory:${POWERS[k]}`] = boxOf(img); }
       }

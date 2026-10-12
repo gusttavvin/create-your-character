@@ -18,11 +18,14 @@ const url = (file: string) => `/princess/${file}.webp`;
 /** The files that make a piece, in the skin she is drawn in (only dresses and her head have skin). */
 export function filesOf(row: string, id: string, tone: SkinTone): string[] {
   if (row === 'hair') return [url(`hair-${id}-back`), url(`hair-${id}-front`)];
+  // her brows come with her eyes
+  if (row === 'eyes') return [browsFile, url(`eyes-${id}`)];
   if (row === 'dress') return [url(`dress-${id}-${tone}`)];
   if (row === 'accessory') return [url(`power-${id}`)];
   return [url(`${row}-${id}`)];
 }
 export const headFile = (tone: SkinTone) => url(`head-${tone}`);
+export const browsFile = url('brows');
 export const hairBack = (id: string) => url(`hair-${id}-back`);
 export const hairFront = (id: string) => url(`hair-${id}-front`);
 
@@ -52,12 +55,6 @@ function Picture({ box, files, children }: { box: number[]; files: string[]; chi
 export function pieceCard(row: string, id: string) {
   return function PieceCard({ colors = {} }: PartSvgProps) {
     const tone = (TONES as string[]).includes(colors.tone) ? (colors.tone as SkinTone) : 'light';
-    const box = boxOf(row, id);
-    // her eyes and mouth are small: on the card they sit on her face, so they read as hers
-    if (row === 'eyes' || row === 'mouth')
-      return <Picture box={row === 'eyes' ? [340, 380, 344, 200] : [450, 520, 128, 100]} files={[headFile(tone), ...filesOf(row, id, tone)]} />;
-    // a hairstyle is shown on her head, or its card has a hole where her face goes
-    if (row === 'hair') return <Picture box={box} files={[hairBack(id), headFile(tone), hairFront(id)]} />;
-    return <Picture box={box} files={filesOf(row, id, tone)} />;
+    return <Picture box={boxOf(row, id)} files={filesOf(row, id, tone)} />;
   };
 }

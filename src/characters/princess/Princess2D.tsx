@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { PRINCESS, princessColors } from './config';
-import { boxOf, CANVAS, filesOf, hairBack, hairFront, headFile, type SkinTone } from './pieces';
+import { boxOf, browsFile, CANVAS, filesOf, hairBack, hairFront, headFile, type SkinTone } from './pieces';
 import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
 /**
@@ -18,6 +18,8 @@ const VH = 720;
 const S = 700 / CANVAS.h;
 const OX = (VW - CANVAS.w * S) / 2;
 const OY = 10;
+/** How far down the canvas the middle of her eyes is: where a blink closes them to. */
+const EYE_LINE = 490;
 const Z = { hairBack: 0, head: 1, dress: 2, eyes: 3, mouth: 4, hairFront: 5, power: 6 };
 
 const WHOLE: CSSProperties = {
@@ -98,8 +100,12 @@ export default function Princess2D({ parts, colors, animate = true, className }:
           <img src={headFile(tone)} alt="" draggable={false} style={IMG} />
         </Layer>
         {eyes && (
-          <Layer key={`eyes-${eyes.id}`} part="eyes" z={Z.eyes} extra="blink">
-            <img src={filesOf('eyes', eyes.id, tone)[0]} alt="" draggable={false} style={IMG} />
+          <Layer key={`eyes-${eyes.id}`} part="eyes" z={Z.eyes}>
+            <img src={browsFile} alt="" draggable={false} style={{ ...IMG, position: 'absolute', inset: 0 }} />
+            {/* she blinks: her eyes close towards their middle, her brows stay */}
+            <div className="blink" style={{ position: 'absolute', inset: 0, transformOrigin: `50% ${(EYE_LINE / CANVAS.h) * 100}%` }}>
+              <img src={filesOf('eyes', eyes.id, tone)[1]} alt="" draggable={false} style={IMG} />
+            </div>
           </Layer>
         )}
         {mouth && (
