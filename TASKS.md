@@ -1795,5 +1795,64 @@ decote verde, e sobravam risquinhos do ombro da verde.
       "a short blue dress".
 
 Falta:
-- [ ] **3D novo.** O 3D atual é o antigo e mostra as peças antigas.
+- [x] **3D novo:** veja a seção seguinte.
 - [ ] Com o cabelo "None" aparecem uns fiozinhos de cabelo nas laterais da testa.
+
+## Princesa: 3D feito das mesmas imagens do 2D — 12 de outubro de 2026
+
+Pedido: "faça o 3d da princesa com os ajustes do 2d, faça igual o 2d". O 3D antigo era outra
+princesa, montada de formas. O novo não redesenha nada: é feito das mesmas imagens que o 2D
+empilha (`public/princess/*.webp`), então de frente ela é a princesa da folha, e girando tem
+corpo de verdade.
+
+- [x] **Volume pela largura de cada parte** (`relief.ts`):
+      - **Vestido:** fatiado como num torno, cada linha da imagem vira uma fatia redonda
+        (`loft`). A saia é um sino, os braços e pernas são tubos, e a barra e os ombros fecham
+        em curva. Uma parte muito larga e baixa (nadadeira, tiara) nunca fica mais funda que alta.
+      - **Cabeça e pescoço:** bolas dentro do contorno (`ball`), o que dá uma cabeça redonda.
+        Fatiada, a cabeça virava um disco com um "prato" embaixo do queixo.
+      - **Cabelo:** é uma camada sobre ela, não um bloco. Onde cobre a cabeça ou os ombros,
+        fica encostado; na altura da cabeça vira uma casca redonda em volta dela (`shellOf`,
+        no máximo 90 px mais larga que a cabeça); solto, tem um terço da largura de fundo.
+        Mechas próximas são juntadas antes (fecha vãos de até 32 px) e a casca é suavizada
+        entre as linhas. Cada cacho mudando de tamanho fazia degraus que viravam riscos escuros.
+- [x] **Montagem** (`build3d.ts`), na mesma ordem do 2D:
+      - corpo (cabeça + vestido + sobrancelhas + boca);
+      - frente do cabelo por cima;
+      - cabelo de trás atrás do corpo;
+      - olhos sobre a pele do rosto, por baixo das mechas, piscando como no 2D.
+- [x] **De costas:** a nuca é cabelo penteado a partir do alto da cabeça, no tom médio do
+      próprio cabelo; sem cabelo, é pele. O vestido mostra o próprio vestido.
+- [x] **Laterais sem listras:** de lado, a superfície só pode mostrar a última fileira de
+      pixels da imagem, esticada. Por isso o que está virado de lado usa a cor de um pouco para
+      dentro do contorno, desfocada; o que está de frente usa a imagem exata. Visto bem de
+      frente, ela é a imagem 2D inteira, inclusive a borda.
+- [x] **Borda:** a malha é presa à borda exata da imagem (não aos degraus da grade de 4 px), e
+      a transparência da imagem vira cobertura de pixel (`alphaToCoverage`), como a mistura do
+      2D. Cortada em 50%, aparecia o contorno do cabelo por trás do braço como farpas.
+- [x] **Luz pela metade:** as imagens já têm sombra pintada; com a luz inteira por cima, cada
+      beirada virava uma faixa de outro tom. A linha de contorno 3D só entra quando ela gira
+      (de frente, o contorno é o do desenho).
+- [x] **Habilidades em 3D de verdade** (`abilities3d.tsx`): os mesmos desenhos do 2D
+      (`abilities.tsx` agora exporta os desenhos e as posições), como figurinhas que giram em
+      volta dela no espaço e passam por trás dela de qualquer lado. Passarinhos batem asa e
+      viram para o lado em que voam; neve cai girando; planeta, lua e brilhos dão a volta;
+      flores abrem e fecham.
+- [x] **Montada, não arrastável**, como o monstro e o dragão (`movable3d.ts`). Os ajustes da
+      folha ficam na folha.
+- [x] **Página local de conferência:** `princess-review-3d.html`. Sem nada, mostra as quatro
+      princesas; `?row=hair` (ou dress, eyes, mouth, accessory) mostra as quatro opções de uma
+      linha; `?skin=dark`; `?view=90`; `?big=1` mostra duas por linha; `?one=1` mostra uma só,
+      grande.
+- Conferido: as quatro princesas de frente, de 3/4, de lado e de costas; os quatro cabelos na
+  pele escura; os quatro olhos, piscando; sem cabelo e sem olhos; as quatro habilidades no
+  jogo; `npm run build`. Montar leva cerca de 0,25 s numa combinação nova e 0,1 s numa já
+  vista, com 80 a 110 mil vértices.
+
+### Limitações reais
+
+- Vista bem de lado, ela é uma figura de perfil (o desenho é de frente): o rosto aparece de
+  lado na cabeça redonda e o cabelo é uma casca lisa, sem mechas desenhadas.
+- As costas do vestido mostram a frente dele espelhada (decote e enfeites também).
+- A grade tem 4 px: chegando a câmera muito perto, a beirada ainda mostra degrauzinhos.
+- `src/characters/princess/parts.tsx` (as peças do 2D antigo) não é mais usado por nada.

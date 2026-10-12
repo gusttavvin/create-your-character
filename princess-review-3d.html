@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="UTF-8" /><title>Princess 3D review — local only</title>
+  <style>
+    body { margin: 0; font-family: system-ui; background: #eef3f8; }
+    .bar { padding: 6px 8px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 8px 8px; }
+    .cell { position: relative; overflow: hidden; background: #fff; border-radius: 8px; height: 330px; }
+    .cell span { position: absolute; left: 6px; top: 4px; font-size: 11px; color: #555; z-index: 1; }
+  </style>
+  <div id="root"></div>
+  <script type="module">
+    /*
+     * The 3D princess, still, four at a time:
+     *   no row — the four princesses as Clara drew them (each dress with its own hair);
+     *   ?row=hair (or dress, eyes, mouth, accessory) — that row's four pieces on the green princess;
+     *   ?view=0..360 turns every camera round her (0 = front, 90 = her left side, 180 = her back);
+     *   ?skin=tan (light, tan, brown, dark);
+     *   ?big=1 two to a row, larger; ?one=0..3 only that one, as large as the page.
+     */
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import Character3D from '/src/components/Character3D.tsx';
+    import '/src/styles/global.css';
+    const SKIN = { light: '#FDC59B', tan: '#E4A074', brown: '#B2724A', dark: '#72462C' };
+    const rows = {
+      dress: ['gown', 'aline', 'mermaid', 'star'],
+      hair: ['braids', 'long', 'curly', 'bun'],
+      eyes: ['sparkly', 'happy', 'wink', 'sleepy'],
+      mouth: ['smile', 'laugh', 'oh', 'tongue'],
+      accessory: ['kitten', 'wand', 'scepter', 'book'],
+    };
+    const own = [
+      { dress: 'gown', hair: 'braids' },
+      { dress: 'aline', hair: 'long' },
+      { dress: 'mermaid', hair: 'curly' },
+      { dress: 'star', hair: 'bun' },
+    ];
+    const q = new URLSearchParams(location.search);
+    const row = q.get('row');
+    const base = { dress: 'gown', hair: 'braids', eyes: 'sparkly', mouth: 'smile', accessory: '' };
+    const all = row ? rows[row].map((o) => ({ ...base, [row]: o })) : own.map((o) => ({ ...base, ...o }));
+    const one = q.get('one');
+    const cells = one !== null ? [all[Number(one)]] : all;
+    if (one !== null) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:1fr}.cell{height:calc(100vh - 40px)}</style>');
+    const colors = { skin: SKIN[q.get('skin') ?? 'light'] };
+    const h = React.createElement;
+    const App = () =>
+      h('div', null,
+        h('div', { className: 'bar' }, `row: ${row ?? 'the four princesses'} · view ${q.get('view') ?? 0}°`),
+        h('div', { className: 'grid' },
+          cells.map((parts, i) =>
+            h('div', { className: 'cell', key: i },
+              h('span', null, Object.values(parts).filter(Boolean).join(' · ')),
+              h(Character3D, { kind: 'princess', parts, colors, still: true })))));
+    if (q.get('big')) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(2,1fr)}.cell{height:560px}</style>');
+    createRoot(document.getElementById('root')).render(h(App));
+    const view = Number(q.get('view'));
+    if (view) {
+      const turn = () => {
+        for (const get of window.__r3fAll ?? []) {
+          const { camera, controls } = get();
+          const r = Math.hypot(camera.position.x, camera.position.z);
+          const a = (view * Math.PI) / 180;
+          camera.position.set(Math.sin(a) * r, camera.position.y, Math.cos(a) * r);
+          camera.lookAt(0, 0, 0);
+          controls?.update();
+        }
+      };
+      setTimeout(turn, 1500);
+      setTimeout(turn, 3000);
+    }
+  </script>
+</html>

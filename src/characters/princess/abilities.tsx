@@ -12,10 +12,10 @@ import type { ReactNode } from 'react';
  */
 const INK = '#3B2314';
 /** The way round her: an ellipse about her middle, wider than she is. */
-const CX = 512;
-const CY = 640;
-const RX = 480;
-const RY = 450;
+export const CX = 512;
+export const CY = 640;
+export const RX = 480;
+export const RY = 450;
 /** From her left, over her head, down her right and back under her skirt. */
 const ORBIT = `M${CX - RX} ${CY} A${RX} ${RY} 0 1 1 ${CX + RX} ${CY} A${RX} ${RY} 0 1 1 ${CX - RX} ${CY}`;
 /** Where on the way round a thing is at a moment, for a still picture: 0 to 1. */
@@ -25,7 +25,7 @@ function orbitAt(t: number): [number, number] {
 }
 
 /* ------------------------------------------------------------------ the drawings */
-function Bird({ body, wing, animate }: { body: string; wing: string; animate: boolean }) {
+export function Bird({ body, wing, animate, flap = 0 }: { body: string; wing: string; animate: boolean; flap?: number }) {
   return (
     <g>
       <path d="M-26 -4 L-50 -16 L-45 2 L-52 14 L-26 9 Z" fill={wing} stroke={INK} strokeWidth={4} strokeLinejoin="round" />
@@ -35,7 +35,7 @@ function Bird({ body, wing, animate }: { body: string; wing: string; animate: bo
       <circle cx={15} cy={-7} r={4.6} fill={INK} />
       <circle cx={16.5} cy={-8.5} r={1.6} fill="#fff" />
       <circle cx={11} cy={4} r={4.5} fill="#FF9DB0" opacity={0.75} />
-      <g>
+      <g transform={flap ? `rotate(${flap} -6 -4)` : undefined}>
         <path d="M-8 -4 Q-24 -40 10 -30 Q12 -14 -8 -4 Z" fill={wing} stroke={INK} strokeWidth={4} strokeLinejoin="round" />
         {animate && <animateTransform attributeName="transform" type="rotate" values="0 -6 -4;-38 -6 -4;0 -6 -4" dur="0.32s" repeatCount="indefinite" />}
       </g>
@@ -45,7 +45,7 @@ function Bird({ body, wing, animate }: { body: string; wing: string; animate: bo
 
 const sparklePath = (s: number) =>
   `M0 ${-s} L${s * 0.24} ${-s * 0.24} L${s} 0 L${s * 0.24} ${s * 0.24} L0 ${s} L${-s * 0.24} ${s * 0.24} L${-s} 0 L${-s * 0.24} ${-s * 0.24} Z`;
-function Sparkle({ s, colour = '#FFE27A', animate, delay = 0 }: { s: number; colour?: string; animate: boolean; delay?: number }) {
+export function Sparkle({ s, colour = '#FFE27A', animate, delay = 0 }: { s: number; colour?: string; animate: boolean; delay?: number }) {
   return (
     <path d={sparklePath(s)} fill={colour} stroke="#E0A93A" strokeWidth={3} strokeLinejoin="round">
       {animate && (
@@ -55,7 +55,7 @@ function Sparkle({ s, colour = '#FFE27A', animate, delay = 0 }: { s: number; col
   );
 }
 
-function Snowflake({ s }: { s: number }) {
+export function Snowflake({ s }: { s: number }) {
   const arms = [0, 60, 120].map((a) => {
     const c = Math.cos((a * Math.PI) / 180) * s, d = Math.sin((a * Math.PI) / 180) * s;
     return `M${-c} ${-d} L${c} ${d}`;
@@ -74,7 +74,7 @@ function Snowflake({ s }: { s: number }) {
   );
 }
 
-function Planet() {
+export function Planet() {
   return (
     <g>
       <path d="M-82 6 A82 22 0 0 1 82 -6" transform="rotate(-14)" fill="none" stroke={INK} strokeWidth={17} />
@@ -88,7 +88,7 @@ function Planet() {
     </g>
   );
 }
-function Moon() {
+export function Moon() {
   return (
     <g>
       <path d="M14 -50 A52 52 0 1 0 14 50 A40 40 0 1 1 14 -50 Z" fill="#FFE27A" stroke={INK} strokeWidth={5} strokeLinejoin="round" />
@@ -98,15 +98,36 @@ function Moon() {
   );
 }
 
-function Flower({ petal, inner, animate, delay }: { petal: string; inner: string; animate: boolean; delay: number }) {
-  const petals = [0, 72, 144, 216, 288].map((a) => {
-    const r = (a * Math.PI) / 180;
-    return <ellipse key={a} cx={Math.cos(r) * 26} cy={Math.sin(r) * 26} rx={22} ry={22} fill={petal} stroke={INK} strokeWidth={4.5} />;
-  });
+export function FlowerStem() {
   return (
     <g>
       <path d="M0 0 Q-6 50 4 92" fill="none" stroke="#5DAE45" strokeWidth={7} strokeLinecap="round" />
       <path d="M2 60 Q28 44 40 58 Q26 74 2 60 Z" fill="#7CCB5B" stroke={INK} strokeWidth={4} strokeLinejoin="round" />
+    </g>
+  );
+}
+
+const petalsOf = (petal: string) =>
+  [0, 72, 144, 216, 288].map((a) => {
+    const r = (a * Math.PI) / 180;
+    return <ellipse key={a} cx={Math.cos(r) * 26} cy={Math.sin(r) * 26} rx={22} ry={22} fill={petal} stroke={INK} strokeWidth={4.5} />;
+  });
+
+export function FlowerBlossom({ petal, inner }: { petal: string; inner: string }) {
+  return (
+    <g>
+      {petalsOf(petal)}
+      <circle r={17} fill={inner} stroke={INK} strokeWidth={4.5} />
+      <circle cx={-5} cy={-5} r={5} fill="#FFF3B0" />
+    </g>
+  );
+}
+
+function Flower({ petal, inner, animate, delay }: { petal: string; inner: string; animate: boolean; delay: number }) {
+  const petals = petalsOf(petal);
+  return (
+    <g>
+      <FlowerStem />
       {/* it opens: its petals grow out of the bud, stay open, and close again */}
       <g>
         {petals}
@@ -147,12 +168,14 @@ function Orbiter({ dur, at, animate, flip = false, children }: { dur: number; at
   );
 }
 
+export const BIRDS = [
+  { body: '#6EC6FF', wing: '#3E9EE6', at: 0.05 },
+  { body: '#FFD95A', wing: '#F2B52E', at: 0.38 },
+  { body: '#FF9EC4', wing: '#F06FA2', at: 0.7 },
+];
+
 function Animals({ animate }: { animate: boolean }) {
-  const birds = [
-    { body: '#6EC6FF', wing: '#3E9EE6', at: 0.05 },
-    { body: '#FFD95A', wing: '#F2B52E', at: 0.38 },
-    { body: '#FF9EC4', wing: '#F06FA2', at: 0.7 },
-  ];
+  const birds = BIRDS;
   return (
     <>
       {birds.map((b) => (
@@ -166,16 +189,21 @@ function Animals({ animate }: { animate: boolean }) {
   );
 }
 
+/** Snow: flakes [x, size, delay] falling round her, and sparkles [x, y, size] winking. */
+export const FLAKES = [
+  [60, 26, 0], [170, 20, 2.3], [880, 24, 1.1], [980, 18, 3.4], [110, 16, 4.6],
+  [930, 28, 5.2], [250, 18, 3.9], [790, 18, 0.8], [30, 22, 6.1], [1000, 20, 2.9],
+];
+export const SNOW_SPARKLES = [
+  [150, 360, 20], [880, 300, 24], [70, 760, 18], [960, 820, 22], [210, 1180, 20], [840, 1240, 18], [512, 120, 22], [330, 940, 14], [700, 980, 14],
+];
+export const SNOW_DUR = 7;
+
 function Snow({ animate }: { animate: boolean }) {
   // flakes falling all round her, each turning as it falls, and sparkles winking
-  const flakes = [
-    [60, 26, 0], [170, 20, 2.3], [880, 24, 1.1], [980, 18, 3.4], [110, 16, 4.6],
-    [930, 28, 5.2], [250, 18, 3.9], [790, 18, 0.8], [30, 22, 6.1], [1000, 20, 2.9],
-  ];
-  const sparkles = [
-    [150, 360, 20], [880, 300, 24], [70, 760, 18], [960, 820, 22], [210, 1180, 20], [840, 1240, 18], [512, 120, 22], [330, 940, 14], [700, 980, 14],
-  ];
-  const dur = 7;
+  const flakes = FLAKES;
+  const sparkles = SNOW_SPARKLES;
+  const dur = SNOW_DUR;
   return (
     <>
       {flakes.map(([x, s, d]) => (
@@ -196,6 +224,10 @@ function Snow({ animate }: { animate: boolean }) {
   );
 }
 
+/** Space: little stars [x, y, size] twinkling all round her, and sparkles going round with the planet. */
+export const SPACE_STARS = [[90, 300, 16], [940, 380, 20], [40, 700, 14], [990, 760, 16], [160, 1140, 18], [870, 1160, 14], [300, 120, 14], [740, 110, 18]];
+export const SPACE_ORBITERS = [0.27, 0.43, 0.77, 0.93];
+
 function Space({ animate }: { animate: boolean }) {
   return (
     <>
@@ -210,12 +242,12 @@ function Space({ animate }: { animate: boolean }) {
         </g>
       </Orbiter>
       {/* and little stars twinkling all round her */}
-      {[[90, 300, 16], [940, 380, 20], [40, 700, 14], [990, 760, 16], [160, 1140, 18], [870, 1160, 14], [300, 120, 14], [740, 110, 18]].map(([x, y, r], k) => (
+      {SPACE_STARS.map(([x, y, r], k) => (
         <g key={`t${k}`} transform={`translate(${x} ${y})`}>
           <Sparkle s={r} animate={animate} delay={k * 0.29} />
         </g>
       ))}
-      {[0.27, 0.43, 0.77, 0.93].map((at, k) => (
+      {SPACE_ORBITERS.map((at, k) => (
         <Orbiter key={at} dur={12} at={at} animate={animate}>
           <Sparkle s={k % 2 ? 34 : 44} animate={animate} delay={k * 0.4} />
         </Orbiter>
@@ -224,19 +256,22 @@ function Space({ animate }: { animate: boolean }) {
   );
 }
 
+/** Flowers: [x, y, petal, middle] round her. */
+export const FLOWERS: [number, number, string, string][] = [
+  [80, 560, '#FF9EC4', '#FFD54A'],
+  [950, 520, '#FFD95A', '#FF8A5C'],
+  [40, 900, '#B79CFF', '#FFD54A'],
+  [990, 880, '#FF9EC4', '#FFD54A'],
+  [150, 1260, '#FFB0C8', '#FFD54A'],
+  [880, 1280, '#B79CFF', '#FFE27A'],
+  [300, 1420, '#FFD95A', '#FF8A5C'],
+  [730, 1430, '#FF9EC4', '#FFD54A'],
+  [140, 240, '#B79CFF', '#FFD54A'],
+  [890, 230, '#FFB0C8', '#FFD54A'],
+];
+
 function Flowers({ animate }: { animate: boolean }) {
-  const flowers: [number, number, string, string][] = [
-    [80, 560, '#FF9EC4', '#FFD54A'],
-    [950, 520, '#FFD95A', '#FF8A5C'],
-    [40, 900, '#B79CFF', '#FFD54A'],
-    [990, 880, '#FF9EC4', '#FFD54A'],
-    [150, 1260, '#FFB0C8', '#FFD54A'],
-    [880, 1280, '#B79CFF', '#FFE27A'],
-    [300, 1420, '#FFD95A', '#FF8A5C'],
-    [730, 1430, '#FF9EC4', '#FFD54A'],
-    [140, 240, '#B79CFF', '#FFD54A'],
-    [890, 230, '#FFB0C8', '#FFD54A'],
-  ];
+  const flowers = FLOWERS;
   return (
     <>
       {flowers.map(([x, y, p, c], k) => (

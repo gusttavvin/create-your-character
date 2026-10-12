@@ -1,7 +1,6 @@
 import { listPhrases, phrasesOf, pickOption, type CharacterDefinition, type ColorMap, type PartMap } from '../types';
 import { pieceCard, TONES, type SkinTone } from './pieces';
 import { abilityCard } from './abilities';
-import * as P from './parts';
 
 /**
  * The princess, cut from the four princesses Clara sent (art-source/princess/reference): a
@@ -137,15 +136,3 @@ export const PRINCESS: CharacterDefinition = {
     return out || `${who} is still just an idea!`;
   },
 };
-
-/**
- * The colours the old 3D princess (Princess3D) is built in, until she is remade from the new
- * pictures: the skin picked, and the old pieces' own dress and hair colours.
- */
-export function resolvePrincessColors(parts: PartMap, colors: Record<string, string>) {
-  return {
-    skin: colors.skin || P.PRINCESS_DEFAULTS.skin,
-    dress: colors.dress || P.PRINCESS_DEFAULTS.dress[parts.dress] || '#FF6EC7',
-    hair: colors.hair || P.PRINCESS_DEFAULTS.hair[parts.hair] || '#FFC93C',
-  };
-}

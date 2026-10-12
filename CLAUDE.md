@@ -63,6 +63,10 @@ npm run build    # confere os tipos e gera o site
   `monster/Monster3D.tsx`; `Monster3DFallback.tsx` mantém a construção antiga somente para
   falhas de carregamento. Leia `docs/monster-model-library.md`. No 3D o monstro se monta
   sozinho: as peças não são arrastáveis (`movable3d.ts`).
+- A princesa em 3D é feita das mesmas imagens do 2D (`public/princess/*.webp`): cada camada
+  ganha volume pela largura que tem (`princess/relief.ts`) e as camadas são montadas na ordem
+  do 2D (`princess/build3d.ts`); as habilidades giram em volta dela (`abilities3d.tsx`).
+  Para conferir: `http://localhost:9090/princess-review-3d.html` (parâmetros no topo do arquivo).
 - O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
   `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/

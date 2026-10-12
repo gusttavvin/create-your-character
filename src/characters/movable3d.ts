@@ -11,14 +11,14 @@ import type { CharacterKind, PartMap } from './types';
  * the model puts them and cannot be picked up. The monster works that way because the
  * class builds it on the 2D sheet first — where a piece is nudged into place — and the
  * 3D view is the finished creature, which needs its own arrangement to look right. The
- * dragon works the same way.
+ * dragon and the princess work the same way.
  */
 const MOVABLE: Record<CharacterKind, string[]> = {
   monster: [],
   // the dragon too, since it was remodelled from its four approved drawings: Clara asked
   // for it to be put together on its own, as the monster is
   dragon: [],
-  princess: ['dress', 'hair', 'crown', 'accessory', 'eyes', 'mouth'],
+  princess: [],
   fairy: ['dress', 'wings', 'hair', 'crown', 'wand', 'eyes'],
   superhero: ['suit', 'cape', 'emblem', 'boots', 'mask', 'power'],
 };
