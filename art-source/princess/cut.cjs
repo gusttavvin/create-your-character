@@ -1078,6 +1078,14 @@ else if (require.main === module)
     fs.mkdirSync(OUT, { recursive: true });
     if (DEBUG) fs.mkdirSync(DEBUG, { recursive: true });
     let headImgPink = null;
+    /*
+     * Clara's second look for her (art-source/princess/v2.cjs): the green princess as a glossy
+     * doll. Her face is now every princess's face (head, brows, eyes, mouths), her braid and
+     * her gown are the green ones; the other hairs and dresses are still cut from the first
+     * pictures, and meet her neck.
+     */
+    const V2 = await require('./v2.cjs').build();
+    const neckRef = V2.head;
     for (const name of Object.keys(PICS)) {
       const pic = PICS[name];
       pic.neckAt = PINK.neck;
@@ -1150,6 +1158,12 @@ else if (require.main === module)
       }
       let [hf, hb] = [hairFront, hairBack];
       if (name === 'blue') [hf, hb] = await curly(hairFront);
+      // every head of hair is now made from the green princess's (v2.cjs)
+      [hf, hb] = [V2.hairs[n].front, V2.hairs[n].back];
+      if (name === 'green') {
+        // and her hair seen from behind, for the 3D princess's back
+        await write(`hair-${n}-rear.webp`, V2.rear.hair);
+      }
       await write(`hair-${n}-back.webp`, hb);
       await write(`hair-${n}-front.webp`, hf);
       boxes[`hair:${n}`] = boxOf(hb, hf);
@@ -1178,7 +1192,20 @@ else if (require.main === module)
           }
         return s0.map((v) => v / Math.max(1, k0));
       };
-      const ownSkin = skinAt(dressImg), pinkSkin = skinAt(headImgPink ?? dressImg);
+      // (her neck now is the new face's: its skin, just below her chin, whatever it is)
+      const neckSkin = (() => {
+        const s0 = [0, 0, 0];
+        let k0 = 0;
+        for (let y = NECK_CUT; y < NECK_CUT + 14; y++)
+          for (let x = 500; x < 524; x++) {
+            const i = y * W + x;
+            if (neckRef[i * 4 + 3] < 200) continue;
+            for (let c = 0; c < 3; c++) s0[c] += neckRef[i * 4 + c];
+            k0++;
+          }
+        return s0.map((v) => v / Math.max(1, k0));
+      })();
+      const ownSkin = skinAt(dressImg), pinkSkin = neckSkin;
       // and nothing loose round it: the ends of a lock of hair on a shoulder, bits of outline
       dropSpecks(dressImgOnly, 2500);
       for (const bx of pic.mirrorFill ?? []) mirrorFill(dressImgOnly, bx);
@@ -1194,9 +1221,9 @@ else if (require.main === module)
       for (let y = NECK_CUT; y < NECK_CUT + 26; y++)
         for (let x = 452; x < 572; x++) {
           const i = y * W + x;
-          const p = headImgPink;
+          const p = neckRef;
           // (in the middle of her neck, whatever it is: a shadow there is the other picture's chin's)
-          if (!(skinMask[i] || (Math.abs(x - 512) < 20 && dressImgOnly[i * 4 + 3])) || !isSkin(p[i * 4], p[i * 4 + 1], p[i * 4 + 2])) continue;
+          if (!(skinMask[i] || (Math.abs(x - 512) < 20 && dressImgOnly[i * 4 + 3])) || p[i * 4 + 3] < 200) continue;
           const w = 1 - (y - NECK_CUT) / 26;
           for (let c = 0; c < 3; c++) dressImgOnly[i * 4 + c] = dressImgOnly[i * 4 + c] * (1 - w) + p[i * 4 + c] * w;
         }
@@ -1206,8 +1233,11 @@ else if (require.main === module)
       if (name === 'blue') made = shiftHue(made, (h) => h >= 185 && h <= 255, 352);
       if (name === 'pink') made = fitted(shiftHue(made, (h, l, y) => y > 830 && (h >= 318 || h <= 2) && l < 0.86, 278, 0.95));
       for (const tone of Object.keys(TONES)) {
-        let out = toned(made, skinMask, tone);
-        if (name === 'purple') out = shiftHue(await short(out, skinMask, tone), (h) => h >= 250 && h <= 320, 212, 1.45);
+        // every dress is now made from the green princess's (v2.cjs)
+        const d2 = V2.dresses[DRESSES[name]];
+        let out = toned(d2.img, d2.skin, tone);
+        if (name === 'green') await write(`dress-${DRESSES[name]}-rear-${tone}.webp`, toned(V2.rear.dress, V2.rear.skin, tone));
+        void made;
         await write(`dress-${DRESSES[name]}-${tone}.webp`, out);
         if (tone === 'light') boxes[`dress:${DRESSES[name]}`] = boxOf(out);
       }
@@ -1248,7 +1278,8 @@ else if (require.main === module)
             for (let c = 0; c < 4; c++) brows[i * 4 + c] = brows[m * 4 + c];
           }
         dropSpecks(brows, 60);
-        await write('brows.webp', brows);
+        void brows;
+        await write('brows.webp', V2.brows);
         // under her eyes and her mouth, plain skin: the colour of her face between her eyes
         const sample = [0, 0, 0];
         let count = 0;
@@ -1294,14 +1325,44 @@ else if (require.main === module)
         // below her neck, every dress brings its own chest and shoulders
         for (let i = NECK_CUT * W + 14 * W; i < W * H; i++) whole[i * 4 + 3] = 0;
         const all = new Uint8Array(W * H).fill(1);
-        for (const tone of Object.keys(TONES)) await write(`head-${tone}.webp`, toned(whole, all, tone));
+        // the new face, a little wider where the first one was: the first hairs were cut round
+        // the first face, and left a gap at her temples and ears on the new one
+        // (with the new skin round it, softly: the nearest colour alone made streaks)
+        const merged = new Uint8ClampedArray(V2.head);
+        {
+          const { blur } = require('./v2.cjs');
+          const todo = [];
+          for (let i = 0; i < W * H; i++) if (whole[i * 4 + 3] > 0 && ((i / W) | 0) < NECK_CUT + 14 && merged[i * 4 + 3] < 250) todo.push(i);
+          const done = new Uint8Array(W * H);
+          for (const sigma of [8, 20, 50]) {
+            const num = [new Float32Array(W * H), new Float32Array(W * H), new Float32Array(W * H)];
+            const den = new Float32Array(W * H);
+            for (let i = 0; i < W * H; i++) {
+              const a0 = V2.head[i * 4 + 3] / 255;
+              if (a0 < 0.95) continue;
+              den[i] = 1;
+              for (let c = 0; c < 3; c++) num[c][i] = V2.head[i * 4 + c];
+            }
+            for (const p of [...num, den]) blur(p, sigma);
+            for (const i of todo) {
+              if (done[i] || den[i] < (sigma === 50 ? 1e-4 : 0.2)) continue;
+              const a0 = merged[i * 4 + 3] / 255;
+              for (let c = 0; c < 3; c++) merged[i * 4 + c] = merged[i * 4 + c] * a0 + (num[c][i] / den[i]) * (1 - a0);
+              merged[i * 4 + 3] = 255;
+              done[i] = 1;
+            }
+          }
+        }
+        void merged;
+        for (const tone of Object.keys(TONES)) await write(`head-${tone}.webp`, toned(V2.head, all, tone));
         // her eyes, and nothing else the outline round them reached: bits of the line of her
         // face, the end of a lock of hair
         const eyes = keepTouching(pick(headImg, head.lab, L.eyes), (x, y) => [427, 597].some((cx) => ((x - cx) / 60) ** 2 + ((y - 492) / 52) ** 2 < 1));
         const mouth = pick(headImg, head.lab, L.mouth);
-        const allEyes = { 1: eyes, ...(await eyesVariants(eyes)) };
-        const allMouths = await mouths();
-        for (const [k, img] of Object.entries(allEyes)) { await write(`eyes-${EYES[k]}.webp`, img); boxes[`eyes:${EYES[k]}`] = boxOf(img, brows); }
+        void eyes; void mouth;
+        const allEyes = V2.eyeOptions;
+        const allMouths = V2.mouthOptions;
+        for (const [k, img] of Object.entries(allEyes)) { await write(`eyes-${EYES[k]}.webp`, img); boxes[`eyes:${EYES[k]}`] = boxOf(img, V2.brows); }
         for (const [k, img] of Object.entries(allMouths)) { await write(`mouth-${MOUTHS[k]}.webp`, img); boxes[`mouth:${MOUTHS[k]}`] = boxOf(img); }
         for (const [k, img] of Object.entries(await powers())) { await write(`power-${POWERS[k]}.webp`, img); boxes[`accessory:${POWERS[k]}`] = boxOf(img); }
       }

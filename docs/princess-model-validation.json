@@ -1,29 +1,29 @@
 [
   {
-    "piece": "dress-gown",
-    "bytes": 1395220,
-    "triangles": 62460,
+    "piece": "mouth-smile",
+    "bytes": 9436,
+    "triangles": 287,
     "errors": 0,
     "warnings": 0
   },
   {
-    "piece": "dress-aline",
-    "bytes": 1399640,
-    "triangles": 62670,
+    "piece": "mouth-laugh",
+    "bytes": 5168,
+    "triangles": 132,
     "errors": 0,
     "warnings": 0
   },
   {
-    "piece": "dress-mermaid",
-    "bytes": 1245372,
-    "triangles": 55632,
+    "piece": "mouth-oh",
+    "bytes": 3480,
+    "triangles": 65,
     "errors": 0,
     "warnings": 0
   },
   {
-    "piece": "dress-star",
-    "bytes": 1519444,
-    "triangles": 70954,
+    "piece": "mouth-tongue",
+    "bytes": 5672,
+    "triangles": 150,
     "errors": 0,
     "warnings": 0
   }

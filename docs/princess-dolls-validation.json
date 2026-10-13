@@ -1,0 +1,30 @@
+[
+  {
+    "piece": "dress-gown",
+    "bytes": 1261960,
+    "triangles": 69999,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "dress-aline",
+    "bytes": 1260148,
+    "triangles": 70000,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "dress-mermaid",
+    "bytes": 1261148,
+    "triangles": 70000,
+    "errors": 0,
+    "warnings": 0
+  },
+  {
+    "piece": "dress-star",
+    "bytes": 1260408,
+    "triangles": 70000,
+    "errors": 0,
+    "warnings": 0
+  }
+]

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { PRINCESS, princessColors } from './config';
-import { boxOf, browsFile, CANVAS, filesOf, hairBack, hairFront, headFile, type SkinTone } from './pieces';
+import { boxOf, browsOf, CANVAS, filesOf, hairBack, hairFront, headFile, type SkinTone } from './pieces';
 import { AbilityLayer } from './abilities';
 import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../types';
 
@@ -98,11 +98,11 @@ export default function Princess2D({ parts, colors, animate = true, className }:
           </Layer>
         )}
         <Layer z={Z.head}>
-          <img src={headFile(tone)} alt="" draggable={false} style={IMG} />
+          <img src={headFile(tone, hair?.id)} alt="" draggable={false} style={IMG} />
         </Layer>
         {eyes && (
           <Layer key={`eyes-${eyes.id}`} part="eyes" z={Z.eyes}>
-            <img src={browsFile} alt="" draggable={false} style={{ ...IMG, position: 'absolute', inset: 0 }} />
+            <img src={browsOf(eyes.id)} alt="" draggable={false} style={{ ...IMG, position: 'absolute', inset: 0 }} />
             {/* she blinks: her eyes close towards their middle, her brows stay */}
             <div className="blink" style={{ position: 'absolute', inset: 0, transformOrigin: `50% ${(EYE_LINE / CANVAS.h) * 100}%` }}>
               <img src={filesOf('eyes', eyes.id, tone)[1]} alt="" draggable={false} style={IMG} />

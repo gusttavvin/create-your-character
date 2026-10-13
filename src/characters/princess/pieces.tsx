@@ -19,13 +19,19 @@ const url = (file: string) => `/princess/${file}.webp`;
 export function filesOf(row: string, id: string, tone: SkinTone): string[] {
   if (row === 'hair') return [url(`hair-${id}-back`), url(`hair-${id}-front`)];
   // her brows come with her eyes
-  if (row === 'eyes') return [browsFile, url(`eyes-${id}`)];
+  if (row === 'eyes') return [browsOf(id), url(`eyes-${id}`)];
   if (row === 'dress') return [url(`dress-${id}-${tone}`)];
   if (row === 'accessory') return [url(`power-${id}`)];
   return [url(`${row}-${id}`)];
 }
-export const headFile = (tone: SkinTone) => url(`head-${tone}`);
+/**
+ * Her head: each princess's own face, with the hair it was drawn with (Clara's doll pictures);
+ * with no hair, the green princess's.
+ */
+export const headFile = (tone: SkinTone, hair?: string | null) => url(hair ? `head-${hair}-${tone}` : `head-${tone}`);
 export const browsFile = url('brows');
+/** Each pair of eyes comes with its own princess's brows. */
+export const browsOf = (eyes: string) => url(`brows-${eyes}`);
 export const hairBack = (id: string) => url(`hair-${id}-back`);
 export const hairFront = (id: string) => url(`hair-${id}-front`);
 

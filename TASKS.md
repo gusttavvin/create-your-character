@@ -2029,3 +2029,149 @@ dragão". As folhas com a imagem esticada (`portrait3d.ts`) foram aposentadas.
 Limitações: costas do vestido e do cabelo em cor chapada (sem a imagem espelhada); a
 nadadeira é fina de lado; sem LOD nem medição em celular; `portrait3d.ts`,
 `PrincessModel3D.tsx`, `build3d.ts` e `relief.ts` ficaram sem uso (não apagados).
+
+### Melhorias no 3D (Claude, 13 de outubro de 2026)
+
+Clara: "pode olhar e nem precisa listar, pode melhorar já". Conferindo de frente, 40°, 60°, 70°,
+90°, 120°, 150° e costas:
+
+- [x] **Cabeça careca por trás, nos quatro cabelos:** a massa do cabelo tinha no máximo 130 px
+      de fundura e o crânio 150, então atrás do meio da cabeça não havia cabelo. Agora há uma
+      casca de cabelo em volta do crânio (`SHELL`: 44, cacheado 58, coque 30), que cobre costas e
+      lados; na frente das orelhas e do rosto só onde a imagem tem cabelo, e ali não mais à
+      frente que o cabelo deitado no crânio (mais grosso, de lado o cabelo cobria meio olho).
+- [x] **Cabelo de trás com textura:** a casca lisa parecia capacete. Fios descendo nos lisos e
+      caroços de cachos no cacheado (`texture` na casca).
+- [x] **Ponta do cabelo comprido:** a camada de trás do 2D é preenchida até uma linha reta (atrás
+      do corpo ninguém vê no 2D); no 3D a ponta vira mechas arredondadas.
+- [x] **Cabelo deitado no vestido nunca funcionava** (`Princess3D.tsx`): `layOnDress` procurava
+      a malha chamada `front`/`back`, mas uma malha com dois materiais carrega como grupo com esse
+      nome e malhas `mesh_N` dentro. O cabelo de trás ficava dentro da saia. Agora olha o nome do
+      pai; na frente só a partir de y=650 (começando em 600 fazia uma crista no cabelo comprido).
+- [x] **Sereia sem a cortina da direita:** o traçado do contorno (`outlineOf`) perdia o caminho
+      onde dois pedaços se tocam só na diagonal (um canto com duas arestas saindo, uma sobrescrita)
+      e uma parte inteira sumia. Agora guarda as duas arestas; e o torno e a barra medem a largura
+      direto na máscara (`maskSections`).
+- [x] **Braços no lugar:** os vestidos foram descidos no 2D (`DROP` do `cut.cjs`) e o recorte fixo
+      dos braços (`ARM`) não acompanhava; cortava braço e cortina. `dressRegion` desconta o
+      `DROP` de cada vestido (as pernas do curto não, são desenhadas depois).
+- [x] **Saia sem prateleira na cintura:** as fatias do torno são suavizadas (média depois da
+      mediana) e a fundura cresce no máximo 0,75 px por px descendo (`flare`); de frente o
+      contorno continua o da imagem.
+- [x] **Coroa curvada em volta da cabeça** (era uma lâmina reta na frente do cabelo de lado).
+- Conferido: as quatro de frente ao lado do 2D, 40°, 60°, 70°, 90° e costas; no jogo, sereia +
+  cacheado + espaço em 3D; `npm run build`. Zero erros no validador glTF.
+- Limitações: `hair-long.glb` 2,5 MB e `hair-curly.glb` 2,3 MB (acima dos 2 MB sugeridos);
+  costas do vestido ainda em cor lisa; a coroa de perfil ainda é fina.
+
+## Princesa: novo visual a partir da princesa verde de boneca (13 de outubro de 2026)
+
+Clara mandou duas imagens novas (`art-source/princess/reference/v2/`): a princesa verde de
+frente, como uma boneca brilhante, com nariz, lábios e sombras ("use essa imagem para as
+princesas ficarem igual a ela"), e a mesma princesa de seis ângulos, para o 3D ("estão
+parecendo placas").
+
+- [x] **Recorte (`art-source/princess/v2.cjs`):** o fundo da imagem é um xadrez pintado (não
+      transparente); sai pelo contorno e também onde fica preso entre braço e corpo (manchas com
+      quadrados cinza e brancos). A borda dela fica com a cor dela, sem o branco do fundo.
+      Encaixe no canvas pelos olhos (centro 512, 492; distância 170 px, como as antigas).
+- [x] **Rosto de todas as princesas:** cabeça, sobrancelhas, olhos e boca vêm agora dela.
+      - Cabeça: o rosto dela; testa e topo redondos, lisos e iluminados de cima (a imagem tinha a
+        sombra do cabelo na testa); a orelha que aparece, e o espelho dela do outro lado; um
+        pouco mais larga onde a cabeça antiga era, para os cabelos antigos não deixarem falha.
+      - Olhos: 1 os dela; 2 azuis com brilho de estrela; 3 verdes com piscadinha (pálpebra fechada
+        curvada com cílios); 4 roxos com brilho de coração. As íris medidas (`IRIS`).
+      - Bocas: 1 o sorriso dela; 2 risada, 3 "wow", 4 a língua sob o sorriso dela, nos tons dos
+        lábios dela.
+      - Sobrancelhas: a direita dela tem uma mecha por cima; é o espelho da outra.
+- [x] **Vestido verde e trança ruiva** são os dela (com braços e colo; o que a trança cobria do
+      vestido é o espelho do outro lado, só ali).
+- [x] **Costas (3D):** da imagem de seis ângulos sai a vista de costas, alinhada com a frente
+      (`hair-braids-rear.webp`, `dress-gown-rear-<tom>.webp`). No 3D, o lado de trás do vestido
+      verde e do cabelo ruivo veste essas imagens (`REAR` em `Princess3D.tsx`), em vez de cor lisa.
+- [x] **Volume (3D):** saia do vestido verde redonda como na vista de lado (fundura 0,9 da
+      largura); cabelo ruivo mais cheio atrás da cabeça.
+- Os outros três vestidos e cabelos ainda são os desenhos antigos (traço de desenho, sem o
+  brilho de boneca), agora com o rosto novo.
+
+### Rodada 2 do visual novo (13 de outubro de 2026)
+
+Clara: "pode replicar nas outras"; trança com restos de rosto e sobrancelha; "o rosto está
+muito estranho"; no 3D "parecendo uma boneca de plástico mal feita", "coloque os pés dela",
+"a trança começa e depois para", "não dá pra ver a mão".
+
+- [x] **As quatro princesas no estilo novo, feitas da verde** (`v2.cjs`): cores trocadas
+      mantendo o sombreado e o dourado dela.
+      - Vestidos: rosa e roxo, mais justo (a saia fecha até a barra); sereia vermelha (cortinas
+        recolhidas num babado sobre uma cauda desenhada com escamas e nadadeira); azul curto
+        (a saia inteira, babados e dourados, em menos altura, com pernas e sapatilhas).
+      - Cabelos: comprido castanho (o lado ondulado espelhado e alongado até as costas, com
+        sombra atrás da cabeça); coque loiro (preso rente à cabeça e um coque enrolado feito de
+        uma faixa do próprio cabelo dela, `coil`); cacheado preto com luzes azuis (cachos
+        enrolados da raiz às pontas, também da faixa de cabelo dela). As pedras da coroa e
+        dos brincos mudam de cor com o cabelo.
+- [x] **Trança limpa:** os restos de cílios e sobrancelha saíram; as florzinhas voltaram (o
+      teste do fundo xadrez apagava o branco delas); o cacho do lado esquerdo veio inteiro.
+- [x] **Cabeça refeita:** pele lisa espalhada a partir da pele que ela mostra, com o detalhe do
+      rosto só onde aparece; queixo e mandíbula medidos na imagem (`JAW`); testa e topo lisos;
+      sem remendos retangulares nem faixa no rosto.
+- [x] **3D:** mãos por cima da saia (apoiadas na parte mais à frente dela, em vez de afundar);
+      sapatinhos debaixo das saias compridas; a trança deitada na saia até a ponta (na beirada
+      da saia a superfície medida acabava e a trança ficava dentro); recortes dos braços
+      iguais para os quatro vestidos; saia da sereia em babado, cauda e nadadeira.
+- Limitação real do 3D: ele é montado a partir das imagens de frente (torno, massas
+  arredondadas). Não chega a ser a boneca esculpida da imagem de todos os ângulos: de lado o
+  rosto é um decalque na cabeça, o babado da sereia fica reto.
+
+## Princesa: idêntica às bonecas da Clara, 2D e 3D (13 de outubro de 2026)
+
+Clara mandou as outras três princesas como bonecas, cada uma de frente, de lado e de costas
+(`art-source/princess/reference/v2/{pink,mermaid,blue}-turnaround.webp`): "faça idêntico...
+se precisar refaça tudo de novo". O 3D anterior "parecia placas".
+
+### 2D (`art-source/princess/dolls.cjs`, `node dolls.cjs write`)
+- [x] Cada princesa é recortada da própria imagem (fundo cinza de estúdio tirado pela borda e
+      nos bolsões presos entre braço e corpo; a borda fica com a cor dela). Encaixe: olhos na
+      linha y 492 com o meio em x 512 e o queixo em y 633 (todas do mesmo tamanho).
+- [x] Peças de cada uma, todas dela: cabeça (o rosto dela, com pele preenchida embaixo de
+      olhos, sobrancelhas, boca e cabelo), sobrancelhas (`brows-<olhos>.webp`, vêm com os olhos
+      dela), olhos, boca, cabelo na frente e atrás, vestido com braços e pele.
+- [x] A cabeça muda com o cabelo (`head-<cabelo>-<tom>.webp`; sem cabelo, a da verde):
+      cada rosto é desenhado junto com o cabelo dele.
+- [x] Verde continua da imagem dela (`v2.cjs`). Os ids e as frases não mudaram.
+
+### 3D (`art-source/princess/dolls3d.mjs`)
+- [x] As três vistas são alinhadas no canvas (`views` em dolls.cjs): frente como o 2D, costas
+      viradas, lado com o pescoço em x 512 (x = 512 + quanto à frente).
+- [x] Vestido: largura de cada linha pela frente, fundura pela vista de lado; manga, braço e
+      perna redondos; abaixo da cintura a saia é uma casca oca e aberta embaixo, e a
+      sobressaia (cortinas) fica mais à frente que a saia de baixo, então as camadas têm
+      volume próprio. Ombros arredondados.
+- [x] Cabelo: onde as três vistas concordam que há cabelo, nunca dentro da cabeça nem do
+      vestido, e na frente do rosto só onde a frente mostra cabelo.
+- [x] Cabeça de cada uma no formato do rosto dela (bochechas e queixo), lisa.
+- [x] Pintura: o jogo projeta a imagem de frente, a de lado e a de costas e mistura pela
+      direção da superfície (`projected` em Princess3D.tsx). Os lados vêm da vista de lado,
+      nada esticado. O lado de dentro da saia fica na sombra.
+- [x] Malhas simplificadas com meshoptimizer: vestido 70 mil, cabelo 60 mil, cabeça 25 mil
+      triângulos (cerca de 1,1 a 1,3 MB por arquivo).
+- Limitações reais: alguns fios do cabelo comprido e do coque aparecem soltos ao lado do
+  rosto de 3/4; o cacheado de perto tem degraus; olhos e boca ainda são decalques na cabeça;
+  não medi desempenho em celular. `model3d.mjs` ainda gera cabeça sem cabelo, olhos e bocas.
+
+### Peças do 2D limpas (13 de outubro de 2026)
+
+Clara: cabelo comprido com contorno de corpo, vestido rosa com contorno preto, olho sem
+sobrancelha, bocas recortadas duras demais.
+
+- [x] Olhos, sobrancelhas e bocas: tirados como a diferença entre a imagem dela e a pele lisa
+      embaixo (`features` em dolls.cjs), então a borda é suave como no original; a sombra da
+      própria pele em volta (pêssego) fica no rosto; o cabelo das têmporas que entra nessas
+      zonas fica no cabelo.
+- [x] Pele: só o pêssego bem saturado e claro (as mechas claras de cabelo castanho ou loiro
+      não contam mais como pele); a sombra do rosto, as orelhas e o colo são do rosto.
+- [x] Cabelo: tudo atrás (camada de trás); na frente só o que fica sobre a cabeça, a coroa e
+      os brincos. Acima dos ombros, o que não é pele é cabelo; abaixo, a cor do cabelo e as
+      sombras escuras ao lado do corpo. O contorno do decote e o colar são do vestido.
+- Falta: o 3D. Os modelos atuais (dolls3d.mjs) são montados a partir das imagens e a Clara
+  recusou: quer olhos, boca e cachos com volume próprio, modelados de verdade.
