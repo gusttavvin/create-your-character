@@ -91,13 +91,13 @@ function Fit({ sig, floor, children }: { sig: string; floor?: React.RefObject<Gr
   return <group ref={ref}>{children}</group>;
 }
 
-function Idle({ children }: { children: React.ReactNode }) {
+function Idle({ children, still = false }: { children: React.ReactNode; still?: boolean }) {
   const ref = useRef<Group>(null);
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    ref.current.position.y = Math.sin(t * 2) * 0.06;
-    ref.current.rotation.z = Math.sin(t * 1.3) * 0.02;
+    ref.current.position.y = still ? 0 : Math.sin(t * 2) * 0.06;
+    ref.current.rotation.z = still ? 0 : Math.sin(t * 1.3) * 0.02;
   });
   return <group ref={ref}>{children}</group>;
 }
@@ -162,11 +162,11 @@ export default function Character3D({ kind, parts, colors, layout, editable, sti
       <Suspense fallback={null}>
         <Layout3DContext.Provider value={ctx}>
           <Fit sig={sig} floor={floor}>
-            <Idle>
+            <Idle still={still}>
             {kind === 'dragon' ? (
               <Dragon3D parts={parts} colors={colors} />
             ) : kind === 'princess' ? (
-              <Princess3D parts={parts} colors={colors} />
+              <Princess3D parts={parts} colors={colors} still={still} />
             ) : kind === 'superhero' ? (
               <Superhero3D parts={parts} colors={colors} />
             ) : kind === 'fairy' ? (

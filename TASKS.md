@@ -1856,3 +1856,176 @@ corpo de verdade.
 - As costas do vestido mostram a frente dele espelhada (decote e enfeites também).
 - A grade tem 4 px: chegando a câmera muito perto, a beirada ainda mostra degrauzinhos.
 - `src/characters/princess/parts.tsx` (as peças do 2D antigo) não é mais usado por nada.
+
+## Princesa: reconstrução como modelo 3D real — 12 de outubro de 2026
+
+**Tentativa rejeitada pelo Gustavo:** o modelo abaixo perdeu a identidade do desenho.
+O registro descreve a tentativa anterior, não a implementação atual nem uma aprovação.
+
+Pedido: "o 3d da princesa esta horrivel, quero que voce ajuste para ser um 3d de verdade,
+igual do dragao e do monstro, gostei muito do 2d da princesa, quero que reflita no 3d".
+
+- [x] **O 2D foi preservado integralmente.** Nenhuma imagem, ID, frase ou regra de montagem do
+      modo 2D foi alterada.
+- [x] **A extrusão das imagens saiu da renderização principal.** `Princess3D.tsx` agora monta
+      `PrincessModel3D.tsx`; `build3d.ts` e `relief.ts` ficam apenas como registro da tentativa
+      anterior e podem ser removidos numa limpeza futura separada.
+- [x] **Volumes reais e separados:** cabeça e orelhas arredondadas, pescoço, tronco, mangas,
+      braços, mãos, pernas, sapatos, tiara, joias, olhos, íris, sobrancelhas e bocas. Todos têm
+      laterais e costas próprias, sem textura frontal esticada.
+- [x] **Quatro vestidos modelados:** vestido verde em sino, vestido rosa/roxo em A, vestido
+      sereia vermelho com barra aberta e vestido curto azul com pernas e sapatos visíveis.
+- [x] **Quatro cabelos modelados:** tranças vermelhas por gomos, cabelo castanho longo por
+      mechas, cachos pretos individuais e coque loiro com mechas frontais.
+- [x] **Expressões preservadas:** quatro cores/formatos de olhos, piscada, corações, sorriso,
+      risada, surpresa e língua. A cor da pele continua respeitando personagens salvos.
+- [x] **Movimento leve somente no código:** balanço sutil do conjunto e piscada; sem rig nem
+      animação embutida.
+- [x] **Conferência local:** quatro princesas nas vistas de frente, lateral e costas; linhas de
+      olhos e bocas; jogo em 2D e 3D; console do navegador; `npm run build`.
+
+### Correção de fidelidade ao 2D (continuação local, ainda sem aprovação)
+
+Pedido: "ficou horrivel, quero que fica exatamente como o 2d mas em 3d".
+
+- `portrait3d.ts` usa os contornos e as texturas originais, em vez de redesenhar rosto,
+  roupas e cabelos com formas genéricas. Cabeça, cabelo, vestido e rosto são malhas nomeadas.
+  A profundidade das mangas e braços não depende da largura da saia; superfícies contínuas
+  evitam as rachaduras que apareceram quando cada região foi cortada separadamente.
+- Câmera ortográfica somente para princesa, inicialmente de frente e girável manualmente.
+  Referência frontal 2D e 3D lado a lado em `princess-review-3d.html?compare=1`; links de
+  ângulos, olhos, bocas e pele escura. `?none=hair` confere a cabeça sem cabelo.
+- Cabelo atrás do pescoço; coroa curvada; vestido com pintura traseira própria para não
+  repetir colar e broche. Recursos de cada instância liberados na troca/desmontagem.
+- O 2D, imagens, IDs, frases, dados salvos e GLBs do monstro não foram alterados.
+- Build de produção passou. Comparação frontal das quatro variantes e vistas de 35°, 55°
+  e 90° inspecionadas durante o ajuste. Diagnóstico local: quatro modelos, 416.450 vértices
+  no total, zero coordenadas inválidas e zero materiais compartilhados entre instâncias.
+- **Limitações:** superfícies ainda derivadas de uma vista frontal, não escultura completa
+  com topologia manual. Perfil do cabelo/coroa e junções dos braços ainda precisam de
+  refinamento visual. Grade de 4 pixels; sem LOD e sem benchmark móvel. Não está aprovado.
+  Aviso de depreciação `THREE.Clock` permanece na dependência; não houve erro de renderização
+  nas comparações frontais verificadas. Nenhum commit ou push desta rodada.
+- Na continuação, conferidos também os quatro olhos, as quatro bocas e a pele escura lado
+  a lado com o 2D; no jogo, vestido verde + cabelo longo + olhos azuis + risada + neve,
+  alternando 2D/3D e mantendo a frase. Salvamento/reabertura e desempenho móvel não foram
+  revalidados nesta rodada. A exportação da imagem pela automação do navegador falhou;
+  a comparação interativa continua disponível localmente.
+
+### Continuação (Claude, 12 de outubro de 2026): cabeça, cabelo e tiara ao girar
+
+Pedido do Gustavo: "ta ficando bom, mas precisa melhorar muito". De frente a princesa já era
+o 2D; os problemas apareciam ao girar. Mudanças em `portrait3d.ts`:
+
+- **Cabeça é um crânio de verdade** (`SKULL`, `headShape`): um ovo medido na imagem da cabeça
+  (y 293 até o queixo ~635, 166 px para cada lado, quase tão fundo quanto largo). Antes a
+  cabeça era uma "bola" tirada do contorno, que contava orelhas e pescoço como cabeça e saía
+  um disco. Orelhas são caroços pequenos fora do crânio; o pescoço só começa abaixo do queixo
+  (começando em y=580 ele pegava a largura da mandíbula e fazia uma faixa clara na boca).
+- **Olhos, sobrancelhas e boca sempre com a pintura deles** (`pDecal`): nunca a cor
+  desfocada da lateral, que deixava uma mancha cinza do lado do olho em 3/4.
+- **Cabelo como domo sobre o crânio:** sobre a testa encosta no crânio; ao lado do rosto vem
+  para a frente parte do caminho; atrás é o domo inteiro. Acima do meio da cabeça cada fileira
+  é tão funda quanto larga (até o limite do domo), então coque e topo do cabelo ficam redondos
+  de lado — antes subiam numa crista fina. Cachos que passam do domo são mechas redondas.
+- **Faixas escondidas ficam escondidas:** a suavização levantava pedaços de cabelo que ficam
+  atrás do rosto até a frente da pele; agora são presos abaixo da pele depois de suavizar.
+- **Cabelo comprido deita nas costas do vestido** (camada da grossura da mecha), em vez de
+  uma tábua atrás dela.
+- **Tiara separada pela cor dourada** (`tiaraOf`), assentada no domo onde encosta no cabelo,
+  acompanhando a curva da cabeça e inclinada para trás. Saiu o retângulo dourado pintado nas
+  costas do cabelo. (No coque loiro a tiara continua junto com o cabelo: as cores se confundem.)
+- **Laterais do cabelo na cor do cabelo**, não o contorno desenhado desfocado (fazia uma
+  costura escura no meio do cabelo visto de lado).
+- Conferido: frente idêntica ao 2D nas quatro; 35°, 40°, 70°, 90° e costas; no jogo, sereia +
+  coque + olhos azuis + risada + flores + pele morena, girando com o dedo; `npm run build`.
+
+Ainda a melhorar: a tiara parece um pouco solta à frente do cabelo vista de lado; brincos
+aparecem como pontinhos atrás da cabeça; braço visto de lado é uma faixa sobre o vestido; a
+borda de cachos tem degrauzinhos chegando perto.
+
+### Continuação 2 (Claude, 12 de outubro de 2026): 3D de verdade de frente, sereia, braços, brincos
+
+Pedido do Gustavo: "a frente tá uma cópia do 2D, não está 3D realmente; pode trabalhar
+bastante e melhorar essa sereia no 3D".
+
+- **Câmera igual à dos outros personagens** (`Character3D.tsx`): a princesa tinha ficado com
+  câmera ortográfica, sem girar sozinha e sem balançar — isso achata tudo. Voltou a câmera em
+  perspectiva, o giro automático e o balanço leve.
+- **Luz também de frente** (`paint` em `portrait3d.ts`): de frente ela recebia zero luz e era
+  a imagem chapada; agora é iluminada mais ou menos pela metade de qualquer lado, com a
+  sombra pintada e a sombra real juntas. A cabeça redonda e o sino da saia passam a ter
+  volume também de frente.
+- **Sereia** (`ratioAt`): a sobressaia (peplum) era uma bola, virou metade da largura em
+  fundura; a cauda é o corpo dela e ficou redonda (0,9); a nadadeira é uma barbatana, fina de
+  lado (0,2). Visto de lado: sobressaia, cauda e nadadeira, em vez de bola + canudo + espeto.
+- **Braços são tubos**: cada braço era um tablete de 36 px de espessura fixa (uma faixa chata
+  no lado do vestido). Agora a largura do braço é medida linha a linha (`span`) e ele é redondo
+  na própria largura; a mão apoiada na saia fica em cima da saia, não dentro dela. A
+  suavização do vestido caiu de 18 para 10 passadas para não achatar isso.
+- **Brincos** (`earringsOf`): pixels ao lado da mandíbula que não têm a cor do cabelo (pérola,
+  pedra) saem do cabelo e viram sólidos próprios na lateral do crânio, pintados dos dois
+  lados. Antes apareciam como pontinhos atrás da cabeça.
+- **Topo da cabeça**: acima da sobrancelha o cabelo é o domo inteiro (era 60%), então a tiara
+  assenta nele (`ring = domo + 4`) em vez de flutuar à frente; a tiara é mantida dentro da
+  malha do cabelo, pintada da cor do cabelo por baixo (`tiara.gold`), porque recortada ela
+  deixava tirinhas de cabelo entre as pontas, que viravam listras de lado. O topo do cabelo
+  é redondo de lado (cada fileira tão funda quanto larga, até o limite do domo).
+- **Costas do cabelo** (`hairBackPaint`): a camada de trás do 2D (uma massa lisa) vai por
+  baixo, a nuca é preenchida com os cachos da frente trazidos dos lados, e por cima vai a
+  frente espelhada, um tom mais escura. Sai o padrão de bolinhas, que parecia plástico-bolha.
+  A tiara vista de trás é a própria tiara espelhada e escurecida, não um borrão dourado.
+- **Laterais**: a textura das laterais tem borrão de 14 px (em um quarto da resolução), maior
+  que um cacho, senão as fileiras de cachos viravam listras ao longo da cabeça.
+- Conferido: as quatro de frente ao lado do 2D; sereia a 40°, 90° e 180°; cabelo comprido e
+  vestido verde a 40° e 90°; malhas escondidas uma a uma para achar a origem das listras;
+  `npm run build`; no jogo, girando com o dedo.
+
+Ainda a melhorar: a tiara vista exatamente de lado é uma lâmina fina à frente do cabelo; a
+boca e os olhos vistos de lado são decalques finos na pele; a borda dos cachos tem degrauzinhos
+de perto (grade de 4 px); `build3d.ts` não é mais usado por nada (`relief.ts` é).
+
+## Princesa: modelos 3D de verdade, como o monstro e o dragão — 12 de outubro de 2026
+
+Gustavo: "não tá nada bom essa princesa. Ela não tem que ser igual o 2D, ela tem que ser o
+upgrade do 2D, transformar o 2D em 3D, algo real em 3D, igual fazemos no monstro ou no
+dragão". As folhas com a imagem esticada (`portrait3d.ts`) foram aposentadas.
+
+- [x] **Gerador `art-source/princess/model3d.mjs`** (`npm run models:princess`; precisa de
+      `npm i --no-save sharp@0.33.5`, como o `cut.cjs`). Lê as camadas `public/princess/*.webp`,
+      tira o contorno de cada uma (marching squares no alfa, simplificado) e faz sólidos como
+      o gerador do dragão: `loft` (torno, fatia a fatia), `ellipsoid`, `rounded` (marching
+      cubes) e `decal`. Escreve `public/models/princess/<fileira>-<id>.glb`,
+      `src/characters/princess/model-library.json` (com a frente e as costas de cada vestido,
+      medidas, para o cabelo deitar) e `docs/princess-model-validation.json` (zero erros).
+- [x] **Peças:** `head` (crânio elipsoide medido na imagem, pescoço em tubo, orelhas
+      arredondadas — um só, a pele é imagem no jogo); `dress-<id>` (corpete + saia num torno
+      com a fundura por vestido — sereia: babado 0,5, cauda redonda 0,9, nadadeira 0,2 —,
+      barra seguindo a imagem, mangas bufantes redondas meio afundadas no ombro, braços em
+      tubo inclinando do ombro à mão apoiada na saia, pernas e sapatos no vestido curto);
+      `hair-<id>` (frente: massa arredondada que envolve o crânio, com camada apoiada no
+      crânio onde a imagem desenha cabelo, e só atrás onde fica o rosto; costas: massa própria
+      atrás do crânio; tiara e brincos como sólidos finos à frente); `eyes-<id>` (olhos com
+      bojo e sobrancelhas, decalques no crânio); `mouth-<id>`.
+- [x] **Cada sólido veste a própria imagem só do lado que olha para a frente** (grupo
+      `Tex_<imagem>_<cor>`), esmaecendo para a cor chapada conforme a superfície vira
+      (`pictured` em `Princess3D.tsx`); laterais e costas em cor chapada, `Skin` tingida pelo
+      tom escolhido. Assim um GLB serve aos quatro tons de pele.
+- [x] **`Princess3D.tsx` montador no molde do `Dragon3D`:** `useGLTF` por peça, cópia própria
+      de materiais e geometria, texturas por tom, cabelo que passa do queixo deitado sobre a
+      frente do vestido e o cabelo de trás atrás das costas dele (`layOnDress`, com as
+      superfícies do catálogo), piscada, `IfLoads` por peça. Câmera e giro iguais aos outros.
+- [x] **Armadilhas que custaram caro:** o glTF conta `v` do topo (a textura entrava de cabeça
+      para baixo e caía na parte transparente); braço empurrado inteiro para a frente vira uma
+      pá (agora inclina); o teste de pele sem o limite de matiz aceita o dourado do friso e a
+      mão levava o friso junto; restos da mão (contorno dos dedos) devolvidos ao corpo
+      alargavam uma fileira do torno e saíam discos — agora as fileiras sob a mão são
+      preenchidas e as fatias do torno passam por mediana; cabelo fino sobre o crânio é mais
+      raso que o crânio e o corte do crânio o apagava — a camada apoiada no crânio resolve;
+      malha sem índice dava 7 MB por vestido (indexada: 1,2–2,1 MB).
+- Conferido: as quatro de frente ao lado do 2D; vestido verde a 0/40/90/180; sereia a
+  0/30/90/180; curto a 35/90; cabelo comprido a 90/180; `npm run build`.
+
+Limitações: costas do vestido e do cabelo em cor chapada (sem a imagem espelhada); a
+nadadeira é fina de lado; sem LOD nem medição em celular; `portrait3d.ts`,
+`PrincessModel3D.tsx`, `build3d.ts` e `relief.ts` ficaram sem uso (não apagados).

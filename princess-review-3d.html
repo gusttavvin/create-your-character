@@ -3,10 +3,13 @@
   <meta charset="UTF-8" /><title>Princess 3D review — local only</title>
   <style>
     body { margin: 0; font-family: system-ui; background: #eef3f8; }
-    .bar { padding: 6px 8px; font-size: 13px; }
+    .bar { padding: 6px 8px; font-size: 13px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .bar a { color:#315ca5; }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 8px 8px; }
     .cell { position: relative; overflow: hidden; background: #fff; border-radius: 8px; height: 330px; }
     .cell span { position: absolute; left: 6px; top: 4px; font-size: 11px; color: #555; z-index: 1; }
+    .reference { position: absolute; height: 86%; aspect-ratio: 1024 / 1536; top: 7%; left: 50%; transform: translateX(-50%); }
+    .reference img { position: absolute; width: 100%; height: 100%; inset: 0; }
   </style>
   <div id="root"></div>
   <script type="module">
@@ -17,6 +20,7 @@
      *   ?view=0..360 turns every camera round her (0 = front, 90 = her left side, 180 = her back);
      *   ?skin=tan (light, tan, brown, dark);
      *   ?big=1 two to a row, larger; ?one=0..3 only that one, as large as the page.
+     *   ?compare=1 pairs the unchanged 2D layers with the 3D front at the same scale.
      */
     import React from 'react';
     import { createRoot } from 'react-dom/client';
@@ -40,19 +44,85 @@
     const row = q.get('row');
     const base = { dress: 'gown', hair: 'braids', eyes: 'sparkly', mouth: 'smile', accessory: '' };
     const all = row ? rows[row].map((o) => ({ ...base, [row]: o })) : own.map((o) => ({ ...base, ...o }));
+    if (q.has('none')) for (const p of all) for (const id of q.get('none').split(',')) p[id] = '';
     const one = q.get('one');
     const cells = one !== null ? [all[Number(one)]] : all;
     if (one !== null) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:1fr}.cell{height:calc(100vh - 40px)}</style>');
     const colors = { skin: SKIN[q.get('skin') ?? 'light'] };
+    const compare = q.has('compare');
     const h = React.createElement;
-    const App = () =>
-      h('div', null,
-        h('div', { className: 'bar' }, `row: ${row ?? 'the four princesses'} · view ${q.get('view') ?? 0}°`),
+    const reference = (p) => h('div', { className: 'reference' },
+      [p.hair && `hair-${p.hair}-back`, `head-${q.get('skin') ?? 'light'}`, p.dress && `dress-${p.dress}-${q.get('skin') ?? 'light'}`,
+        p.eyes && 'brows', p.eyes && `eyes-${p.eyes}`, p.mouth && `mouth-${p.mouth}`, p.hair && `hair-${p.hair}-front`]
+        .filter(Boolean).map((file) => h('img', { key: file, src: `/princess/${file}.webp`, alt: '' })));
+    function checkModels() {
+      let invalid = 0, shared = 0, vertices = 0, models = 0;
+      const seen = new Set();
+      for (const get of window.__r3fAll ?? []) {
+        const root = get().scene.getObjectByName('princess-model');
+        if (!root) continue;
+        models++;
+        const local = new Set();
+        root.traverse((object) => {
+          if (!object.isMesh) return;
+          const positions = object.geometry.attributes.position;
+          vertices += positions.count;
+          for (const value of positions.array) if (!Number.isFinite(value)) invalid++;
+          for (const material of Array.isArray(object.material) ? object.material : [object.material]) local.add(material);
+        });
+        for (const material of local) { if (seen.has(material)) shared++; seen.add(material); }
+      }
+      return `${models}/${cells.length} models · ${vertices} vertices · ${invalid} invalid values · ${shared} shared materials`;
+    }
+    function exportComparison() {
+      for (const get of window.__r3fAll ?? []) { const {gl, scene, camera} = get(); gl.render(scene, camera); }
+      const elements = [...document.querySelectorAll('.cell')];
+      const output = document.createElement('canvas');
+      const columns = compare ? 4 : cells.length;
+      const tileW = 380, tileH = 530;
+      output.width = columns * tileW; output.height = Math.ceil(elements.length / columns) * tileH;
+      const ctx = output.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, output.width, output.height);
+      elements.forEach((element, i) => {
+        const left = (i % columns) * tileW, top = Math.floor(i / columns) * tileH;
+        ctx.fillStyle = '#303030'; ctx.font = '13px sans-serif'; ctx.fillText(element.querySelector('span').textContent, left + 10, top + 20);
+        const model = element.querySelector('canvas');
+        if (model) {
+          const scale = Math.min(tileW / element.clientWidth, (tileH - 30) / element.clientHeight);
+          const w = element.clientWidth * scale, hh = element.clientHeight * scale;
+          ctx.drawImage(model, left + (tileW - w) / 2, top + 30 + (tileH - 30 - hh) / 2, w, hh);
+        } else {
+          const hh = (tileH - 30) * .86, w = hh * 1024 / 1536;
+          for (const img of element.querySelectorAll('img')) ctx.drawImage(img, left + (tileW - w) / 2, top + 30 + (tileH - 30 - hh) / 2, w, hh);
+        }
+      });
+      const img = document.createElement('img'); img.alt = 'Exported 2D and 3D comparison';
+      img.id = 'comparison-export'; img.src = output.toDataURL('image/png'); img.style.maxWidth = '100%';
+      document.getElementById('comparison-export')?.remove(); document.body.append(img);
+    }
+    const App = () => {
+      const [report, setReport] = React.useState('');
+      return h('div', null,
+        h('div', { className: 'bar' }, `row: ${row ?? 'the four princesses'} · view ${q.get('view') ?? 0}°`,
+          ...[0, 35, 90, 180].map((angle) => {
+            const params = new URLSearchParams(q); params.set('view', angle);
+            return h('a', { key: angle, href: `?${params}` }, `${angle}°`);
+          }),
+          h('a', { href: '?compare=1' }, 'Compare all'),
+          h('a', { href: '?row=eyes&compare=1' }, 'Eyes'),
+          h('a', { href: '?row=mouth&compare=1' }, 'Mouths'),
+          h('a', { href: '?compare=1&skin=dark' }, 'Dark skin'),
+          h('button', { onClick: () => setReport(checkModels()) }, 'Check models'),
+          h('button', { onClick: exportComparison }, 'Export comparison'),
+          h('output', null, report)),
         h('div', { className: 'grid' },
-          cells.map((parts, i) =>
+          cells.flatMap((parts, i) => [
+            ...(compare ? [h('div', { className: 'cell', key: `reference-${i}` }, h('span', null, `2D · ${parts.dress} · ${parts.hair}`), reference(parts))] : []),
             h('div', { className: 'cell', key: i },
-              h('span', null, Object.values(parts).filter(Boolean).join(' · ')),
-              h(Character3D, { kind: 'princess', parts, colors, still: true })))));
+              h('span', null, `3D · ${Object.values(parts).filter(Boolean).join(' · ')}`),
+              h(Character3D, { kind: 'princess', parts, colors, still: true }))])));
+    };
+    if (compare) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(4,1fr)}.cell{height:430px}</style>');
+    if (compare && one !== null) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(2,1fr)}.cell{height:calc(100vh - 40px)}</style>');
     if (q.get('big')) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(2,1fr)}.cell{height:560px}</style>');
     createRoot(document.getElementById('root')).render(h(App));
     const view = Number(q.get('view'));

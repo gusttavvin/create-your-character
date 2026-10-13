@@ -63,10 +63,19 @@ npm run build    # confere os tipos e gera o site
   `monster/Monster3D.tsx`; `Monster3DFallback.tsx` mantém a construção antiga somente para
   falhas de carregamento. Leia `docs/monster-model-library.md`. No 3D o monstro se monta
   sozinho: as peças não são arrastáveis (`movable3d.ts`).
-- A princesa em 3D é feita das mesmas imagens do 2D (`public/princess/*.webp`): cada camada
-  ganha volume pela largura que tem (`princess/relief.ts`) e as camadas são montadas na ordem
-  do 2D (`princess/build3d.ts`); as habilidades giram em volta dela (`abilities3d.tsx`).
-  Para conferir: `http://localhost:9090/princess-review-3d.html` (parâmetros no topo do arquivo).
+- A princesa em 3D é uma biblioteca de modelos, como o dragão: `art-source/princess/model3d.mjs`
+  (`npm run models:princess`; precisa de `npm i --no-save sharp@0.33.5`) lê as camadas
+  `public/princess/*.webp`, tira o contorno de cada uma e faz sólidos (torno para o vestido,
+  elipsoide para o crânio, marching cubes para cabelo/tiara/brincos, decalques para
+  olhos/sobrancelhas/boca), gravando `public/models/princess/<fileira>-<id>.glb`,
+  `princess/model-library.json` (frente e costas de cada vestido) e
+  `docs/princess-model-validation.json`. `Princess3D.tsx` monta as peças no molde do
+  `Dragon3D`: cada sólido veste a própria imagem só do lado da frente (materiais
+  `Tex_<imagem>_<cor>`, tom de pele por textura e tinta), o cabelo deita sobre/atrás do vestido
+  escolhido, os olhos piscam, as habilidades giram em volta (`abilities3d.tsx`). O 2D não muda.
+  `portrait3d.ts`, `PrincessModel3D.tsx`, `build3d.ts` e `relief.ts` são tentativas anteriores,
+  sem uso. Para conferir: `http://localhost:9090/princess-review-3d.html` (`?compare=1` põe o
+  2D ao lado do 3D; `?one=2` mostra só a sereia, grande; `?view=90` gira).
 - O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
   `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/

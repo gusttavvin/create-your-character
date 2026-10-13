@@ -11,7 +11,8 @@
     "typecheck": "tsc -b",
     "models:monster": "node art-source/approved/model-library.mjs",
     "memory:index": "node scripts/memory-emoji-index.mjs",
-    "models:dragon": "node art-source/dragon/model3d.mjs"
+    "models:dragon": "node art-source/dragon/model3d.mjs",
+    "models:princess": "node art-source/princess/model3d.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
