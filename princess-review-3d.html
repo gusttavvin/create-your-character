@@ -133,8 +133,10 @@
     if (view || zoom !== 1 || up || at) {
       const turn = () => {
         for (const get of window.__r3fAll ?? []) {
-          const { camera, controls, scene } = get();
-          const r = Math.hypot(camera.position.x, camera.position.z) / zoom;
+          const { camera, controls, scene, gl } = get();
+          // from where the camera started, so running this twice does not zoom twice
+          const base = (camera.userData.base ??= { r: Math.hypot(camera.position.x, camera.position.z), y: camera.position.y });
+          const r = base.r / zoom;
           const a = (view * Math.PI) / 180;
           let target = { x: 0, y: up * 0.0025, z: 0 };
           const piece = at && scene.getObjectByName(at);
@@ -143,13 +145,15 @@
             piece.geometry.computeBoundingSphere();
             target = piece.geometry.boundingSphere.center.clone().applyMatrix4(piece.matrixWorld);
           }
-          camera.position.set(target.x + Math.sin(a) * r, target.y + (piece ? 0.02 : camera.position.y / zoom), target.z + Math.cos(a) * r);
+          camera.position.set(target.x + Math.sin(a) * r, target.y + (piece ? 0.02 : base.y / zoom), target.z + Math.cos(a) * r);
           camera.lookAt(target.x, target.y, target.z);
           controls?.update();
+          // drawn at once: in a hidden pane the animation loop is paused and nothing would show
+          gl.render(scene, camera);
         }
       };
-      setTimeout(turn, 1500);
-      setTimeout(turn, 3000);
+      // again as the pieces finish loading
+      for (let ms = 1500; ms <= 40000; ms += 1500) setTimeout(turn, ms);
     }
   </script>
 </html>

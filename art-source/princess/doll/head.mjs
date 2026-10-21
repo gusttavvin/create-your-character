@@ -22,7 +22,7 @@ export function headFront(x, y) {
   if (r <= 0 || Math.abs(dx) >= r) return -Infinity;
   return Math.sqrt(r * r - dx * dx) * HEAD.depth;
 }
-export const BLUSH = material('Blush', '#f7a3a8', { roughness: 0.7 });
+export const BLUSH = material('Blush', '#f3909b', { roughness: 0.75 });
 
 export function head() {
   const root = new T.Group();
@@ -37,10 +37,10 @@ export function head() {
   mesh(ellipsoid(HEAD.cx, 535, headFront(HEAD.cx, 535) - 2, 9, 7, 9, 16), SKIN(), 'nose', root);
   // a blush on each cheek, lying on the skin
   const blush = (x) => {
-    const g = ellipsoid(x, 548, 0, 30, 15, 5, 20);
-    g.translate(0, 0, headFront(x, 548) - 2);
+    const g = ellipsoid(x, 550, 0, 36, 19, 6, 20);
+    g.translate(0, 0, headFront(x, 550) - 3);
     return g;
   };
-  mesh(pair(blush(HEAD.cx - 82)), BLUSH, 'blush', root);
+  mesh(pair(blush(HEAD.cx - 88)), BLUSH, 'blush', root);
   return root;
 }

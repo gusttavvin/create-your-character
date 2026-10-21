@@ -74,16 +74,30 @@ function body(id, root) {
   mesh(pair(cuff), GOLD(), 'cuffs', root);
 }
 
-/** An arm from the shoulder to a hand laid on the skirt at (hx, hy), the hand's front at hz. */
+/**
+ * An arm from the shoulder, bent at the elbow, to a hand laid on the skirt at (hx, hy), the
+ * hand's front at hz: a plump upper arm, a forearm narrowing to the wrist, and a hand with a
+ * palm, four fingers curled down over the skirt and a thumb, turned to lie along the skirt.
+ */
 function arms(root, hx, hy, hz, swing = 0) {
   const sx = CX - 150;
-  const arm = sweep(
-    [[sx, 740, 10], [sx - 14, 800, 18 + swing], [hx + 10, hy - 50, hz - 14], [hx, hy, hz]],
-    (t) => 24 - 6 * t, (t) => 22 - 6 * t, { radial: 14 },
-  );
-  const hand = ellipsoid(hx - 2, hy + 12, hz + 2, 22, 28, 13, 18);
-  const thumb = ellipsoid(hx + 16, hy + 4, hz + 4, 8, 13, 7, 12);
-  mesh(pair(merge([arm, hand, thumb])), SKIN(), 'arms', root);
+  const elbow = [sx - 26 - swing, 830, 26];
+  const wrist = [hx + 8, hy - 18, hz - 6];
+  const arm = sweep([[sx, 738, 8], [sx - 12, 785, 18], elbow, [hx + 12, hy - 55, hz - 16], wrist], (t) => 23 - 8 * t, (t) => 21 - 8 * t, { radial: 14, tension: 0.35 });
+  // the hand, built flat (palm towards +z, fingers down) and turned to the skirt's slope there
+  const angle = Math.atan2(hx - CX, hz);
+  const palm = ellipsoid(0, 0, 0, 19, 24, 9, 18);
+  const parts = [palm];
+  for (let i = 0; i < 4; i++) {
+    const fx = -14 + i * 9.5;
+    const len = 26 - Math.abs(i - 1.5) * 3;
+    parts.push(sweep([[fx, 16, 2], [fx, 16 + len * 0.6, 6], [fx + (i - 1.5) * 1.5, 16 + len, 2]], 5 - Math.abs(i - 1.5) * 0.5, 4.5, { radial: 8 }));
+  }
+  parts.push(sweep([[14, -8, 2], [25, 4, 7], [28, 16, 6]], 5.5, 5, { radial: 8 }));
+  const hand = merge(parts);
+  hand.rotateY(angle);
+  hand.translate(hx, -(hy + 6), hz + 4);
+  mesh(pair(merge([arm, hand])), SKIN(), 'arms', root);
 }
 
 /* ---------------------------------------------------------------- the skirts */

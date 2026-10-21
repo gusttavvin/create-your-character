@@ -2240,6 +2240,24 @@ Olhos: íris maior (como as das bonecas), sem a pálpebra de baixo, cílios mais
 sobrancelhas mais finas, mais altas e mais claras; cada olho inclinado para acompanhar a
 curva do crânio (de perfil a borda externa do globo saía da bochecha).
 
-Limitações: `hair-curly.glb` tem 2,6 MB e 149 mil triângulos (os outros ficam entre 0,02 e
-1,4 MB); sem textura de escamas ou brocados (só relevo e cor); a nadadeira é lisa; desempenho
-em celular não medido.
+Terceira passada ("melhore o rosto e os braços, e os cabelos, ainda estão bem ruins"):
+- Rosto: íris envernizada (`gloss`, um verniz `MeshPhysicalMaterial` que o carregador do
+  jogo entende) com anel escuro e crescente claro embaixo, como olho de boneca; dobra de pele
+  sobre o olho; lábios com verniz; blush maior e mais rosado.
+- Braços: cotovelo dobrado, antebraço afinando até o punho, mão com palma, quatro dedos
+  curvados sobre a saia e polegar, virada para acompanhar a inclinação da saia (`arms`).
+- Cabelos: verniz de boneca; mechas em S mais grossas (`strand` com `bends`) e pontas
+  arredondadas; comprido com massa atrás redonda, barra em ondas (`wavyBottom`) e mechas
+  curvas na frente dos ombros; trança com massa recolhida atrás e rolos torcidos; sulcos
+  penteados (`grooves`): linhas finas mais escuras sobre a superfície real do cabelo, achada
+  com um raio (`surfaceOf`/`capLock`), porque medidas pelo crânio ficavam enterradas no volume.
+- Página de revisão: `?at=skull` mira a câmera numa peça; a câmera é redesenhada a cada
+  1,5 s por 40 s (no painel escondido o laço de animação para); zoom guardado uma vez
+  (`camera.userData.base`), senão cada chamada aproximava de novo.
+- Cuidado: no painel do navegador do app, depois de várias navegações na mesma aba todos os
+  canvas 3D ficam em branco (contextos WebGL perdidos). Abra uma aba nova por vista.
+
+Limitações: `hair-curly.glb` tem 2,6 MB e 149 mil triângulos, o comprido 1,6 MB (os outros
+ficam entre 0,02 e 1,2 MB); sem textura de escamas ou brocados (só relevo e cor); a nadadeira
+é lisa; de costas o cabelo comprido ainda é uma massa única com sulcos; desempenho em celular
+não medido.

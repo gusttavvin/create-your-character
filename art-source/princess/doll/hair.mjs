@@ -19,12 +19,12 @@ const SK = { cx: CX, cy: 468, cz: 0, rx: 168, ry: 178, rz: 162 };
 const skullE = (x, y, z) => Math.sqrt(((x - SK.cx) / SK.rx) ** 2 + ((y - SK.cy) / SK.ry) ** 2 + ((z - SK.cz) / SK.rz) ** 2);
 
 const COLOUR = {
-  braids: { hair: '#b1301c', gem: '#1d9a5a', shine: '#d9573f' },
-  long: { hair: '#7a3a16', gem: '#ff4fa0', shine: '#9a5a2a' },
-  curly: { hair: '#1b1416', gem: '#2f7be0', shine: '#2a3c6a' },
-  bun: { hair: '#f0c24e', gem: '#8a4fd0', shine: '#f7d98a' },
+  braids: { hair: '#b1301c', gem: '#1d9a5a', groove: '#7d1e10' },
+  long: { hair: '#7a3a16', gem: '#ff4fa0', groove: '#52250c' },
+  curly: { hair: '#1b1416', gem: '#2f7be0', groove: '#0c0809' },
+  bun: { hair: '#f0c24e', gem: '#8a4fd0', groove: '#c08f2a' },
 };
-const hairMat = (id) => material('Hair', COLOUR[id].hair, { roughness: 0.42 });
+const hairMat = (id) => material('Hair', COLOUR[id].hair, { roughness: 0.45, gloss: 0.7 });
 
 /** A point on the skull's surface at angle a (0 = front) and height y, `lift` out. */
 function onSkull(a, y, lift = 0) {
@@ -42,7 +42,7 @@ function cap(t, extra = [], { hairline = 350, bottom = 620, res = 96, box } = {}
     const shell = Math.min((1 + t / 165 - e) * 165, (e - 0.97) * 165);
     // in front of the face (z forward) and below the hairline there is no cap
     const face = Math.max(hairline - y, 20 - z, (e - 1 - t / 165) * 165);
-    let f = Math.min(shell, face, bottom - y);
+    let f = Math.min(shell, face, (typeof bottom === 'function' ? bottom(x, z) : bottom) - y);
     for (const g of extra) f = Math.max(f, Math.min(g(x, y, z), (e - 0.97) * 165));
     return f;
   };
@@ -60,17 +60,18 @@ function lock(a0, y0, a1, y1, lift, rx = 28, rz = 12, wave = 6) {
   return sweep(pts, (u) => rx * (1 - 0.45 * u), (u) => rz * (1 - 0.3 * u), { radial: 10 });
 }
 /** A wavy strand hanging from (x0, y0, z0) to (x1, y1, z1), waving sideways `wave` pixels. */
-function strand(from, to, rx = 24, rz = 15, wave = 12, phase = 0, tension = 0.5) {
+function strand(from, to, rx = 24, rz = 15, wave = 12, phase = 0, tension = 0.5, bends = 1) {
   const pts = [];
-  const n = 7;
+  const n = 9;
   const [ax, ay, az] = from;
   const [bx, by, bz] = to;
   for (let i = 0; i <= n; i++) {
     const u = i / n;
-    const w = wave * Math.sin(u * Math.PI * 2 + phase) * Math.sin(u * Math.PI);
-    pts.push([ax + (bx - ax) * u + w, ay + (by - ay) * u, az + (bz - az) * u + w * 0.3]);
+    const w = wave * Math.sin(u * Math.PI * 2 * bends + phase) * Math.sin(u * Math.PI * 0.9 + 0.1);
+    pts.push([ax + (bx - ax) * u + w, ay + (by - ay) * u, az + (bz - az) * u + w * 0.35]);
   }
-  return sweep(pts, (u) => rx * (1 - 0.55 * u * u), (u) => rz * (1 - 0.5 * u * u), { radial: 12, tension });
+  // a lock keeps its width most of the way and rounds off at the tip
+  return sweep(pts, (u) => rx * (1 - 0.35 * u * u), (u) => rz * (1 - 0.3 * u * u), { radial: 12, tension });
 }
 
 /** A spiral curl: a tube wound round an axis from `from` towards `to`, `R` wide. */
@@ -92,6 +93,52 @@ function spiral(from, to, R = 15, turns = 3, r = 7, radial = 7) {
     pts.push([p.x, p.y, p.z]);
   }
   return sweep(pts, r, r * 0.8, { radial, seg: Math.round(n * 1.5), tension: 0.5 });
+}
+
+/**
+ * Where the finished hair's surface is: a ray from outside, level, towards the skull's axis at
+ * angle a (0 = front) and height y, and the first point of the hair it meets (null where
+ * there is none, as in front of her face).
+ */
+function surfaceOf(geo) {
+  const m = new T.Mesh(geo, new T.MeshBasicMaterial({ side: T.DoubleSide }));
+  const rc = new T.Raycaster();
+  return (a, y) => {
+    const dir = new T.Vector3(-Math.sin(a), 0, -Math.cos(a));
+    rc.set(new T.Vector3(CX + 420 * Math.sin(a), -y, 420 * Math.cos(a)), dir);
+    rc.far = 420;
+    const hit = rc.intersectObject(m, false)[0];
+    return hit ? [hit.point.x, -hit.point.y, hit.point.z] : null;
+  };
+}
+/** A lock lying on the hair's surface from (a0, y0) to (a1, y1), `lift` out of it. */
+function capLock(surface, a0, y0, a1, y1, lift, rx, rz) {
+  const pts = [];
+  for (let i = 0; i <= 8; i++) {
+    const u = i / 8;
+    const a = a0 + (a1 - a0) * u;
+    const p = surface(a, y0 + (y1 - y0) * u);
+    if (!p) return null;
+    pts.push([p[0] + lift * Math.sin(a), p[1], p[2] + lift * Math.cos(a)]);
+  }
+  return sweep(pts, (u) => rx * (1 - 0.4 * u), (u) => rz * (1 - 0.3 * u), { radial: 8 });
+}
+/**
+ * Grooves combed into the hair: thin darker strands lying on its surface from the crown down
+ * (or up into a bun), so the mass reads as sculpted locks rather than a smooth ball.
+ */
+function grooves(root, id, surface, { n = 22, top = 300, bottom = 560, up = false } = {}) {
+  const dark = material('HairGroove', COLOUR[id].groove, { roughness: 0.5, gloss: 0.6 });
+  const lines = [];
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * TAU + 0.1;
+    const twist = 0.22 * Math.sin(k * 1.7);
+    const y0 = up ? bottom : top;
+    const y1 = up ? top : bottom;
+    const g = capLock(surface, a, y0 + (k % 3) * 14, a + twist, y1 - (k % 2) * 30, 1.5, 3.4, 2.6);
+    if (g) lines.push(g);
+  }
+  if (lines.length) mesh(merge(lines), dark, 'grooves', root);
 }
 
 /** The tiara: a gold band round the top of the hair with three points and a gem, in front. */
@@ -130,8 +177,20 @@ function braids(root) {
     ellipsoidField(CX - 150, 470, -20, 70, 120, 90), ellipsoidField(CX + 150, 470, -20, 70, 120, 90),
     ellipsoidField(CX - 178, 505, 42, 52, 120, 58), ellipsoidField(CX + 178, 505, 42, 52, 120, 58),
     ellipsoidField(CX, 330, -30, 150, 90, 150),
+    // the mass of hair gathered at the back of her head
+    ellipsoidField(CX, 440, -130, 150, 170, 85),
   ]);
   mesh(geo, m, 'cap', root);
+  const surface = surfaceOf(geo);
+  // twisted rolls over that mass, from the crown down and round to the braid
+  const rolls = [];
+  for (const [a0, a1, y0, y1] of [[Math.PI - 0.3, Math.PI + 0.55, 320, 500], [Math.PI + 0.4, Math.PI - 0.5, 380, 560], [Math.PI - 0.1, Math.PI + 0.9, 440, 540], [Math.PI + 0.9, Math.PI - 0.9, 300, 420]]) {
+    const g = capLock(surface, a0, y0, a1, y1, -6, 30, 18);
+    if (g) rolls.push(g);
+  }
+  mesh(merge(rolls), m, 'rolls', root);
+  // combed lines over the crown and down the back
+  grooves(root, 'braids', surface, { n: 24, top: 296, bottom: 560 });
   // waves over the crown, parted to her left: a thick sweep across the forehead each way
   const waves = [];
   waves.push(lock(0.45, 288, -0.95, 450, 16, 42, 14, 3));
@@ -179,27 +238,38 @@ function braids(root) {
 
 function long(root) {
   const m = hairMat('long');
-  // the cap, with the mass of hair that falls down her back melted into it
-  mesh(cap(24, [ellipsoidField(CX, 330, -30, 140, 80, 150), ellipsoidField(CX, 600, -95, 205, 270, 105)], { bottom: 860, box: [220, 60, -300, 804, 900, 260], res: 112 }), m, 'cap', root);
+  // the cap, with the mass of hair that falls down her back melted into it: round, lobed at
+  // the bottom in big waves, not a flat cape
+  const wavyBottom = (x, z) => 850 + 34 * Math.cos((x - CX) / 48) - 0.2 * Math.max(0, z);
+  const capGeo = cap(26, [
+    ellipsoidField(CX, 330, -30, 140, 80, 150),
+    ellipsoidField(CX, 560, -90, 200, 240, 115),
+    ellipsoidField(CX - 110, 740, -75, 100, 130, 80), ellipsoidField(CX + 110, 740, -75, 100, 130, 80),
+    ellipsoidField(CX, 760, -100, 90, 120, 70),
+  ], { bottom: wavyBottom, box: [220, 60, -300, 804, 920, 260], res: 112 });
+  mesh(capGeo, m, 'cap', root);
+  grooves(root, 'long', surfaceOf(capGeo), { n: 26, top: 296, bottom: 820 });
   const strands = [];
-  // parted a little off the middle, a thick lock sweeps over the forehead to each temple
-  strands.push(lock(0.12, 288, -1.08, 448, 20, 44, 13, 3));
-  strands.push(lock(0.12, 288, 1.08, 448, 20, 44, 13, 3));
-  // waves all round the back and sides, over the mass, down past her shoulders
-  const n = 15;
+  // parted a little off the middle, a thick lock sweeps over the forehead to each temple,
+  // hugging the skull
+  strands.push(lock(0.12, 288, -1.0, 440, 14, 38, 11, 2));
+  strands.push(lock(0.12, 288, 1.0, 440, 14, 38, 11, 2));
+  // thick S-shaped waves all round the back and sides, over the mass, past her shoulders
+  const n = 13;
   for (let i = 0; i < n; i++) {
-    const a = Math.PI * 0.4 + (Math.PI * 1.2 * i) / (n - 1);
+    const a = Math.PI * 0.42 + (Math.PI * 1.16 * i) / (n - 1);
     const spread = 1 + 0.3 * Math.abs(Math.sin(a));
-    const [x0, , z0] = onSkull(a, 420, 28);
-    const r1 = (HEAD.r(430) + 70) * spread;
-    const end = [CX + r1 * Math.sin(a) * 0.95, 900 - 50 * Math.abs(Math.cos(a)), r1 * Math.cos(a) * 0.75 - 30];
-    strands.push(strand([x0, 420, z0], end, 42, 20, 12, i * 1.3, 0.3));
+    const [x0, , z0] = onSkull(a, 410, 30);
+    const r1 = (HEAD.r(430) + 75) * spread;
+    const end = [CX + r1 * Math.sin(a) * 0.95, 905 - 45 * Math.abs(Math.cos(a)) - (i % 2) * 30, r1 * Math.cos(a) * 0.75 - 30];
+    strands.push(strand([x0, 410, z0], end, 46, 24, 24, i * 1.1, 0.3, 1.5));
   }
-  // two locks in front of each shoulder, waving down over her chest
-  for (const a of [0.62, -0.62, 0.9, -0.9]) {
-    const [x0, , z0] = onSkull(a, 500, 26);
-    const out = Math.abs(a) > 0.8 ? 1.15 : 1;
-    strands.push(strand([x0, 500, z0], [CX + 205 * out * Math.sin(a), 790 + 30 * (out - 1) * 10, 70 - 30 * (out - 1) * 10], 38, 16, 14, a * 2, 0.3));
+  // two waved locks in front of each shoulder, curling out at the tips
+  for (const a of [0.6, -0.6, 0.92, -0.92]) {
+    const [x0, , z0] = onSkull(a, 500, 28);
+    const out = Math.abs(a) > 0.8 ? 1.12 : 1;
+    const dir = Math.sign(a);
+    strands.push(strand([x0, 500, z0], [CX + (205 * out + 10) * Math.sin(a) + dir * 12, 800 - (out - 1) * 300, 72 - (out - 1) * 250], 42, 20, 22, 1.2 + out, 0.3, 1.5));
   }
   mesh(merge(strands), m, 'strands', root);
   tiara(root, 268, 126, COLOUR.long.gem, 0.95);
@@ -256,6 +326,8 @@ function bun(root) {
   coil.push(ring(CX, 112, -30, 48, 18, [Math.PI / 2 - 0.3, 0.4, 0], TAU, 40));
   coil.push(ring(CX, 190, -20, 108, 18, [Math.PI / 2 + 0.15, 0, 0], TAU, 48));
   mesh(merge(coil), m, 'bun', root);
+  // hair combed up from the hairline into the bun (over the cap and the bun as one surface)
+  grooves(root, 'bun', surfaceOf(merge([geo, ...coil.map((g) => g.clone())])), { n: 26, top: 120, bottom: 560, up: true });
   // a soft sweep from a side parting over the forehead, and a curl hanging at each ear
   const locks = [];
   locks.push(lock(0.4, 290, -1.0, 440, 18, 42, 12, 3));

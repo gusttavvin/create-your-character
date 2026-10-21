@@ -24,7 +24,11 @@ const materials = new Map();
 export function material(name, colour, opts = {}) {
   const key = name + '|' + colour + '|' + JSON.stringify(opts);
   if (!materials.has(key)) {
-    const m = new T.MeshStandardMaterial({ color: colour, roughness: 0.55, metalness: 0, ...opts });
+    // `gloss` gives a varnished, doll-like finish (a clearcoat the game's loader understands)
+    const { gloss, ...rest } = opts;
+    const m = gloss
+      ? new T.MeshPhysicalMaterial({ color: colour, roughness: 0.5, metalness: 0, clearcoat: gloss, clearcoatRoughness: 0.25, ...rest })
+      : new T.MeshStandardMaterial({ color: colour, roughness: 0.55, metalness: 0, ...rest });
     m.name = name;
     materials.set(key, m);
   }

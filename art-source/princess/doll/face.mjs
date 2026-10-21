@@ -4,7 +4,7 @@
  * real lips, with teeth, a tongue or an open "oh" where the picture has them.
  */
 import * as T from 'three';
-import { ellipsoid, heart, material, merge, mesh, mirrored, plate, ring, star, sweep } from './lib.mjs';
+import { ellipsoid, heart, material, merge, mesh, mirrored, plate, ring, SKIN, star, sweep } from './lib.mjs';
 import { headFront } from './head.mjs';
 
 const EYE_Y = 492;
@@ -13,12 +13,13 @@ const WHITE = material('EyeWhite', '#ffffff', { roughness: 0.25 });
 const INK = material('Ink', '#2a1611', { roughness: 0.6 });
 const BROW = material('Brow', '#6b4226', { roughness: 0.7 });
 const SHINE = material('Shine', '#ffffff', { roughness: 0.1 });
-const LIP = material('Lip', '#e8626d', { roughness: 0.35 });
+const LIP = material('Lip', '#e8626d', { roughness: 0.3, gloss: 0.8 });
 const MOUTH = material('MouthInside', '#6e1620', { roughness: 0.6 });
 const TEETH = material('Teeth', '#fffaf4', { roughness: 0.3 });
 const TONGUE = material('Tongue', '#f28a9b', { roughness: 0.45 });
 
 const IRIS = { sparkly: '#6b3d1e', happy: '#2e55b5', wink: '#3a9a4a', sleepy: '#7a3fb5' };
+const LIGHT = { sparkly: '#b5733a', happy: '#6f9ae8', wink: '#7fd08a', sleepy: '#b98ae6' };
 
 /** The surface of the skull at (x, y), a little out. */
 const on = (x, y, lift = 0) => headFront(x, y) + lift;
@@ -30,8 +31,20 @@ function openEye(cx, cy, id, eye) {
   const z = front - RZ;
   mesh(ellipsoid(cx, cy, z, RX, RY, RZ, 28), WHITE, 'eyeball', eye);
   // the iris is a big dome on the ball, as a doll's is, the pupil a smaller dome on the iris
-  mesh(ellipsoid(cx, cy + 3, front - 10, 44, 44, 13, 28), material('Iris', IRIS[id], { roughness: 0.3 }), 'iris', eye);
+  mesh(ellipsoid(cx, cy + 3, front - 10, 44, 44, 13, 28), material('Iris', IRIS[id], { roughness: 0.2, gloss: 1 }), 'iris', eye);
+  // a dark rim round the iris, and a lighter crescent in its lower half, as a doll's eye has
+  mesh(ring(cx, cy + 3, front + 1.5, 42, 2.4, [0, 0, 0], Math.PI * 2, 40), INK, 'irisrim', eye);
+  mesh(ellipsoid(cx, cy + 19, front + 1, 24, 12, 2.5, 20), material('IrisLight', LIGHT[id], { roughness: 0.2, gloss: 1 }), 'irislight', eye);
   mesh(ellipsoid(cx, cy + 4, front - 5, 23, 23, 9, 20), INK, 'pupil', eye);
+  // the fold of the upper lid: a soft ridge of skin over the top of the eye
+  const fold = [];
+  for (let i = 0; i <= 10; i++) {
+    const a = Math.PI * (0.1 + (0.8 * i) / 10);
+    const x = cx - RX * 1.12 * Math.cos(a);
+    const y = cy - RY * 1.22 * Math.sin(a);
+    fold.push([x, y, on(x, y, 2) + Math.sqrt(Math.max(0, 1 - ((x - cx) / (RX * 1.2)) ** 2 - ((y - cy) / (RY * 1.3)) ** 2)) * RZ * 0.5]);
+  }
+  mesh(sweep(fold, (t) => 4 + 6 * Math.sin(t * Math.PI), (t) => 3 + 5 * Math.sin(t * Math.PI), { radial: 8 }), SKIN(), 'lidfold', eye);
   // shines: a big one up and outward, a small one down and inward
   const out = cx < 512 ? -1 : 1;
   if (id === 'happy') mesh(plate(star(cx + out * 10, cy - 10, 17, 7), front + 8, 3), SHINE, 'shine', eye);
