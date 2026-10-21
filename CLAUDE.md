@@ -63,19 +63,22 @@ npm run build    # confere os tipos e gera o site
   `monster/Monster3D.tsx`; `Monster3DFallback.tsx` mantém a construção antiga somente para
   falhas de carregamento. Leia `docs/monster-model-library.md`. No 3D o monstro se monta
   sozinho: as peças não são arrastáveis (`movable3d.ts`).
-- A princesa em 3D é uma biblioteca de modelos, como o dragão: `art-source/princess/model3d.mjs`
-  (`npm run models:princess`; precisa de `npm i --no-save sharp@0.33.5`) lê as camadas
-  `public/princess/*.webp`, tira o contorno de cada uma e faz sólidos (torno para o vestido,
-  elipsoide para o crânio, marching cubes para cabelo/tiara/brincos, decalques para
-  olhos/sobrancelhas/boca), gravando `public/models/princess/<fileira>-<id>.glb`,
-  `princess/model-library.json` (frente e costas de cada vestido) e
-  `docs/princess-model-validation.json`. `Princess3D.tsx` monta as peças no molde do
-  `Dragon3D`: cada sólido veste a própria imagem só do lado da frente (materiais
-  `Tex_<imagem>_<cor>`, tom de pele por textura e tinta), o cabelo deita sobre/atrás do vestido
-  escolhido, os olhos piscam, as habilidades giram em volta (`abilities3d.tsx`). O 2D não muda.
-  `portrait3d.ts`, `PrincessModel3D.tsx`, `build3d.ts` e `relief.ts` são tentativas anteriores,
-  sem uso. Para conferir: `http://localhost:9090/princess-review-3d.html` (`?compare=1` põe o
-  2D ao lado do 3D; `?one=2` mostra só a sereia, grande; `?view=90` gira).
+- A princesa em 2D é feita de imagens recortadas das bonecas da Clara
+  (`art-source/princess/dolls.cjs`, `v2.cjs`, `cut.cjs`, `curly.cjs`; precisam de
+  `npm i --no-save sharp@0.33.5`), em `public/princess/*.webp`, com as caixas em `pieces.json`.
+- A princesa em 3D é uma **boneca modelada**, como o dragão, não as imagens infladas:
+  `art-source/princess/doll/` (`npm run models:princess`, sem sharp) desenha cada peça com
+  formas de verdade nos pixels da folha 1024×1536 — `head.mjs` (crânio torneado, pescoço,
+  orelhas, nariz, blush), `face.mjs` (olhos com globo, íris, pupila, brilho, pálpebra, cílios e
+  sobrancelha; bocas com lábios, dentes e língua), `dress.mjs` (colo, corpete, mangas bufantes,
+  braços e mãos na saia, saias/cauda/pernas, frisos e joias) e `hair.mjs` (touca por marching
+  cubes, mechas, trança, cachos em espiral, coque; tiara e brincos vêm com o cabelo), com as
+  formas em `lib.mjs`. Grava `public/models/princess/<fileira>-<id>.glb` (`head.glb` é o único
+  crânio), `princess/model-library.json` e `docs/princess-model-validation.json`.
+  `Princess3D.tsx` só carrega, clona materiais, pinta o material `Skin` no tom escolhido, pisca
+  os olhos (grupo `Eyes`) e põe as habilidades (`abilities3d.tsx`). O 2D não muda.
+  Para conferir: `http://localhost:9090/princess-review-3d.html` (`?compare=1` põe o 2D ao lado
+  do 3D; `?one=2&zoom=3&up=300` aproxima a sereia; `?view=90` gira; `?row=eyes` troca a fileira).
 - O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
   `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/

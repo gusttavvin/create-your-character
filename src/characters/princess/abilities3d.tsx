@@ -7,7 +7,10 @@ import {
   Snowflake, SNOW_DUR, SNOW_SPARKLES, SPACE_ORBITERS, SPACE_STARS, Sparkle,
 } from './abilities';
 import { CANVAS } from './pieces';
-import { U } from './relief';
+import rawLibrary from './model-library.json';
+
+/** Metres per pixel of her sheet, as the models are built. */
+const U = (rawLibrary as { unit: number }).unit;
 
 /**
  * Her abilities in 3D: the same birds, snowflakes, planet, moon, stars and flowers as on the

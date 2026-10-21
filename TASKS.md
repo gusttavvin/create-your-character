@@ -2175,3 +2175,71 @@ sobrancelha, bocas recortadas duras demais.
       sombras escuras ao lado do corpo. O contorno do decote e o colar são do vestido.
 - Falta: o 3D. Os modelos atuais (dolls3d.mjs) são montados a partir das imagens e a Clara
   recusou: quer olhos, boca e cachos com volume próprio, modelados de verdade.
+
+## Princesa: boneca modelada em 3D, como o dragão — 21 de outubro de 2026
+
+Gustavo: "está horrível o 3D dela... você não está transformando em 3D o 2D, está só dando
+volume e falando que virou 3D; tem que ficar bonito e realmente funcional, igual o dragão;
+pode criar, excluir e editar o que for preciso".
+
+Abordagem nova: nada de inflar ou projetar as imagens. Cada peça é desenhada com formas de
+verdade (`art-source/princess/doll/`, `npm run models:princess`, sem precisar do sharp), nos
+pixels da folha 1024×1536 medidos nas imagens do 2D, com as cores das bonecas da Clara:
+
+- [x] **Cabeça** (`head.mjs`): crânio torneado com o perfil medido no rosto 2D (bochechas largas,
+      queixo pequeno), pescoço, orelhas, nariz de botão e blush. Um só `head.glb`; o material
+      `Skin` é pintado no jogo com o tom escolhido.
+- [x] **Olhos** (`face.mjs`): globo branco afundado no crânio, íris em domo (castanha, azul,
+      verde, roxa), pupila, brilho grande (redondo, estrela ou coração) e pequeno, pálpebra
+      escura com três cílios, pálpebra de baixo fina, sobrancelha em arco. A piscadinha é uma
+      linha curva com cílios. O grupo `Eyes` pisca no jogo (as sobrancelhas ficam).
+- [x] **Bocas**: sorriso (lábio de baixo cheio e de cima fino, varridos na curva do rosto),
+      risada (boca aberta escura, dentes, língua, lábios em volta), "oh" (anel de lábios) e
+      língua de fora.
+- [x] **Vestidos** (`dress.mjs`): corpo comum (colo em pele, corpete com decote coração e friso
+      dourado, cinto, joia, mangas bufantes com punho dourado, braços em tubo descendo até as
+      mãos apoiadas na saia, com polegar) e saia própria: baile em três camadas com barras
+      douradas e sobressaia drapeada com folhinhas douradas; rosa com sobressaia lilás aberta
+      na frente e borda dourada; sereia com sobressaia em sino, cauda com escamas em relevo,
+      faixa e joia no tornozelo e nadadeira em dois lóbulos; curto com saia ondulada, sobressaia
+      com botões, pernas e sapatilhas azuis. Larguras e funduras tiradas das vistas de frente e
+      de lado.
+- [x] **Cabelos** (`hair.mjs`): touca por marching cubes em volta do crânio (nunca sobre o rosto)
+      com volumes extras fundidos; mechas varridas (`lock`, sobre o crânio) e penduradas
+      (`strand`, ondulando); trança em gomos alternados com flores brancas e ondas grossas
+      na testa e nas têmporas; cabelo comprido com massa nas costas, risca com uma mecha
+      larga para cada lado e ondas até abaixo dos ombros; nuvem de cachos encaroçada com 190
+      espirais, algumas azuis; coque alto enrolado com anéis e cachinhos nas orelhas. Tiara em arco
+      com três pontas e pedras, e brincos de gota, na cor de cada princesa, vêm com o cabelo.
+- [x] **Montador** (`Princess3D.tsx`): como o `Dragon3D`: carrega, clona materiais, pinta `Skin`,
+      pisca, põe a habilidade. Sem texturas: os GLBs são só geometria e cor.
+- [x] **Página de revisão**: `?zoom=` aproxima a câmera e `?up=` sobe o alvo (pixels), para olhar o
+      rosto de perto.
+- [x] **Limpeza**: saíram `model3d.mjs`, `dolls3d.mjs`, `portrait3d.ts`, `PrincessModel3D.tsx`,
+      `build3d.ts`, `relief.ts`, o `parts.tsx` antigo da princesa, `head-<cabelo>.glb`, as 60
+      imagens só do 3D (`-side`, `-rear`, `-front3d`, `-skin-`) e o trecho de vistas laterais do
+      `dolls.cjs`. `abilities3d.tsx` lê a unidade do `model-library.json`.
+
+Erros que custaram tempo: interpolar com suavização entre pontos a 4 px de distância fez
+anéis empilhados na cabeça e na saia (agora o torno liga os pontos em reta); girar uma peça
+com `rotateY` depois de transladada a jogou longe (folhas e escamas voando; agora `turned`
+gira no próprio centro); a tiara feita de toro girado foi parar fora da cabeça (agora é um
+arco varrido); mechas retas entre dois pontos do crânio cortavam o ar na frente da testa
+(agora `lock` acompanha a superfície).
+
+Conferido: as quatro de frente, 40°, 90° e costas; rosto de perto (sorriso, risada, piscadela
+com pele escura); no jogo, sereia + cacheado + piscadela + risada + flores em 3D; validador
+glTF sem erros; `npm run build`.
+
+Segunda passada (mesmo dia, "veja os objetos um por um e comece a ajustar"): cabelos com
+ondas largas acompanhando o crânio (`lock`) em vez de uma touca com linha reta na testa,
+massas nas têmporas da ruiva, duas mechas na frente de cada ombro no comprido, nuvem de
+cachos com relevo e o dobro de espirais, coque com a mecha da franja varrida; lábios maiores
+com um brilho de dentes no sorriso, risada mais aberta; topo do crânio mais redondo.
+Olhos: íris maior (como as das bonecas), sem a pálpebra de baixo, cílios mais curtos,
+sobrancelhas mais finas, mais altas e mais claras; cada olho inclinado para acompanhar a
+curva do crânio (de perfil a borda externa do globo saía da bochecha).
+
+Limitações: `hair-curly.glb` tem 2,6 MB e 149 mil triângulos (os outros ficam entre 0,02 e
+1,4 MB); sem textura de escamas ou brocados (só relevo e cor); a nadadeira é lisa; desempenho
+em celular não medido.
