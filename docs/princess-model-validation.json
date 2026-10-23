@@ -1,120 +1,120 @@
 [
   {
     "piece": "dress-aline",
-    "bytes": 577236,
-    "triangles": 30912,
+    "bytes": 663540,
+    "triangles": 35504,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "dress-gown",
-    "bytes": 773544,
-    "triangles": 41736,
+    "bytes": 852372,
+    "triangles": 45912,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "dress-mermaid",
-    "bytes": 723988,
-    "triangles": 38204,
+    "bytes": 732988,
+    "triangles": 38700,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "dress-star",
-    "bytes": 680772,
-    "triangles": 36584,
+    "bytes": 759480,
+    "triangles": 40768,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "eyes-happy",
-    "bytes": 307636,
-    "triangles": 12192,
+    "bytes": 491284,
+    "triangles": 24720,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "eyes-sleepy",
-    "bytes": 318148,
-    "triangles": 12304,
+    "bytes": 501780,
+    "triangles": 24832,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "eyes-sparkly",
-    "bytes": 317468,
-    "triangles": 12760,
+    "bytes": 553492,
+    "triangles": 28344,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "eyes-wink",
-    "bytes": 183932,
-    "triangles": 7520,
+    "bytes": 302048,
+    "triangles": 15312,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "hair-braids",
-    "bytes": 1153276,
-    "triangles": 65650,
+    "bytes": 1149620,
+    "triangles": 65538,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "hair-bun",
-    "bytes": 1180188,
-    "triangles": 67028,
+    "bytes": 1174204,
+    "triangles": 66812,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "hair-curly",
-    "bytes": 2609044,
-    "triangles": 148796,
+    "bytes": 2627872,
+    "triangles": 145340,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "hair-long",
-    "bytes": 1627432,
-    "triangles": 91804,
+    "bytes": 1686208,
+    "triangles": 93420,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "head",
-    "bytes": 186588,
-    "triangles": 10016,
+    "bytes": 365336,
+    "triangles": 16368,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "mouth-laugh",
-    "bytes": 52348,
-    "triangles": 2048,
+    "bytes": 119924,
+    "triangles": 6360,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "mouth-oh",
-    "bytes": 34144,
-    "triangles": 1288,
+    "bytes": 96020,
+    "triangles": 5088,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "mouth-smile",
-    "bytes": 19840,
-    "triangles": 816,
+    "bytes": 51980,
+    "triangles": 2700,
     "errors": 0,
     "warnings": 0
   },
   {
     "piece": "mouth-tongue",
-    "bytes": 34160,
-    "triangles": 1336,
+    "bytes": 63440,
+    "triangles": 3220,
     "errors": 0,
     "warnings": 0
   }

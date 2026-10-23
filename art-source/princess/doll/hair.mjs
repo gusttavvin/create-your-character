@@ -9,13 +9,13 @@
  *   bun     blonde hair pulled back into a tall coiled bun, with a curl at each ear
  */
 import * as T from 'three';
-import { blob, ellipsoid, ellipsoidField, GOLD, material, merge, mesh, mirrored, pair, ring, sweep, turned, W } from './lib.mjs';
+import { blob, ellipsoid, ellipsoidField, GOLD, lighter, material, merge, mesh, mirrored, pair, ring, smax, sweep, tubeField, turned, W } from './lib.mjs';
 import { HEAD } from './head.mjs';
 
 const CX = W / 2;
 const TAU = Math.PI * 2;
 // the skull as an ellipsoid, for fields: centre and radii
-const SK = { cx: CX, cy: 468, cz: 0, rx: 168, ry: 178, rz: 162 };
+const SK = { cx: CX, cy: 466.5, cz: 0, rx: 167, ry: 173.5, rz: 160 };
 const skullE = (x, y, z) => Math.sqrt(((x - SK.cx) / SK.rx) ** 2 + ((y - SK.cy) / SK.ry) ** 2 + ((z - SK.cz) / SK.rz) ** 2);
 
 const COLOUR = {
@@ -236,81 +236,144 @@ function braids(root) {
   earrings(root, COLOUR.braids.gem);
 }
 
+const smooth01 = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+/** Inside her face's open window: in front, below the hairline, within the oval of her face. */
+function faceWindow(x, y, z, hairline = 395) {
+  const ox = (x - CX) / 150;
+  const oy = (y - 545) / 210;
+  return Math.min((1 - Math.sqrt(ox * ox + oy * oy)) * 150, z + 5, y - hairline);
+}
+
+/**
+ * Long brown hair, sculpted as one soft mass the way a doll's hair is: full over the crown,
+ * parted a little to one side with a swept fringe; it falls past her cheeks in two curtains
+ * over her shoulders and down the front of her dress, and in a round mass down her back. Its
+ * whole surface is combed into big S-shaped waves running down to wavy ends. Nothing crosses
+ * her face.
+ */
 function long(root) {
-  const m = hairMat('long');
-  // the cap, with the mass of hair that falls down her back melted into it: round, lobed at
-  // the bottom in big waves, not a flat cape
-  const wavyBottom = (x, z) => 850 + 34 * Math.cos((x - CX) / 48) - 0.2 * Math.max(0, z);
-  const capGeo = cap(26, [
-    ellipsoidField(CX, 330, -30, 140, 80, 150),
-    ellipsoidField(CX, 560, -90, 200, 240, 115),
-    ellipsoidField(CX - 110, 740, -75, 100, 130, 80), ellipsoidField(CX + 110, 740, -75, 100, 130, 80),
-    ellipsoidField(CX, 760, -100, 90, 120, 70),
-  ], { bottom: wavyBottom, box: [220, 60, -300, 804, 920, 260], res: 112 });
-  mesh(capGeo, m, 'cap', root);
-  grooves(root, 'long', surfaceOf(capGeo), { n: 26, top: 296, bottom: 820 });
-  const strands = [];
-  // parted a little off the middle, a thick lock sweeps over the forehead to each temple,
-  // hugging the skull
-  strands.push(lock(0.12, 288, -1.0, 440, 14, 38, 11, 2));
-  strands.push(lock(0.12, 288, 1.0, 440, 14, 38, 11, 2));
-  // thick S-shaped waves all round the back and sides, over the mass, past her shoulders
-  const n = 13;
-  for (let i = 0; i < n; i++) {
-    const a = Math.PI * 0.42 + (Math.PI * 1.16 * i) / (n - 1);
-    const spread = 1 + 0.3 * Math.abs(Math.sin(a));
-    const [x0, , z0] = onSkull(a, 410, 30);
-    const r1 = (HEAD.r(430) + 75) * spread;
-    const end = [CX + r1 * Math.sin(a) * 0.95, 905 - 45 * Math.abs(Math.cos(a)) - (i % 2) * 30, r1 * Math.cos(a) * 0.75 - 30];
-    strands.push(strand([x0, 410, z0], end, 46, 24, 24, i * 1.1, 0.3, 1.5));
-  }
-  // two waved locks in front of each shoulder, curling out at the tips
-  for (const a of [0.6, -0.6, 0.92, -0.92]) {
-    const [x0, , z0] = onSkull(a, 500, 28);
-    const out = Math.abs(a) > 0.8 ? 1.12 : 1;
-    const dir = Math.sign(a);
-    strands.push(strand([x0, 500, z0], [CX + (205 * out + 10) * Math.sin(a) + dir * 12, 800 - (out - 1) * 300, 72 - (out - 1) * 250], 42, 20, 22, 1.2 + out, 0.3, 1.5));
-  }
-  mesh(merge(strands), m, 'strands', root);
-  tiara(root, 268, 126, COLOUR.long.gem, 0.95);
+  const crown = ellipsoidField(CX, 335, -18, 180, 102, 174);
+  const back = ellipsoidField(CX, 590, -100, 214, 300, 112);
+  const curtain = [[CX - 152, 400, 8], [CX - 180, 520, 30], [CX - 198, 640, 60], [CX - 206, 760, 76], [CX - 200, 860, 72]];
+  const curtainL = tubeField(curtain, (t) => 52 - 10 * t);
+  const curtainR = tubeField(curtain.map(([x, y, z]) => [2 * CX - x, y, z]), (t) => 52 - 10 * t);
+  // the fringe: from the parting over the forehead, sweeping down to her left temple; a
+  // shorter sweep to her right
+  const sweepTo = (a0, a1, y0, y1, lift) => Array.from({ length: 8 }, (_, i) => onSkull(a0 + ((a1 - a0) * i) / 7, y0 + ((y1 - y0) * i) / 7, lift));
+  const fringeL = tubeField(sweepTo(0.2, -1.08, 292, 432, 18), (t) => 26 - 6 * t);
+  const fringeR = tubeField(sweepTo(0.2, 1.02, 292, 414, 16), (t) => 20 - 6 * t);
+  const geo = blob((x, y, z) => {
+    const e = skullE(x, y, z);
+    let f = (1 + 28 / 165 - e) * 165;
+    f = smax(f, crown(x, y, z), 30);
+    f = smax(f, back(x, y, z), 40);
+    f = smax(f, curtainL(x, y, z), 30);
+    f = smax(f, curtainR(x, y, z), 30);
+    f = smax(f, fringeL(x, y, z), 12);
+    f = smax(f, fringeR(x, y, z), 12);
+    // never inside her head, never over her face
+    f = Math.min(f, (e - 0.985) * 165, -faceWindow(x, y, z));
+    // wavy ends
+    const th = Math.atan2(x - CX, z + 40);
+    f = Math.min(f, 876 + 30 * Math.cos(7 * th) - y);
+    // big S-waves combed down the whole mass (the very top stays smooth)
+    f += 5.5 * Math.cos(15 * th + 1.3 * Math.sin(y / 34 + 1.5 * th)) * smooth01(300, 380, y);
+    return f;
+  }, [186, 190, -270, 838, 935, 225], 150);
+  mesh(lighter(geo, 90000), hairMat('long'), 'hair', root);
+  tiara(root, 260, 132, COLOUR.long.gem, 0.95);
   earrings(root, COLOUR.long.gem);
 }
 
+/**
+ * A ringlet: a corkscrew curl, a tube wound round an axis that hangs from its root down along
+ * `axis` (sheet points), the coil `R` wide, thinning a little to its end.
+ */
+function ringlet(axis, { R = 11, pitch = 26, r = 8.5 } = {}) {
+  const curve = new T.CatmullRomCurve3(axis.map(([x, y, z]) => new T.Vector3(x, y, z)), false, 'centripetal');
+  const len = curve.getLength();
+  const n = Math.max(12, Math.round((len / pitch) * 9));
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const p = curve.getPointAt(t);
+    const tan = curve.getTangentAt(t);
+    // the coil turns about the axis: one way round it is outwards from her head
+    const out = new T.Vector3(p.x - CX, 0, p.z + 20).normalize();
+    const N = out.sub(tan.clone().multiplyScalar(out.dot(tan))).normalize();
+    const B = new T.Vector3().crossVectors(tan, N);
+    const a = (t * len * Math.PI * 2) / pitch;
+    const k = 1 - 0.25 * t;
+    pts.push([p.x + R * k * (Math.cos(a) * N.x + Math.sin(a) * B.x), p.y + R * k * (Math.cos(a) * N.y + Math.sin(a) * B.y), p.z + R * k * (Math.cos(a) * N.z + Math.sin(a) * B.z)]);
+  }
+  return sweep(pts, (t) => r * (1 - 0.3 * t), (t) => r * (1 - 0.3 * t), { radial: 6, seg: Math.round(n * 1.1), tension: 0.5 });
+}
+
+/**
+ * Curly black hair, as in the mermaid doll's picture: a big head of corkscrew ringlets falling
+ * in layers from her crown to her chest, framing her face, a few catching blue light, over a
+ * soft dark mass that fills between them.
+ */
 function curly(root) {
-  const m = hairMat('curly');
-  // a big cloud of hair, open where her face is, down to her shoulders
-  // (its surface lumpy, as a mass of ringlets is, not a smooth ball)
-  const cloud = ellipsoidField(CX, 455, -20, 290, 325, 235);
-  const lumps = (x, y, z) => 9 * (Math.cos(x / 23) * Math.cos(y / 21) + Math.cos((x + z) / 19) * Math.cos(y / 27) + Math.cos(z / 22) * Math.cos((x - y) / 25));
+  const under = ellipsoidField(CX, 492, -30, 196, 226, 168);
   const geo = blob((x, y, z) => {
-    const hole = z > 10 ? (Math.sqrt(((x - CX) / 192) ** 2 + ((y - 505) / 182) ** 2) - 1) * 180 : 180;
-    return Math.min(cloud(x, y, z) + lumps(x, y, z), hole, (skullE(x, y, z) - 0.97) * 165, 820 - y);
-  }, [180, 90, -290, 844, 840, 290], 112);
-  mesh(geo, m, 'cloud', root);
-  // spiral curls all over the cloud, each wound along the surface's outward direction
+    const e = skullE(x, y, z);
+    let f = smax((1 + 26 / 165 - e) * 165, under(x, y, z), 30);
+    f = Math.min(f, (e - 0.985) * 165, -faceWindow(x, y, z, 380), 740 - y);
+    return f;
+  }, [250, 220, -260, 774, 760, 200], 100);
+  mesh(lighter(geo, 30000), material('HairUnder', '#120d0f', { roughness: 0.6 }), 'hair', root);
+
+  // rows of ringlets from the crown down: the higher a row starts, the further out it lies,
+  // so the crown's curls fall over the others as hair does
+  const rows = [
+    { y0: 252, lift: 78, n: 9 },
+    { y0: 296, lift: 70, n: 14 },
+    { y0: 345, lift: 60, n: 18 },
+    { y0: 400, lift: 47, n: 22 },
+    { y0: 455, lift: 35, n: 22 },
+    { y0: 510, lift: 25, n: 20 },
+  ];
+  const base = (y) => (y < 470 ? Math.max(HEAD.r(y), 40) : 165 + (y - 470) * 0.14);
   const curls = [];
   const lights = [];
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  const N = 190;
-  for (let i = 0; i < N; i++) {
-    const t = (i + 0.5) / N;
-    const phi = Math.acos(1 - 2 * t);
-    const th = golden * i;
-    const nx = Math.sin(phi) * Math.cos(th);
-    const ny = -Math.cos(phi);
-    const nz = Math.sin(phi) * Math.sin(th);
-    // none on the face, none under the chin
-    const y = 455 + 325 * ny;
-    if (nz > 0.15 && y > 330 && Math.abs(nx) < 0.75) continue;
-    if (y > 790) continue;
-    const p0 = [CX + 290 * nx * 0.9, y - 6, -20 + 235 * nz * 0.9];
-    const p1 = [CX + 290 * nx * 1.1, y + 34, -20 + 235 * nz * 1.1];
-    // every sixth curl catches a blue light
-    (i % 6 === 3 ? lights : curls).push(spiral(p0, p1, 16, 2, 8.5, 5));
+  let k = 0;
+  rows.forEach((row, ri) => {
+    for (let j = 0; j < row.n; j++) {
+      const th = -Math.PI + ((j + (ri % 2) * 0.5) / row.n) * TAU;
+      const front = Math.abs(th) < 1.0;
+      // in front of her face only short curls along the top of her forehead
+      if (front && (ri > 1 || Math.abs(th) > 0.9)) continue;
+      const hash = Math.sin(j * 12.9898 + ri * 78.233) * 0.5 + 0.5;
+      const y1 = front ? (ri === 0 ? 330 : 372) : 690 + 120 * Math.min(1, (Math.abs(th) - 1) / 1.6) - ri * 8 + 30 * (hash - 0.5);
+      const axis = [];
+      for (let y = row.y0; y <= y1 + 0.1; y += 14) {
+        const rho = base(y) + row.lift + 5 * Math.sin(y / 40 + j);
+        const a = th + 0.05 * Math.sin(y / 60 + j);
+        axis.push([CX + rho * Math.sin(a), y, rho * Math.cos(a) * 0.96 - 18]);
+      }
+      if (axis.length < 3) continue;
+      (k++ % 5 === 2 ? lights : curls).push(ringlet(axis, { R: front ? 9 : 11, r: front ? 7.5 : 8.5 }));
+    }
+  });
+  // short curls over the top of her head, each lying along the curve of her crown from near the
+  // top outwards, so no smooth patch shows from above or behind
+  for (let j = 0; j < 12; j++) {
+    const th = (j / 12) * TAU + 0.26;
+    const axis = [];
+    for (let s = 0; s <= 6; s++) {
+      const phi = 0.12 + (0.62 * s) / 6;
+      const L = 50;
+      axis.push([CX + (SK.rx + L) * Math.sin(phi) * Math.sin(th), SK.cy - (SK.ry + L) * Math.cos(phi), (SK.rz + L) * Math.sin(phi) * Math.cos(th)]);
+    }
+    curls.push(ringlet(axis, { R: 10, r: 8 }));
   }
-  mesh(merge(curls), material('Curl', '#221a1c', { roughness: 0.4 }), 'curls', root);
-  mesh(merge(lights), material('CurlLight', '#2e4a80', { roughness: 0.35 }), 'lights', root);
-  tiara(root, 165, 150, COLOUR.curly.gem, 0.85);
+  mesh(lighter(merge(curls), 90000), hairMat('curly'), 'curls', root);
+  mesh(lighter(merge(lights), 22000), material('CurlLight', '#253a66', { roughness: 0.35, gloss: 0.7 }), 'lights', root);
+  tiara(root, 252, 124, COLOUR.curly.gem, 0.95);
   earrings(root, COLOUR.curly.gem);
 }
 

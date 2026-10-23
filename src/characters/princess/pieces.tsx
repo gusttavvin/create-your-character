@@ -13,11 +13,17 @@ export const CANVAS = { w: 1024, h: 1536 };
 export type SkinTone = 'light' | 'tan' | 'brown' | 'dark';
 export const TONES: SkinTone[] = ['light', 'tan', 'brown', 'dark'];
 
-const url = (file: string) => `/princess/${file}.webp`;
+/**
+ * A picture's address, with the version of the pictures: they keep their names when they are
+ * redrawn, and a browser that had the old ones kept showing them (cards cut off, a mouth in the old
+ * place). Raise VERSION whenever the pictures are made again (art-source/princess/layers2d.cjs).
+ */
+const VERSION = 5;
+const url = (file: string) => `/princess/${file}.webp?v=${VERSION}`;
 
 /** The files that make a piece, in the skin she is drawn in (only dresses and her head have skin). */
 export function filesOf(row: string, id: string, tone: SkinTone): string[] {
-  if (row === 'hair') return [url(`hair-${id}-back`), url(`hair-${id}-front`)];
+  if (row === 'hair') return [url(`hair-${id}-back`), hairFront(id)];
   // her brows come with her eyes
   if (row === 'eyes') return [browsOf(id), url(`eyes-${id}`)];
   if (row === 'dress') return [url(`dress-${id}-${tone}`)];

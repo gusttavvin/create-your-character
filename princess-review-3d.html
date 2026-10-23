@@ -43,7 +43,11 @@
     const q = new URLSearchParams(location.search);
     const row = q.get('row');
     const base = { dress: 'gown', hair: 'braids', eyes: 'sparkly', mouth: 'smile', accessory: '' };
-    const all = row ? rows[row].map((o) => ({ ...base, [row]: o })) : own.map((o) => ({ ...base, ...o }));
+    // ?parts=star,bun,sleepy,tongue shows that one princess in the four skins (?skins) or once
+    const fixed = q.get('parts')?.split(',');
+    const all = fixed
+      ? (q.has('skins') ? ['light', 'tan', 'brown', 'dark'] : [q.get('skin') ?? 'light']).map((tone) => ({ dress: fixed[0], hair: fixed[1], eyes: fixed[2], mouth: fixed[3], accessory: '', tone }))
+      : row ? rows[row].map((o) => ({ ...base, [row]: o })) : own.map((o) => ({ ...base, ...o }));
     if (q.has('none')) for (const p of all) for (const id of q.get('none').split(',')) p[id] = '';
     const one = q.get("one");
     const zoom = Number(q.get("zoom") ?? 1); // ?zoom=2 brings the camera twice as close, ?up=N raises what it looks at (pixels)
@@ -121,7 +125,7 @@
             ...(compare ? [h('div', { className: 'cell', key: `reference-${i}` }, h('span', null, `2D · ${parts.dress} · ${parts.hair}`), reference(parts))] : []),
             h('div', { className: 'cell', key: i },
               h('span', null, `3D · ${Object.values(parts).filter(Boolean).join(' · ')}`),
-              h(Character3D, { kind: 'princess', parts, colors, still: true }))])));
+              h(Character3D, { kind: 'princess', parts, colors: parts.tone ? { skin: SKIN[parts.tone] } : colors, still: true }))])));
     };
     if (compare) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(4,1fr)}.cell{height:430px}</style>');
     if (compare && one !== null) document.head.insertAdjacentHTML('beforeend', '<style>.grid{grid-template-columns:repeat(2,1fr)}.cell{height:calc(100vh - 40px)}</style>');
@@ -130,23 +134,37 @@
     const view = Number(q.get('view'));
     // ?at=skull (or any mesh name) aims the camera straight at that piece, level with it
     const at = q.get('at');
-    if (view || zoom !== 1 || up || at) {
+    if (view || zoom !== 1 || up || at || q.get('aim')) {
       const turn = () => {
         for (const get of window.__r3fAll ?? []) {
           const { camera, controls, scene, gl } = get();
+          // the game keeps the camera at least 3.5 m away; up close is what this page is for
+          if (controls) controls.minDistance = 0.1;
           // from where the camera started, so running this twice does not zoom twice
           const base = (camera.userData.base ??= { r: Math.hypot(camera.position.x, camera.position.z), y: camera.position.y });
-          const r = base.r / zoom;
+          // closer by the camera's own zoom: moving it or narrowing its lens only makes Fit
+          // (Character3D) shrink her to fill the view again
+          const r = base.r;
+          camera.zoom = zoom;
+          camera.updateProjectionMatrix();
           const a = (view * Math.PI) / 180;
           let target = { x: 0, y: up * 0.0025, z: 0 };
           const piece = at && scene.getObjectByName(at);
-          if (piece) {
+          // ?aim=x,y,z aims at a point of her sheet, in pixels (x right, y down, z forward)
+          const aim = q.get('aim')?.split(',').map(Number);
+          const model = aim && scene.getObjectByName('princess-model');
+          if (model) {
+            const V = camera.position.constructor;
+            target = model.localToWorld(new V((aim[0] - 512) * 0.0025, (1536 - aim[1]) * 0.0025, (aim[2] ?? 0) * 0.0025));
+          } else if (piece) {
             piece.updateWorldMatrix(true, false);
             piece.geometry.computeBoundingSphere();
             target = piece.geometry.boundingSphere.center.clone().applyMatrix4(piece.matrixWorld);
           }
-          camera.position.set(target.x + Math.sin(a) * r, target.y + (piece ? 0.02 : base.y / zoom), target.z + Math.cos(a) * r);
+          camera.position.set(target.x + Math.sin(a) * r, target.y + (piece || model ? 0.02 : base.y / zoom), target.z + Math.cos(a) * r);
           camera.lookAt(target.x, target.y, target.z);
+          // the controls look at their own target on every update
+          controls?.target.set(target.x, target.y, target.z);
           controls?.update();
           // drawn at once: in a hidden pane the animation loop is paused and nothing would show
           gl.render(scene, camera);

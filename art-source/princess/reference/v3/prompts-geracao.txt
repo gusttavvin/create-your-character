@@ -1,0 +1,65 @@
+Ferramenta: geração de imagens integrada (image_gen).
+
+VERDE
+
+Use case: stylized-concept. Create a production modular dress-up game sprite atlas matching the attached princess references: polished cute 3D rendered chibi doll, enormous glossy eyes, small body, luxurious satin and gold. This is a raster sprite set, frontal view only.
+OUTPUT: one square transparent PNG sprite atlas, ideally 3072x3072, arranged as EXACTLY 3 equal columns and 2 equal rows with absolutely NO labels, borders, text, dividers, checkerboard drawing or backgrounds.
+Each of the SIX cells represents the SAME full-character portrait canvas, same camera, same pose, same scale and EXACT same coordinates so crops can be overlaid without manual rescaling. Character fits within x=8%-92%, y=3%-97% OF EACH CELL. Crown at y=4%-13%, head oval x=30%-70% y=18%-43%, eyes centered y=30%, mouth centered y=37%, neck y=43%-48%, bodice y=47%-60%, skirt/tail y=59%-96%. Head is large and cute, realistic toy depth.
+Cell order left-to-right, then next row:
+TOP LEFT: ONLY neutral smooth skin bald blank head oval, ears and neck, no hair, no eyebrows, no eyes, no nose? include small nose, NO mouth. This is the underlying face base; transparent everywhere else, no body.
+TOP CENTER: ONLY complete dress or mermaid tail INCLUDING neck-to-shoulders skin, both arms and hands in the exact relaxed pose of reference. Neck connects seamlessly behind the head. NO head, hair, eyes or mouth. Include shoes/legs if visible in short dress.
+TOP RIGHT: ONLY hairstyle INCLUDING crown and earrings as one separated accessory, with a completely transparent empty face opening. NO skin, head, facial features or body. Hair strands around face stay outside its central opening.
+BOTTOM LEFT: ONLY paired eyes, eyebrows and eyelashes in their assembled facial positions, transparent elsewhere. No face or skin colored rectangles.
+BOTTOM CENTER: ONLY mouth in its assembled facial position, transparent elsewhere. No face or nose.
+BOTTOM RIGHT: fully assembled princess preview made from exactly the same parts and exact alignment.
+Every cell must keep all invisible full character padding intact. No pieces drift to center of their own cell: face part at head location, dress at body location, eyes at eye location, mouth at mouth location. Orthographic straight front camera, symmetric body pose, no ground shadows. Actual alpha transparency. Crisp isolated silhouettes. No extra decorations floating around.
+Reference image role: princess visual design reference, not an edit target. The game screenshot is a reference for modular piece logic. PRINCESS: green emerald gown with pale mint layered underskirt and gold vine embroidery as reference 1. Long red auburn thick braid draping over viewer's right shoulder and reaching waist, tiny white flowers in braid, emerald and gold tiara/earrings. Warm fair peach skin, two big brown eyes, happy open smile with small white upper teeth, NO tongue out. Keep face opening clear.
+
+ROSA
+
+Use case: stylized-concept. Create a production modular dress-up game sprite atlas matching the attached princess references: polished cute 3D rendered chibi doll, enormous glossy eyes, small body, luxurious satin and gold. This is a raster sprite set, frontal view only.
+OUTPUT: one square transparent PNG sprite atlas, ideally 3072x3072, arranged as EXACTLY 3 equal columns and 2 equal rows with absolutely NO labels, borders, text, dividers, checkerboard drawing or backgrounds.
+Each of the SIX cells represents the SAME full-character portrait canvas, same camera, same pose, same scale and EXACT same coordinates so crops can be overlaid without manual rescaling. Character fits within x=8%-92%, y=3%-97% OF EACH CELL. Crown at y=4%-13%, head oval x=30%-70% y=18%-43%, eyes centered y=30%, mouth centered y=37%, neck y=43%-48%, bodice y=47%-60%, skirt/tail y=59%-96%. Head is large and cute, realistic toy depth.
+Cell order left-to-right, then next row:
+TOP LEFT: ONLY neutral smooth skin bald blank head oval, ears and neck, no hair, no eyebrows, no eyes, no nose? include small nose, NO mouth. This is the underlying face base; transparent everywhere else, no body.
+TOP CENTER: ONLY complete dress or mermaid tail INCLUDING neck-to-shoulders skin, both arms and hands in the exact relaxed pose of reference. Neck connects seamlessly behind the head. NO head, hair, eyes or mouth. Include shoes/legs if visible in short dress.
+TOP RIGHT: ONLY hairstyle INCLUDING crown and earrings as one separated accessory, with a completely transparent empty face opening. NO skin, head, facial features or body. Hair strands around face stay outside its central opening.
+BOTTOM LEFT: ONLY paired eyes, eyebrows and eyelashes in their assembled facial positions, transparent elsewhere. No face or skin colored rectangles.
+BOTTOM CENTER: ONLY mouth in its assembled facial position, transparent elsewhere. No face or nose.
+BOTTOM RIGHT: fully assembled princess preview made from exactly the same parts and exact alignment.
+Every cell must keep all invisible full character padding intact. No pieces drift to center of their own cell: face part at head location, dress at body location, eyes at eye location, mouth at mouth location. Orthographic straight front camera, symmetric body pose, no ground shadows. Actual alpha transparency. Crisp isolated silhouettes. No extra decorations floating around.
+Reference image role: princess visual design reference, not an edit target. The game screenshot is a reference for modular piece logic.  PRINCESS DESIGN: Long chestnut brown flowing wavy hair, golden tiara with pink heartlike central jewel, pearl heart earrings. Pink puff sleeves, lavender purple overskirt with gold edge and pale pink full length underskirt, gold V waist. Fair peach skin, BLUE eyes, happy open laughing mouth with tongue inside, no tongue sticking out. Critical: reserve clean TRANSPARENT GUTTERS around every individual asset to allow extraction into separate PNG files. Each asset must stay within its own grid cell.
+
+SEREIA
+
+Use case: stylized-concept. Create a production modular dress-up game sprite atlas matching the attached princess references: polished cute 3D rendered chibi doll, enormous glossy eyes, small body, luxurious satin and gold. This is a raster sprite set, frontal view only.
+OUTPUT: one square transparent PNG sprite atlas, ideally 3072x3072, arranged as EXACTLY 3 equal columns and 2 equal rows with absolutely NO labels, borders, text, dividers, checkerboard drawing or backgrounds.
+Each of the SIX cells represents the SAME full-character portrait canvas, same camera, same pose, same scale and EXACT same coordinates so crops can be overlaid without manual rescaling. Character fits within x=8%-92%, y=3%-97% OF EACH CELL. Crown at y=4%-13%, head oval x=30%-70% y=18%-43%, eyes centered y=30%, mouth centered y=37%, neck y=43%-48%, bodice y=47%-60%, skirt/tail y=59%-96%. Head is large and cute, realistic toy depth.
+Cell order left-to-right, then next row:
+TOP LEFT: ONLY neutral smooth skin bald blank head oval, ears and neck, no hair, no eyebrows, no eyes, no nose? include small nose, NO mouth. This is the underlying face base; transparent everywhere else, no body.
+TOP CENTER: ONLY complete dress or mermaid tail INCLUDING neck-to-shoulders skin, both arms and hands in the exact relaxed pose of reference. Neck connects seamlessly behind the head. NO head, hair, eyes or mouth. Include shoes/legs if visible in short dress.
+TOP RIGHT: ONLY hairstyle INCLUDING crown and earrings as one separated accessory, with a completely transparent empty face opening. NO skin, head, facial features or body. Hair strands around face stay outside its central opening.
+BOTTOM LEFT: ONLY paired eyes, eyebrows and eyelashes in their assembled facial positions, transparent elsewhere. No face or skin colored rectangles.
+BOTTOM CENTER: ONLY mouth in its assembled facial position, transparent elsewhere. No face or nose.
+BOTTOM RIGHT: fully assembled princess preview made from exactly the same parts and exact alignment.
+Every cell must keep all invisible full character padding intact. No pieces drift to center of their own cell: face part at head location, dress at body location, eyes at eye location, mouth at mouth location. Orthographic straight front camera, symmetric body pose, no ground shadows. Actual alpha transparency. Crisp isolated silhouettes. No extra decorations floating around.
+Reference image role: princess visual design reference, not an edit target. The game screenshot is a reference for modular piece logic.  PRINCESS DESIGN: MERMAID princess. Very voluminous BLACK glossy ringlet curly hair, golden crown with BLUE teardrop jewels and matching earrings. Pink puff sleeves, ruby red bodice and short red draped peplum, gold trims, red scaled mermaid tail ending in broad pale pink split fin edged in gold. Warm tan skin. GREEN eyes with viewer right eye WINKING, small round open surprised O mouth. Critical: reserve clean TRANSPARENT GUTTERS around every individual asset to allow extraction into separate PNG files. Each asset must stay within its own grid cell.
+
+AZUL
+
+Use case: stylized-concept. Create a production modular dress-up game sprite atlas matching the attached princess references: polished cute 3D rendered chibi doll, enormous glossy eyes, small body, luxurious satin and gold. This is a raster sprite set, frontal view only.
+OUTPUT: one square transparent PNG sprite atlas, ideally 3072x3072, arranged as EXACTLY 3 equal columns and 2 equal rows with absolutely NO labels, borders, text, dividers, checkerboard drawing or backgrounds.
+Each of the SIX cells represents the SAME full-character portrait canvas, same camera, same pose, same scale and EXACT same coordinates so crops can be overlaid without manual rescaling. Character fits within x=8%-92%, y=3%-97% OF EACH CELL. Crown at y=4%-13%, head oval x=30%-70% y=18%-43%, eyes centered y=30%, mouth centered y=37%, neck y=43%-48%, bodice y=47%-60%, skirt/tail y=59%-96%. Head is large and cute, realistic toy depth.
+Cell order left-to-right, then next row:
+TOP LEFT: ONLY neutral smooth skin bald blank head oval, ears and neck, no hair, no eyebrows, no eyes, no nose? include small nose, NO mouth. This is the underlying face base; transparent everywhere else, no body.
+TOP CENTER: ONLY complete dress or mermaid tail INCLUDING neck-to-shoulders skin, both arms and hands in the exact relaxed pose of reference. Neck connects seamlessly behind the head. NO head, hair, eyes or mouth. Include shoes/legs if visible in short dress.
+TOP RIGHT: ONLY hairstyle INCLUDING crown and earrings as one separated accessory, with a completely transparent empty face opening. NO skin, head, facial features or body. Hair strands around face stay outside its central opening.
+BOTTOM LEFT: ONLY paired eyes, eyebrows and eyelashes in their assembled facial positions, transparent elsewhere. No face or skin colored rectangles.
+BOTTOM CENTER: ONLY mouth in its assembled facial position, transparent elsewhere. No face or nose.
+BOTTOM RIGHT: fully assembled princess preview made from exactly the same parts and exact alignment.
+Every cell must keep all invisible full character padding intact. No pieces drift to center of their own cell: face part at head location, dress at body location, eyes at eye location, mouth at mouth location. Orthographic straight front camera, symmetric body pose, no ground shadows. Actual alpha transparency. Crisp isolated silhouettes. No extra decorations floating around.
+Reference image role: princess visual design reference, not an edit target. The game screenshot is a reference for modular piece logic.  PRINCESS DESIGN: Blonde swept hair with high elaborate bun and curled side tendrils, golden crown with PURPLE jewels and purple teardrop earrings. Short knee length blue princess dress, light blue puff sleeves, rich blue draped overskirt gold edging, pale icy blue underskirt, bare lower legs and small blue shoes. Fair peach skin. PURPLE eyes, playful mouth with tongue sticking out. Critical: reserve clean TRANSPARENT GUTTERS around every individual asset to allow extraction into separate PNG files. Each asset must stay within its own grid cell.
+
+AJUSTE ROSA
+
+Use case: precise-object-edit. Edit this transparent sprite sheet. Preserve all six assets, princess design, colors and front view. Fix ONE issue: the separate pink/purple dress in the upper center and separate brown hairstyle in the upper right TOUCH each other along their neighboring edges. Shrink and reposition both of these isolated pieces so that there is at least 70 pixels of COMPLETELY TRANSPARENT gap between ALL their pixels, and every asset fits comfortably within its own one-third-width, half-height cell. Do not join the dress to the hair. Keep these as individual isolated cutouts. Keep the bald head, eyes, mouth and assembled princess as separate items. Remove stray floating specks outside the assets and inside the hair face opening. Genuine transparent background. No labels or text.

@@ -63,9 +63,14 @@ npm run build    # confere os tipos e gera o site
   `monster/Monster3D.tsx`; `Monster3DFallback.tsx` mantém a construção antiga somente para
   falhas de carregamento. Leia `docs/monster-model-library.md`. No 3D o monstro se monta
   sozinho: as peças não são arrastáveis (`movable3d.ts`).
-- A princesa em 2D é feita de imagens recortadas das bonecas da Clara
-  (`art-source/princess/dolls.cjs`, `v2.cjs`, `cut.cjs`, `curly.cjs`; precisam de
-  `npm i --no-save sharp@0.33.5`), em `public/princess/*.webp`, com as caixas em `pieces.json`.
+- A princesa em 2D vem das camadas prontas em `art-source/princess/reference/v3/` (rosto,
+  vestido, cabelo com coroa, olhos e boca de cada boneca, 768×1152, geradas por IA a partir
+  das bonecas da Clara). `node art-source/princess/layers2d.cjs` (precisa de
+  `npm i --no-save sharp@0.33.5`) amplia para a folha 1024×1536, sobe olhos, nariz e boca,
+  põe o blush, separa as sobrancelhas, manda o cabelo abaixo do queixo para trás dos ombros
+  (menos a trança), iguala a pele e pinta os quatro tons, gravando `public/princess/*.webp`
+  com os nomes de sempre e as caixas em `pieces.json`. Os scripts antigos (`dolls.cjs`,
+  `v2.cjs`, `cut.cjs`, `curly.cjs`) fazem a versão anterior e sobrescreveriam essas imagens.
 - A princesa em 3D é uma **boneca modelada**, como o dragão, não as imagens infladas:
   `art-source/princess/doll/` (`npm run models:princess`, sem sharp) desenha cada peça com
   formas de verdade nos pixels da folha 1024×1536 — `head.mjs` (crânio torneado, pescoço,
@@ -79,6 +84,12 @@ npm run build    # confere os tipos e gera o site
   os olhos (grupo `Eyes`) e põe as habilidades (`abilities3d.tsx`). O 2D não muda.
   Para conferir: `http://localhost:9090/princess-review-3d.html` (`?compare=1` põe o 2D ao lado
   do 3D; `?one=2&zoom=3&up=300` aproxima a sereia; `?view=90` gira; `?row=eyes` troca a fileira).
+- Princesas 3D do **TRELLIS.2** (imagem → GLB com textura, no Hugging Face): os GLBs como vieram
+  ficam em `art-source/princess/trellis/raw/` e `art-source/princess/trellis/prepare.mjs` os deixa
+  prontos em `public/models/princess-trellis/` e `trellis-library.json`. Quando as peças escolhidas
+  são exatamente as de uma princesa inteira de lá, `Princess3D.tsx` mostra ela no lugar da boneca;
+  a pele é achada pela cor na textura (`inSkin`) e pintada no tom. Conferir com
+  `princess-review-3d.html?parts=star,bun,sleepy,tongue&skins`. Veja a seção no `TASKS.md`.
 - O histórico de cada rodada de pedidos, com o que deu errado e por quê, está no
   `TASKS.md`. Leia a seção do personagem antes de mexer nele.
 - `src/components/Builder.tsx` e `Stage.tsx` — a folha, arrastar peças e mover/girar/

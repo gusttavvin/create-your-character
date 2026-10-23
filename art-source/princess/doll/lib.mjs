@@ -9,6 +9,9 @@
 import * as T from 'three';
 import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { mergeVertices, mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { MeshoptSimplifier } from 'three/addons/libs/meshopt_simplifier.module.js';
+
+await MeshoptSimplifier.ready;
 
 export const W = 1024;
 export const H = 1536;
@@ -62,20 +65,51 @@ export function mesh(geo, mat, name, group) {
   return m;
 }
 
-/** Smooth interpolation of [[t, v], ...] (t ascending), with cosine easing between knots. */
+/**
+ * A smooth profile through [[t, v], ...] (t ascending): a monotone cubic spline (Fritsch–
+ * Carlson), which bends smoothly through every knot and never overshoots between them.
+ * (Easing each stretch on its own, as this did before, came to a stop at every knot: the face
+ * and the skirts had a flat ring at each one, which the light showed as waves.)
+ * `smooth = false` joins the knots with straight lines.
+ */
 export function curve(knots, smooth = true) {
-  return (t) => {
-    if (t <= knots[0][0]) return knots[0][1];
-    for (let i = 1; i < knots.length; i++) {
-      if (t <= knots[i][0]) {
-        const [t0, v0] = knots[i - 1];
-        const [t1, v1] = knots[i];
-        let f = (t - t0) / (t1 - t0);
-        if (smooth) f = 0.5 - 0.5 * Math.cos(f * Math.PI);
-        return v0 + (v1 - v0) * f;
+  const n = knots.length;
+  const xs = knots.map((k) => k[0]);
+  const ys = knots.map((k) => k[1]);
+  const d = [];
+  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  const m = new Array(n).fill(0);
+  if (n > 1) {
+    m[0] = d[0];
+    m[n - 1] = d[n - 2];
+    for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+    for (let i = 0; i < n - 1; i++) {
+      if (d[i] === 0) {
+        m[i] = 0;
+        m[i + 1] = 0;
+        continue;
+      }
+      const a = m[i] / d[i];
+      const b = m[i + 1] / d[i];
+      const s = a * a + b * b;
+      if (s > 9) {
+        const k = 3 / Math.sqrt(s);
+        m[i] = k * a * d[i];
+        m[i + 1] = k * b * d[i];
       }
     }
-    return knots.at(-1)[1];
+  }
+  return (t) => {
+    if (t <= xs[0]) return ys[0];
+    if (t >= xs[n - 1]) return ys[n - 1];
+    let i = 1;
+    while (t > xs[i]) i++;
+    const h = xs[i] - xs[i - 1];
+    const f = (t - xs[i - 1]) / h;
+    if (!smooth) return ys[i - 1] + (ys[i] - ys[i - 1]) * f;
+    const f2 = f * f;
+    const f3 = f2 * f;
+    return (2 * f3 - 3 * f2 + 1) * ys[i - 1] + (f3 - 2 * f2 + f) * h * m[i - 1] + (-2 * f3 + 3 * f2) * ys[i] + (f3 - f2) * h * m[i];
   };
 }
 
@@ -255,6 +289,58 @@ export function blob(field, box, res = 96) {
   mc.geometry.dispose();
   return finish(g, cell * 0.2);
 }
+/**
+ * A mesh made lighter: at most `target` triangles, keeping its shape (meshoptimizer), so a
+ * finely sampled surface stays cheap for a phone to draw.
+ */
+export function lighter(geo, target) {
+  if (!geo.index || geo.index.count / 3 <= target) return geo;
+  const idx = new Uint32Array(geo.index.array);
+  const pos = new Float32Array(geo.attributes.position.array);
+  const [kept] = MeshoptSimplifier.simplify(idx, pos, 3, target * 3, 0.02, []);
+  const remap = new Int32Array(pos.length / 3).fill(-1);
+  const out = [];
+  let n = 0;
+  for (const v of kept) if (remap[v] < 0) { remap[v] = n++; out.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); }
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(out, 3));
+  g.setIndex(Array.from(kept, (v) => remap[v]));
+  g.computeVertexNormals();
+  return g;
+}
+
+/** A tube as a field: positive inside, about the distance in pixels to its surface. */
+export function tubeField(points, radius) {
+  const R = typeof radius === 'function' ? radius : () => radius;
+  const segs = [];
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    segs.push({ a, b, len, at: total });
+    total += len;
+  }
+  const lo = points.reduce((m, p) => m.map((v, i) => Math.min(v, p[i])), [Infinity, Infinity, Infinity]);
+  const hi = points.reduce((m, p) => m.map((v, i) => Math.max(v, p[i])), [-Infinity, -Infinity, -Infinity]);
+  const pad = Math.max(R(0), R(0.5), R(1)) + 30;
+  return (x, y, z) => {
+    if (x < lo[0] - pad || x > hi[0] + pad || y < lo[1] - pad || y > hi[1] + pad || z < lo[2] - pad || z > hi[2] + pad) return -pad;
+    let best = -Infinity;
+    for (const s of segs) {
+      const vx = s.b[0] - s.a[0];
+      const vy = s.b[1] - s.a[1];
+      const vz = s.b[2] - s.a[2];
+      const t = Math.max(0, Math.min(1, ((x - s.a[0]) * vx + (y - s.a[1]) * vy + (z - s.a[2]) * vz) / (s.len * s.len || 1)));
+      const d = Math.hypot(x - s.a[0] - vx * t, y - s.a[1] - vy * t, z - s.a[2] - vz * t);
+      best = Math.max(best, R((s.at + s.len * t) / total) - d);
+    }
+    return best;
+  };
+}
+/** Smooth union of fields that are positive inside. */
+export const smax = (a, b, k = 20) => -smin(-a, -b, k);
+
 /** Field helpers: smooth union / subtraction of distance-like fields. */
 export const smin = (a, b, k = 10) => {
   const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (b - a)) / k));

@@ -6,3 +6,7 @@ dist
 *.log
 .DS_Store
 .wrangler
+
+# local TRELLIS.2 tests (pictures sent and models as they came)
+trellis-teste/
+trellis-test.html

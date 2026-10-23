@@ -1,0 +1,41 @@
+PRINCESAS MODULARES — PNG COM APARÊNCIA 3D
+
+Quatro conjuntos baseados nas referências enviadas:
+01_verde_ruiva — vestido verde, trança ruiva, olhos castanhos, sorriso.
+02_rosa_castanha — vestido rosa/lilás, ondas castanhas, olhos azuis, riso.
+03_sereia_cacheada — cauda vermelha, cachos pretos, olho verde piscando, boca surpresa.
+04_azul_loira — vestido azul curto, coque loiro, olhos roxos, língua para fora.
+
+Cada pasta contém os PNGs individuais com transparência:
+base_rosto.png — rosto com nariz, sem olhos nem boca.
+vestido.png — roupa com braços e mãos; a sereia inclui a cauda e a azul inclui pernas e sapatos.
+cabelo_coroa.png — cabelo com coroa e brincos, abertura transparente para o rosto.
+olhos.png — par de olhos com cílios e sobrancelhas.
+boca.png — expressão da boca.
+
+PARA MONTAR NO JOGO
+Use os cinco arquivos da subpasta camadas_768x1152.
+Eles têm a mesma dimensão, 768 x 1152 pixels, e já estão posicionados.
+Coloque todos na mesma posição e escala, nesta ordem do fundo para a frente:
+1. base_rosto
+2. vestido
+3. cabelo_coroa
+4. olhos
+5. boca
+
+Troque cada categoria independentemente para combinar os conjuntos.
+Preserve a margem transparente dessas camadas e use o mesmo ponto de origem.
+Os PNGs na raiz de cada pasta são recortes compactos para as miniaturas do menu.
+
+montagem_das_pecas.png é a composição real das cinco camadas.
+previa_montada.png é a referência visual gerada junto das peças.
+folha_completa.png é a folha original das peças.
+Abra testar_montagem.html no navegador para testar as combinações locais.
+
+Estes arquivos são imagens 2D com aparência de renderização 3D.
+Não são modelos tridimensionais em GLB, FBX ou OBJ.
+A integração ao projeto do jogo ainda depende de acesso aos arquivos do jogo.
+As camadas são uma montagem inicial; alguns cruzamentos de cabelo e roupa podem pedir ajuste de posição no seu jogo.
+
+Criação: ferramenta integrada de geração de imagens.
+Os prompts utilizados estão em prompts-geracao.txt.

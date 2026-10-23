@@ -2257,7 +2257,177 @@ Terceira passada ("melhore o rosto e os braços, e os cabelos, ainda estão bem 
 - Cuidado: no painel do navegador do app, depois de várias navegações na mesma aba todos os
   canvas 3D ficam em branco (contextos WebGL perdidos). Abra uma aba nova por vista.
 
-Limitações: `hair-curly.glb` tem 2,6 MB e 149 mil triângulos, o comprido 1,6 MB (os outros
+Braços refeitos (22 de outubro de 2026, Gustavo: "mão separada do corpo, uma volta que não
+existe no punho; um braço bonito, harmônico de princesa"):
+- A mão flutuava na frente da saia: a fundura dela era uma conta aproximada. Agora a mão é
+  posta por ângulo e altura sobre a própria superfície da saia (`onSkirt`), deitada no pano.
+- A ponta do tubo do braço afinava até um ponto antes da mão (o "pescoço") e a curva entre os
+  últimos pontos dava uma volta no punho. Agora o braço é um tubo só, de seção redonda, de uma
+  curva centrípeta amostrada por igual (não dá laço), que continua para dentro da palma.
+- O braço nunca entra na saia nem no corpete: cada ponto é empurrado para fora da oval da saia
+  com a própria espessura e mais 3 px (antes a sobressaia verde furava o antebraço).
+- Mais cheio, de boneca (21 no ombro, 16,5 no cotovelo, 11 no punho); palma maior; dedos juntos
+  seguindo o pano; polegar na frente.
+- O punho dourado da manga agora abraça o braço onde ele sai do bufante (antes era um anel largo
+  solto no ar).
+- Página de revisão: `?aim=x,y,z` mira um ponto da folha; o zoom usa `camera.zoom` (mudar a
+  distância ou a lente só fazia o `Fit` encolher a princesa de volta) e o alvo dos controles
+  acompanha.
+
+Rodada de 22 de outubro de 2026 (Gustavo: cabelo cacheado "parece um capacete", cabelo comprido
+"sem lógica nenhuma", "criar pé para as princesas", "o rosto está com umas ondas ridículas",
+bocas sem efeito 3D, "ta cortando ela, ta ficando muito alta no flutuante"):
+- **Ondas no rosto:** o perfil `curve` suavizava cada trecho separado e parava em cada ponto
+  medido; a luz mostrava um anel achatado em cada um. Agora `curve` é uma spline cúbica
+  monótona (sem paradas nem sobras) e o crânio é uma fórmula (um ovo que afina no queixo,
+  `head.mjs`) dobrado a partir de uma esfera fina. Vale também para saias e braços.
+- **Bocas esculpidas** (`cushion` em `face.mjs`): cada lábio é uma almofada entre duas bordas,
+  inchando para fora e seguindo o rosto: lábio de cima com arco do cupido, o de baixo mais
+  cheio, uma linha fina entre eles. Risada e "oh" com o escuro da boca, dentes e língua na frente
+  da pele (afundados, a pele do crânio escondia tudo) e lábios em volta. Língua de fora com
+  sulco. As almofadas saíram do avesso na primeira vez (y invertido): a ordem dos vértices foi
+  trocada.
+- **Pés** (`feet` em `dress.mjs`): sapatilhas com sola, laço e peito do pé; as pontas aparecem
+  na barra do vestido verde (douradas) e do rosa (rosas); as do azul curto com pernas mais
+  finas no tornozelo. A sereia tem cauda.
+- **Cabelo comprido refeito:** uma massa só, por campo (`blob`): touca, coroa cheia, volume
+  nas costas, duas cortinas (`tubeField`) pela frente dos ombros, franja varrida de lado; nunca
+  dentro da cabeça nem sobre o rosto (`faceWindow`); ondas em S esculpidas na própria superfície
+  e pontas em ondas. Simplificado para 90 mil triângulos (`lighter`, meshoptimizer).
+- **Cabelo cacheado refeito:** cachos em saca-rolhas (`ringlet`) caindo em camadas da coroa ao
+  peito, os de cima mais por fora, alguns azuis, curtos sobre a testa, e cachos deitados na
+  coroa; por baixo uma massa escura menor que não aparece.
+- **Enquadramento no jogo:** a caixa invisível que o `Fit` usa para enquadrar estava centrada
+  nos pés (os modelos começam em y = 0): dobrava a altura, a princesa ficava alta e, no
+  computador, com a cabeça cortada. Agora a caixa fica sobre ela, 12% mais alta (espaço para
+  flutuar), e as habilidades giram em volta do meio dela.
+- Conferido: frente, 30°/40°/45°, costas, pele morena; bocas de perto; pés de perto; no jogo,
+  no computador e no celular (375×812). Validador glTF sem erros; `npm run build`.
+- **Punho sem volta** (Gustavo: "retire essa volta do punho, coloque a mão direta"): a mão era
+  virada para deitar ao longo da saia e por isso mudava de direção no punho. Agora antebraço,
+  punho e mão ficam numa linha reta (a mão segue a direção do antebraço); se essa linha
+  atravessaria a saia, quem se afasta é o cotovelo (`clear` em `arms`), não o punho que dobra.
+- **Mão entrando no vestido** (Gustavo, print da sereia): com o antebraço apontado do cotovelo
+  para a mão, ele vinha de dentro para a saia e a mão continuava para dentro do pano. Agora o
+  antebraço desce rente à saia (direção "para baixo no pano" na mão), inclinado para o pano só o
+  bastante para o cotovelo e o antebraço ficarem por fora; os dedos, a partir dos nós, deitam no
+  pano. A folga é medida perpendicular ao pano (onde a saia abre, a folga de lado é maior que a
+  real e o antebraço do vestido azul raspava). Primeira tentativa errou o sinal da inclinação e
+  pôs o cotovelo dentro da saia.
+
+Olhos e vestidos 2D (22 de outubro de 2026, Gustavo: "os olhos estão horríveis"; "arrumar os
+corpetes do 2D, alguns vestidos estão com resquícios de fundo, imagens sem qualidade"):
+- **Olhos 3D refeitos em camadas** (`dome` em `face.mjs`): o branco é um oval inchado deitado no
+  rosto, e sobre ele a borda escura da íris, a íris, o crescente claro e a pupila, cada um sobre
+  o de baixo; a linha da pálpebra fica exatamente na borda de cima do branco e os cílios saem da
+  ponta dela. Antes o globo ficava meio enterrado no crânio (aparecia menos branco que o
+  desenhado) e a pálpebra, os cílios e a "dobra de pele" ficavam soltos ao lado; a dobra saiu.
+  Estrela e coração do brilho deitados na curva do olho (de frente para a frente, passavam da
+  borda vistos de lado).
+- **Vestidos 2D limpos** (`art-source/princess/clean-dresses.cjs`, rodar depois do `dolls.cjs`):
+  tira o cabelo da boneca que sobrou nos ombros e entre braço e corpo (cachos pretos na sereia,
+  ondas castanhas no rosa, fios ruivos no verde), tira pedacinhos soltos, preenche os buracos
+  dentro do vestido com a cor em volta (em volta do coração do rosa, no decote do azul, entre
+  manga e ombro do verde) e refaz os tons de pele a partir da imagem clara já limpa, pintando só a
+  pele (manchas grandes e contínuas de cor de pele; o dourado é mais amarelo e mais saturado):
+  os tons escuros tinham manchas marrons nos frisos dourados desde a geração original.
+  Pegadinhas: pixels quase pretos têm saturação alta na conta (escapavam da regra "escuro e
+  pouco saturado"); no Windows o sharp segura o arquivo que leu (cache), por isso o script lê
+  por buffer e desliga o cache.
+
+## Princesa 3D pelo TRELLIS.2 — em andamento (22 de outubro de 2026)
+
+Gustavo quer as quatro princesas em 3D "perfeitas", com troca de peças, "nem que demore alguns
+dias". Caminho: o TRELLIS.2 (Microsoft, imagem → GLB com textura), pela demonstração no
+Hugging Face (`huggingface.co/spaces/microsoft/TRELLIS.2`), com a conta do Gustavo (a cota
+anônima acaba logo; a cota grátis da conta dá poucas gerações por dia). Eu não consigo subir
+arquivos pelo navegador do app: o Gustavo escolhe a imagem e eu ajusto (Decimation 100000,
+Texture 1024), gero, confiro e baixo.
+- [x] Teste 1: princesa azul inteira (`trellis-teste/1-princesa-azul.png` → `princesa-azul-trellis.glb`,
+      uma peça só, 95 mil triângulos, 4,4 MB, textura webp). Muito melhor que a boneca por código,
+      de todos os lados. O material vem como metal (metallic 1): no jogo precisa ficar pintado
+      (metalness 0, roughness ~0,55). Página local: `trellis-test.html`.
+- [~] Teste 2: só o vestido azul (`trellis-teste/3-so-vestido-azul.png`). Gerado e conferido
+      (sem cabeça inventada, toco de pescoço limpo, costas coerentes): peça a peça funciona.
+      O download não saiu e a aba fechou; a segunda geração bateu na cota diária grátis.
+      Refazer e baixar logo que o GLB ficar pronto (botão Download GLB ou o ícone ↓ do visualizador).
+      Cota: a conta grátis dá 2–3 gerações por dia; a PRO (US$ 9/mês) anuncia ~50 modelos por dia.
+- [x] Parte do jogo preparada (Gustavo: "pode começar a preparar a parte do jogo"):
+      - `art-source/princess/trellis/prepare.mjs` (precisa de `npm i --no-save
+        @gltf-transform/core@4.1.1 @gltf-transform/extensions@4.1.1 @gltf-transform/functions@4.1.1
+        meshoptimizer@0.22.0`) lê os GLBs de `art-source/princess/trellis/raw/` (lista `PIECES`):
+        tira o metal, reduz para até 40 mil triângulos, põe em pé no chão com 3,6 m, raiz
+        `<fileira>_<id>`, comprime (meshopt, que o `useGLTF` já lê) e grava
+        `public/models/princess-trellis/`, `src/characters/princess/trellis-library.json` e
+        `docs/princess-trellis-validation.json`. A azul: 1,05 MB, 40 mil triângulos, 0 erros,
+        0 avisos, igual à original lado a lado.
+      - `Princess3D.tsx`: quando as peças escolhidas são exatamente as de uma princesa inteira do
+        TRELLIS (por enquanto vestido curto + coque + olhos roxos + língua), ela aparece no lugar
+        da boneca de peças. Qualquer outra mistura continua com a boneca de peças.
+      - Tom de pele: a pele está pintada na textura, junto com tudo. `inSkin` acha a pele pela
+        cor ao desenhar (pêssego, matiz ~10–25°; o loiro e o dourado são mais amarelos, 28°+;
+        lábios e blush mais rosados) e escurece nas proporções de cada tom, como no 2D.
+        Conferido nos quatro tons, de frente e de lado: cabelo, coroa e vestido não mudam.
+      - Página de conferência: `princess-review-3d.html?parts=star,bun,sleepy,tongue&skins`.
+      - `trellis-teste/` e `trellis-test.html` ficam fora do Git (`.gitignore`).
+- [ ] Depois: as outras três princesas inteiras e as peças separadas (vestidos, cabelos,
+      cabeça; olhos e bocas pintados na cabeça), encaixe na mesma escala para misturar.
+
+## Princesa 2D nova, das camadas feitas por IA — 22 de outubro de 2026
+
+Gustavo: "nessa pasta tem um 2D melhor das princesas" (pasta do Codex com cinco camadas por
+princesa, 768×1152, já alinhadas) e "ao final tem que ficar assim" (as prévias montadas).
+- Camadas copiadas para `art-source/princess/reference/v3/` (com o LEIA-ME e os prompts).
+- `art-source/princess/layers2d.cjs` converte para o jogo, sem mudar nomes, IDs nem código:
+  amplia 4/3 e desce para os olhos ficarem na linha de sempre; sobe olhos e sobrancelhas
+  (19 px), nariz (19 px, recortado e pele refeita no lugar) e boca (22 px), porque vieram baixos
+  no rosto ("cuidado para olhos, bocas e nariz não ficarem muito para baixo"); blush nas
+  bochechas como nas prévias (avermelha a pele, serve para todo tom); sobrancelhas separadas dos
+  olhos (piscar não as move; centro da piscada agora y 473); cabelo abaixo do queixo vai para a
+  camada de trás (as mangas bufantes aparecem, como nas prévias), menos a trança; o cabelo de trás
+  fica inteiro e só a frente esmaece (duas camadas meio transparentes deixavam uma linha clara);
+  pele igualada entre as quatro e pintada nos quatro tons só onde é pele grande e contínua (o
+  dourado fica intacto); a pele clara desenhada nos olhos, na boca e nas orelhas do cabelo é
+  tirada, para a do rosto aparecer no tom certo.
+- Saiu o `clean-dresses.cjs` da rodada anterior (era para as imagens antigas).
+- Conferido: as quatro montadas ao lado das prévias; rostos de perto nos tons claro, médio,
+  moreno e escuro; misturas (cabelo de uma com vestido de outra) no jogo; cartões; console;
+  `npm run build`.
+- Limitação: nos tons escuros ainda sobra um fio claro na beira de algumas orelhas.
+- Segunda passada (Gustavo: "tem que subir mais os olhos, mais a boca"; prints de olhos e boca
+  de uma princesa no rosto de outra): os rostos foram desenhados com o queixo em alturas
+  diferentes (até 21 px de diferença na folha) e a boca quase no queixo. Agora `measure` acha o
+  queixo, o centro dos olhos e o da boca de cada conjunto, e `PLACE` (tela pequena) põe todos os
+  queixos em 420 (rosto e cabelo andam juntos), os olhos em 318, o nariz em 352 e a boca em 380,
+  qualquer que seja a princesa de origem; misturas ficam no mesmo lugar. Centro da piscada: y 468.
+- Terceira passada ("cabelo long sai errado, e o olho purple tá caído"; "descer um pouco a boca
+  smile"): o cabelo comprido veio desenhado com mechas sobre as duas bochechas (a abertura do
+  rosto tinha 50 px no queixo); agora o cabelo que fica sobre o oval do rosto, dos olhos para
+  baixo (`FACE_OVAL`), vai para trás do rosto, com transição suave e sem tirar brincos de pérola
+  (as orelhas e os outros brincos ficam fora do oval). `NUDGE`: olhos roxos 8 px mais altos (são
+  maiores e mais baixos no quadro deles) e sorriso 6 px mais baixo (tela pequena).
+- Quarta passada ("todas as bocas têm que dar no mesmo lugar... mais afastado do nariz"): as
+  bocas eram postas pelo centro do desenho, e boca aberta ou com língua tem o centro mais baixo,
+  então cada uma ficava numa altura. Agora todas pelo topo do lábio de cima, em 377 (tela
+  pequena), um pouco mais longe do nariz; o ajuste do sorriso saiu.
+- Quinta passada ("o cabelo long está com uma testa muito grande e o bun com a testa pequena"):
+  a linha do cabelo no meio da testa estava em y 285 (comprido), 320 (trança), 325 (cacheado) e
+  378 (coque) na folha. `hairline` estica ou encolhe o cabelo só entre o topo (y 120) e as
+  orelhas (y 560), mais na linha do cabelo (y 330): comprido 40 px para baixo, coque 53 para
+  cima (`HAIRLINE`). Agora as quatro ficam entre 321 e 326; a coroa e os brincos quase não se
+  mexem.
+- Sexta passada ("os desenhos da boca estão cortados"; "tem que ter um espaço do nariz até a
+  boca"): os cartões cortados eram o navegador mostrando as imagens antigas (guardadas com o
+  mesmo nome) dentro das caixas novas do `pieces.json`. As imagens agora levam `?v=3` no
+  endereço (`VERSION` em `pieces.tsx`): **aumente o número sempre que regerar as imagens.**
+  Nariz subiu para 345 e o topo da boca desceu para 381 (tela pequena).
+- Sétima passada ("arrumar a conexão do pescoço"): o rosto vem com pescoço até a clavícula e o
+  vestido com outro pescoço por cima; a borda de cima do pescoço do vestido fazia uma linha logo
+  abaixo do queixo. Agora, onde o pescoço do rosto está por baixo, a pele do vestido (e a borda
+  meio transparente dela) some até y 636 e volta aos poucos até y 676 (`NECK`): o pescoço é um
+  só, do queixo ao colo. `VERSION` = 5.
+
+Limitações: `hair-curly.glb` tem 2,6 MB e 145 mil triângulos, o comprido 1,7 MB (os outros
 ficam entre 0,02 e 1,2 MB); sem textura de escamas ou brocados (só relevo e cor); a nadadeira
 é lisa; de costas o cabelo comprido ainda é uma massa única com sulcos; desempenho em celular
 não medido.
