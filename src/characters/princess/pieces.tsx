@@ -18,7 +18,7 @@ export const TONES: SkinTone[] = ['light', 'tan', 'brown', 'dark'];
  * redrawn, and a browser that had the old ones kept showing them (cards cut off, a mouth in the old
  * place). Raise VERSION whenever the pictures are made again (art-source/princess/layers2d.cjs).
  */
-const VERSION = 5;
+const VERSION = 11;
 const url = (file: string) => `/princess/${file}.webp?v=${VERSION}`;
 
 /** The files that make a piece, in the skin she is drawn in (only dresses and her head have skin). */

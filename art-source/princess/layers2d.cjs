@@ -22,7 +22,15 @@ const sharp = require('sharp');
 
 sharp.cache(false);
 
-const SRC = path.join(__dirname, 'reference', 'v3');
+/**
+ * FROM_REF: the layers cut by cutref.cjs straight from Clara's pictures of her four princesses
+ * (reference/v4), already in place: nothing is moved, grown, rounded or repainted on them (all
+ * the corrections below were for the layers of reference/v3, made by an image generator, which
+ * did not look like her princesses: "o rosto ainda tá quadrado... os olhos estão diferentes...
+ * o cabelo está bem maior que na referência").
+ */
+const FROM_REF = true;
+const SRC = path.join(__dirname, 'reference', FROM_REF ? 'v4' : 'v3');
 const OUT = path.join(__dirname, '..', '..', 'public', 'princess');
 const BOXES = path.join(__dirname, '..', '..', 'src', 'characters', 'princess', 'pieces.json');
 const W = 1024;
@@ -62,7 +70,18 @@ function hsv(r, g, b) {
  * the four faces had their chins at different heights and the features sat low (the mouth
  * almost on the chin), so a mouth from one princess on another's face could fall off it.
  */
-const PLACE = { chin: 420, eyes: 318, nose: 345, mouthTop: 381 };
+const PLACE = { chin: 420, eyes: 336, nose: 358, mouthTop: 381 };
+/**
+ * How much bigger the eyes and brows are drawn than in the layers, about the middle of the eyes
+ * (Clara's picture of the blue princess, 23 Oct 2026: big round eyes, wide apart, in the middle
+ * of a round face; ours were smaller, closer together and high, with a long face under them).
+ * Measured on her blue and pink princesses, from hairline (0) to chin (1): brows at 0.24, eyes at
+ * 0.55-0.60, irises 0.30-0.36 across and 0.58-0.67 apart. At 1.2 ours were 0.28 across and 0.48
+ * apart, with the brows low over them at 0.30 ("ainda tô achando os olhos estranhos").
+ */
+const EYES_GROW = 1.2;
+/** And the brows that much higher again (sheet pixels), off her eyes. */
+const BROWS_UP = 16;
 /**
  * Corrections for single pieces, after that (small-canvas pixels, + is lower): the purple eyes
  * are drawn bigger and lower in their frame and looked droopy beside the others.
@@ -72,7 +91,23 @@ const NUDGE = { eyes: { sleepy: -8 }, mouth: {} };
  * The oval of her face below her eyes, on the sheet: hair over it goes behind her face. Her
  * cheeks, not her ears (which stick out past it, with the earrings).
  */
-const FACE_OVAL = { cx: 512, cy: 470, rx: 140, ry: 150 };
+// (from top, quickly: fading in over 60 px from y 410, curls over her temples were left half
+// clear, grey smudges beside her eyes)
+const FACE_OVAL = { cx: 512, cy: 470, rx: 140, ry: 150, top: 440 };
+/**
+ * And her round face (see CHEEKS), from her eyes down: hair over it goes behind it too, so her
+ * face shows as wide across her eyes as in Clara's pictures. Not over her ears (with what hangs
+ * from them), and starting quickly, under her brows: a slow start left half-clear locks over her
+ * temples, like ghosts.
+ */
+function cheekBehind(x, y) {
+  if (y < 462) return 0;
+  const off = Math.abs(x - W / 2);
+  if (y < 562 && off > 138) return 0;
+  const R = y < CHEEKS.from ? CHEEKS.hw : faceHalf(y) + 2;
+  if (off > R) return 0;
+  return Math.min(1, (y - 462) / 14) * Math.min(1, (R - off) / 8);
+}
 /** Where each princess's nose is on the sheet (measured on base_rosto), to lift it with the eyes. */
 const NOSE = { '01_verde_ruiva': [516, 511], '02_rosa_castanha': [512, 527], '03_sereia_cacheada': [513, 532], '04_azul_loira': [511, 525] };
 
@@ -203,20 +238,80 @@ const HAIR_BEHIND = { long: true, curly: true, bun: true, braids: false };
  * Rosy cheeks, as the dolls have: a soft round flush on each cheek, below and outside the eyes.
  * It reddens the skin under it rather than painting pink on it, so it suits every skin tone.
  */
-function blush(face, { y = 550, x = [408, 616], rx = 46, ry = 30, strength = 0.7 } = {}) {
+// (as in Clara's picture: a round pink spot on each cheek, out under the eyes, with a soft edge —
+// it was a wide faint flush)
+function blush(face, { y = 570, x = [412, 612], rx = 38, ry = 30, strength = 0.8 } = {}) {
   const o = new Uint8ClampedArray(face);
-  const k = [1.0, 0.74, 0.78];
+  const k = [1.0, 0.7, 0.76];
   for (const cx of x)
     for (let py = y - ry * 2; py <= y + ry * 2; py++)
       for (let px = cx - rx * 2; px <= cx + rx * 2; px++) {
         const i = (py * W + px) * 4;
         if (face[i + 3] < 200) continue;
-        const d = ((px - cx) / rx) ** 2 + ((py - y) / ry) ** 2;
-        const a = strength * Math.exp(-d * 1.6);
+        const d = Math.sqrt(((px - cx) / rx) ** 2 + ((py - y) / ry) ** 2);
+        const t = Math.min(1, Math.max(0, (d - 0.55) / 0.5));
+        const a = strength * (1 - t * t * (3 - 2 * t));
         if (a < 0.01) continue;
         for (let c = 0; c < 3; c++) o[i + c] = face[i + c] * (1 - a + a * k[c]);
       }
   return o;
+}
+
+/**
+ * Round cheeks (Clara's pink and blue princesses: a round, chubby face, widest across her eyes and
+ * curving down to a small round chin; ours narrowed from under her ears into a pointed chin).
+ * Each row of the face below her ears is widened about her middle to the outline of her pink
+ * princess's face (FACE_LINE: half-widths, as a share of the widest, from the middle of her eyes
+ * (0) to her chin (1), measured on the picture); never narrower than it was, and her ears and
+ * neck are left as they are. (A plain ellipse, widest below her ears, came out square: wide jaws
+ * under narrow temples, "o rosto ainda tá muito quadrado".)
+ */
+const CHEEKS = { eye: 508, chin: 626, hw: 136, from: 552, to: 626 };
+const FACE_LINE = [[0, 1], [0.37, 1], [0.61, 0.89], [0.73, 0.78], [0.85, 0.61], [0.91, 0.44], [1, 0.24]];
+/** Half the width of her face at row y, as it is to be. */
+function faceHalf(y) {
+  const u = (y - CHEEKS.eye) / (CHEEKS.chin - CHEEKS.eye);
+  if (u <= 0) return CHEEKS.hw;
+  for (let k = 1; k < FACE_LINE.length; k++) {
+    const [u1, p1] = FACE_LINE[k];
+    const [u0, p0] = FACE_LINE[k - 1];
+    if (u <= u1) return CHEEKS.hw * (p0 + ((p1 - p0) * (u - u0)) / (u1 - u0));
+  }
+  return 0;
+}
+function roundCheeks(face) {
+  const out = new Uint8ClampedArray(face);
+  const f = new Float32Array(H).fill(1);
+  for (let y = CHEEKS.from; y < CHEEKS.to; y++) {
+    let l = -1;
+    let r = -1;
+    for (let x = 0; x < W; x++) if (face[(y * W + x) * 4 + 3] > 128) { if (l < 0) l = x; r = x; }
+    const now = (r - l) / 2;
+    if (now > 10) f[y] = Math.min(1.7, Math.max(1, faceHalf(y) / now));
+  }
+  // smoothly from row to row, and back to 1 at her ears and her neck
+  const g = new Float32Array(H).fill(1);
+  for (let y = CHEEKS.from; y < CHEEKS.to + 16; y++) {
+    let sum = 0;
+    let n = 0;
+    for (let k = -8; k <= 8; k++) {
+      sum += f[y + k] ?? 1;
+      n++;
+    }
+    const ends = Math.min(1, (y - CHEEKS.from) / 14, Math.max(0, (CHEEKS.to + 16 - y) / 16));
+    g[y] = 1 + (sum / n - 1) * ends;
+  }
+  for (let y = CHEEKS.from; y < CHEEKS.to + 16; y++) {
+    if (g[y] === 1) continue;
+    for (let x = 0; x < W; x++) {
+      const sx = W / 2 + (x - W / 2) / g[y];
+      const x0 = Math.floor(sx);
+      const t = sx - x0;
+      const o = (y * W + x) * 4;
+      for (let c = 0; c < 4; c++) out[o + c] = face[(y * W + x0) * 4 + c] * (1 - t) + face[(y * W + x0 + 1) * 4 + c] * t;
+    }
+  }
+  return out;
 }
 
 /** The middle colour of the skin on her forehead: what "her skin" is in this picture. */
@@ -300,7 +395,8 @@ function skinMask(img, base) {
     // shadows on skin go redder, shadows on gold go towards skin from the yellow side: the
     // window reaches further to the red than to the yellow
     // (skin in shadow, as under her chin, is redder and more saturated: allowed on the red side)
-    if (h >= h0 - 13 && h <= h0 + 6 && s >= s0 * 0.4 && s <= (h <= h0 - 2 ? 0.8 : s0 + 0.3) && v >= 0.3) near[i] = 1;
+    // (FROM_REF: the shine on her shoulders is paler, and was left light on dark skin)
+    if (h >= h0 - 13 && h <= h0 + 6 && s >= s0 * (FROM_REF ? 0.22 : 0.4) && s <= (h <= h0 - 2 ? 0.8 : s0 + 0.3) && v >= 0.3) near[i] = 1;
   }
   const c = components(near);
   const mask = new Uint8Array(W * H);
@@ -370,6 +466,246 @@ function box(...imgs) {
 }
 
 /** The eyes and the brows apart: the brows are what lies wholly above the middle of the eyes. */
+/**
+ * A mouth made a little girl's (Clara: "deixa as bocas mais infantis"; then her picture of the
+ * blue princess, with a small soft pink smile): a little smaller, about the middle of its top
+ * lip so it stays where it was, and its lips lighter and softer, not lipstick red (shrunk to
+ * two thirds, as first done, it was a tiny pout far under her eyes).
+ */
+const CHILD = { x: 0.9, y: 0.9 };
+function childlike(img) {
+  const [bx, by, bw] = box(img);
+  const small = scaleAbout(img, bx + bw / 2, by, CHILD.x, CHILD.y);
+  for (let i = 0; i < W * H; i++) {
+    if (small[i * 4 + 3] < 10) continue;
+    const [h, s, v] = hsv(small[i * 4], small[i * 4 + 1], small[i * 4 + 2]);
+    // the lips (red to pink, not the white of her teeth): lighter and less strong
+    if (!(h >= 320 || h <= 20) || s < 0.25) continue;
+    const k = 0.28;
+    for (let c = 0; c < 3; c++) {
+      const soft = [246, 160, 172][c];
+      small[i * 4 + c] = small[i * 4 + c] * (1 - k) + soft * k * Math.min(1, v + 0.3);
+    }
+  }
+  return small;
+}
+
+/** A picture made sx wider and sy taller about (cx, cy). */
+function scaleAbout(img, cx, cy, sxk, syk) {
+  const out = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const sx = cx + (x - cx) / sxk, sy = cy + (y - cy) / syk;
+      const x0 = Math.floor(sx), y0 = Math.floor(sy);
+      if (x0 < 0 || y0 < 0 || x0 >= W - 1 || y0 >= H - 1) continue;
+      const fx = sx - x0, fy = sy - y0;
+      let a = 0;
+      const acc = [0, 0, 0];
+      for (const [dx, dy, wt] of [[0, 0, (1 - fx) * (1 - fy)], [1, 0, fx * (1 - fy)], [0, 1, (1 - fx) * fy], [1, 1, fx * fy]]) {
+        const k = ((y0 + dy) * W + x0 + dx) * 4;
+        const al = (img[k + 3] / 255) * wt;
+        a += al;
+        for (let c = 0; c < 3; c++) acc[c] += img[k + c] * al;
+      }
+      if (a <= 0) continue;
+      const o = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) out[o + c] = acc[c] / a;
+      out[o + 3] = a * 255;
+    }
+  return out;
+}
+
+/**
+ * The bun's picture has a second pair of ears drawn on it, low, under her own (Clara: "o hair
+ * bun está com orelhas em baixo"), with the earrings hanging from them by her shoulders. Those
+ * ears go, with the specks of their outline (taken out by colour alone, bits of skin and holes
+ * were left), and the earrings are hung under her own ears, as in Clara's picture.
+ */
+const BUN_EARRINGS = [
+  { bead: [357, 627], to: [349, 563] },
+  { bead: [683, 627], to: [679, 563] },
+];
+function bunEars(hair) {
+  const zone = (x, y) => y >= 460 && y <= 720 && ((x >= 290 && x <= 420) || (x >= 604 && x <= 734));
+  const at = (x) => BUN_EARRINGS[x < W / 2 ? 0 : 1];
+  // the earrings: the purple drop, the gold round it and the gold bead it hangs from
+  const drop = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if (!zone(x, y) || hair[i * 4 + 3] < 60) continue;
+    const [h, s] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
+    if (h >= 220 && h <= 320 && s > 0.25) drop[i] = 1;
+  }
+  const earring = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if (!zone(x, y) || hair[i * 4 + 3] < 10) continue;
+    const { bead: [bx, by] } = at(x);
+    let near = Math.hypot(x - bx, y - by) <= 11 || (Math.abs(x - bx - 2) <= 5 && y >= by && y <= by + 16);
+    for (let dy = -4; !near && dy <= 4; dy++) for (let dx = -4; !near && dx <= 4; dx++) near = drop[i + dy * W + dx] === 1;
+    if (!near) continue;
+    const [h, s, v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
+    // (the skin of the ear behind the bead stays behind)
+    if (h <= 28 && s > 0.12 && s < 0.6 && v > 0.45 && !drop[i]) continue;
+    for (let c = 0; c < 4; c++) earring[i * 4 + c] = hair[i * 4 + c];
+    hair[i * 4 + 3] = 0;
+  }
+  // the ears: their skin, then the outline round where it was, then what is left in specks
+  const gone = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i / W) | 0;
+    if (!zone(x, y) || hair[i * 4 + 3] < 10) continue;
+    const [h, s, v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
+    // (her hair round them is gold, hue 28-40; the ears are peach, 12-24)
+    if ((h <= 25 || h >= 340) && s > 0.12 && v > 0.4) {
+      hair[i * 4 + 3] = 0;
+      gone[i] = 1;
+    }
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    const more = [];
+    for (let i = 0; i < W * H; i++) {
+      const x = i % W, y = (i / W) | 0;
+      if (!zone(x, y) || hair[i * 4 + 3] < 1) continue;
+      let by = false;
+      for (let dy = -2; !by && dy <= 2; dy++) for (let dx = -2; !by && dx <= 2; dx++) by = gone[i + dy * W + dx] === 1;
+      if (!by) continue;
+      const [h, , v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
+      if (h <= 27 || v < 0.4 || hair[i * 4 + 3] < 140) more.push(i);
+    }
+    for (const i of more) {
+      hair[i * 4 + 3] = 0;
+      gone[i] = 1;
+    }
+  }
+  const left = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) if (zone(i % W, (i / W) | 0) && hair[i * 4 + 3] > 10) left[i] = 1;
+  const c = components(left);
+  for (let i = 0; i < W * H; i++) if (left[i] && c.sizes[c.label[i]] < 120) hair[i * 4 + 3] = 0;
+  // a soft edge where the hair was cut round them (it was left ragged)
+  for (let pass = 0; pass < 2; pass++) {
+    const alpha = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) alpha[i] = hair[i * 4 + 3];
+    for (let i = 0; i < W * H; i++) {
+      const x = i % W, y = (i / W) | 0;
+      if (!zone(x, y) || !alpha[i]) continue;
+      let cut = false;
+      for (let dy = -3; !cut && dy <= 3; dy++) for (let dx = -3; !cut && dx <= 3; dx++) cut = gone[i + dy * W + dx] === 1;
+      if (!cut) continue;
+      let sum = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) sum += alpha[i + dy * W + dx];
+      hair[i * 4 + 3] = Math.min(alpha[i], sum / 9);
+    }
+  }
+  // the earrings, hung under her own ears, in front of the hair
+  for (let i = 0; i < W * H; i++) {
+    const a = earring[i * 4 + 3] / 255;
+    if (!a) continue;
+    const x = i % W, y = (i / W) | 0;
+    const { bead, to } = at(x);
+    const j = (y + to[1] - bead[1]) * W + x + to[0] - bead[0];
+    const b = hair[j * 4 + 3] / 255;
+    const out = a + b * (1 - a);
+    for (let k = 0; k < 3; k++) hair[j * 4 + k] = (earring[i * 4 + k] * a + hair[j * 4 + k] * b * (1 - a)) / out;
+    hair[j * 4 + 3] = out * 255;
+  }
+}
+
+/**
+ * The long hair's white hearts, drawn on her ears beside her eyes: with the bigger eyes they
+ * were over the corners of her eyes, so they go down onto her ear lobes, a little outwards.
+ */
+const LONG_HEARTS = [
+  { box: [336, 474, 386, 526], by: [-26, 34] },
+  { box: [618, 474, 664, 524], by: [26, 34] },
+];
+/** Moves the white (pearl, heart) pixels in a box of a hair picture, and their rim, by `by`. */
+function moveStud(hair, { box: [x0, y0, x1, y1], by: [dx, dy] }) {
+  const pick = new Uint8Array(W * H);
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) {
+      const i = y * W + x;
+      if (hair[i * 4 + 3] < 10) continue;
+      const [, s, v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
+      // (and the gold of the little hook it hangs from, yellower than her brown hair)
+      const h = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2])[0];
+      if ((s < 0.3 && v > 0.55) || (h >= 32 && h <= 60 && s > 0.35 && v > 0.6)) pick[i] = 1;
+    }
+  const rim = new Uint8Array(pick);
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) {
+      const i = y * W + x;
+      if (pick[i] || hair[i * 4 + 3] < 10) continue;
+      if ([i - 1, i + 1, i - W, i + W].some((j) => pick[j])) rim[i] = 1;
+    }
+  const stud = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++)
+    if (rim[i]) {
+      for (let c = 0; c < 4; c++) stud[i * 4 + c] = hair[i * 4 + c];
+      hair[i * 4 + 3] = 0;
+    }
+  for (let i = 0; i < W * H; i++) {
+    const a = stud[i * 4 + 3] / 255;
+    if (!a) continue;
+    const j = i + dy * W + dx;
+    const b = hair[j * 4 + 3] / 255;
+    const out = a + b * (1 - a);
+    for (let k = 0; k < 3; k++) hair[j * 4 + k] = (stud[i * 4 + k] * a + hair[j * 4 + k] * b * (1 - a)) / out;
+    hair[j * 4 + 3] = out * 255;
+  }
+}
+
+/**
+ * Bigger irises (Clara's pink and blue princesses: the coloured part fills almost all the eye,
+ * touching the lids; ours had white all round it and looked startled). Each iris, with its pupil
+ * and shines, is drawn IRIS_GROW times bigger about its middle, only inside the eye: over the
+ * white and the iris itself, never over the lids and lashes, which clip it as real lids do.
+ */
+const IRIS_GROW = 1.22;
+function biggerIris(eyes) {
+  const out = new Uint8ClampedArray(eyes);
+  for (const side of [0, 1]) {
+    const xs = [];
+    const ys = [];
+    for (let i = 0; i < W * H; i++) {
+      const x = i % W;
+      if ((x < W / 2) !== (side === 0) || eyes[i * 4 + 3] < 200) continue;
+      const [, s, v] = hsv(eyes[i * 4], eyes[i * 4 + 1], eyes[i * 4 + 2]);
+      if (s > 0.3 && v > 0.3) {
+        xs.push(x);
+        ys.push((i / W) | 0);
+      }
+    }
+    // a closed (winking) eye has no iris
+    if (xs.length < 1500) continue;
+    // its circle from its sides and its bottom (the lid hides its top)
+    const at = (a, p) => a.slice().sort((m, n) => m - n)[Math.floor(a.length * p)];
+    const r = (at(xs, 0.99) - at(xs, 0.01)) / 2;
+    const cx = (at(xs, 0.99) + at(xs, 0.01)) / 2;
+    const cy = at(ys, 0.99) - r;
+    const R = r * IRIS_GROW;
+    for (let y = Math.floor(cy - R); y <= cy + R; y++)
+      for (let x = Math.floor(cx - R); x <= cx + R; x++) {
+        const d = Math.hypot(x - cx, y - cy);
+        if (d > R) continue;
+        const i = y * W + x;
+        if (eyes[i * 4 + 3] < 200) continue;
+        const [, s, v] = hsv(eyes[i * 4], eyes[i * 4 + 1], eyes[i * 4 + 2]);
+        // (the white of the eye, or the iris itself; not a lid or a lash)
+        // (its shaded edge too: bluish grey under the lid)
+        if (!(d <= r || (s < 0.38 && v > 0.45))) continue;
+        const sx = Math.round(cx + (x - cx) / IRIS_GROW);
+        const sy = Math.round(cy + (y - cy) / IRIS_GROW);
+        if (Math.hypot(sx - cx, sy - cy) > r) continue;
+        const j = sy * W + sx;
+        // a soft rim, so the iris's edge is not cut
+        const a = Math.min(1, (R - d) / 3);
+        for (let c = 0; c < 3; c++) out[i * 4 + c] = eyes[i * 4 + c] * (1 - a) + eyes[j * 4 + c] * a;
+      }
+  }
+  return out;
+}
+
 function splitBrows(eyes, up) {
   const solid = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) solid[i] = eyes[i * 4 + 3] > 20 ? 1 : 0;
@@ -394,7 +730,7 @@ function splitBrows(eyes, up) {
     const L = (n) => path.join(SRC, set.dir, `${n}.png`);
     // where this princess's chin, eyes and mouth were drawn (small canvas)
     const m = await measure(L);
-    const up = {
+    const up = FROM_REF ? { face: 0, eyes: 0, mouth: 0 } : {
       face: (m.chin - PLACE.chin) * SCALE,
       eyes: (m.eyes - PLACE.eyes - (NUDGE.eyes[set.eyes] ?? 0)) * SCALE,
       mouth: (m.mouth - PLACE.mouthTop - (NUDGE.mouth[set.mouth] ?? 0)) * SCALE,
@@ -403,9 +739,10 @@ function splitBrows(eyes, up) {
     const noseAt = Math.round(ny - up.face);
     const face = await sheet(L('base_rosto'), up.face);
     const layers = {
-      face: blush(liftNose(face, [nx, noseAt], Math.round(noseAt - toSheet(PLACE.nose)))),
+      face: FROM_REF ? face : blush(roundCheeks(liftNose(face, [nx, noseAt], Math.round(noseAt - toSheet(PLACE.nose))))),
       dress: await sheet(L('vestido')),
-      hair: hairline(await sheet(L('cabelo_coroa'), up.face), HAIRLINE[set.hair]),
+      dressSkin: FROM_REF ? await sheet(L('vestido_pele')) : null,
+      hair: FROM_REF ? await sheet(L('cabelo_coroa')) : hairline(await sheet(L('cabelo_coroa'), up.face), HAIRLINE[set.hair]),
       eyes: await sheet(L('olhos'), up.eyes),
       mouth: await sheet(L('boca'), up.mouth),
       up,
@@ -422,13 +759,15 @@ function splitBrows(eyes, up) {
 
   const clear = new Uint8ClampedArray(W * H * 4);
   for (const [set, layers] of loaded) {
-    const mask = skinMask(layers.dress, layers.skin);
+    // (FROM_REF: the skin on her dress was found by cutref.cjs on her picture)
+    const mask = layers.dressSkin ? layers.dressSkin.filter((_, k) => k % 4 === 3).map((a) => (a > 100 ? 1 : 0)) : skinMask(layers.dress, layers.skin);
     // one neck: the face comes with its neck down to her collarbone, and the dress with another
     // neck on top of it, whose top edge showed as a line under her chin. Where the face's neck is
     // under it, the dress's neck fades out towards her chin, so the neck runs on from her chin
     // into her chest
     const dress = new Uint8ClampedArray(layers.dress);
-    for (let y = NECK.from; y < NECK.to; y++)
+    // (cut from her picture, her dress has her own neck, laid over her face's: it stays whole)
+    for (let y = FROM_REF ? NECK.to : NECK.from; y < NECK.to; y++)
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
         // (its skin, and its soft half-clear rim, which kept the light skin)
@@ -451,13 +790,15 @@ function splitBrows(eyes, up) {
     const ears = (x, y) => y >= 440 && y <= 610 && ((x >= 300 && x <= 405) || (x >= 619 && x <= 724));
     const [h0, s0, v0] = hsv(...layers.skin);
     const hair = new Uint8ClampedArray(layers.hair);
-    for (let i = 0; i < W * H; i++) {
+    for (let i = 0; !FROM_REF && i < W * H; i++) {
       if (hair[i * 4 + 3] < 10 || layers.face[i * 4 + 3] < 200 || !ears(i % W, (i / W) | 0)) continue;
       const [h, s, v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
       if (h < h0 - 14 || h > h0 + 8 || s < s0 * 0.35 || s > (h <= h0 - 2 ? 0.8 : s0 + 0.32) || v < v0 * 0.5) continue;
       const sure = Math.min(1, Math.max(0, (v - v0 * 0.5) / (v0 * 0.2)));
       hair[i * 4 + 3] = hair[i * 4 + 3] * (1 - sure);
     }
+    if (!FROM_REF && set.hair === 'bun') bunEars(hair);
+    if (!FROM_REF && set.hair === 'long') for (const s of LONG_HEARTS) moveStud(hair, s);
     // hair that falls below her chin goes behind her shoulders and dress, as in the dolls'
     // pictures (in front, long hair and curls hid her puff sleeves); a braid drapes in front
     const front = new Uint8ClampedArray(hair);
@@ -478,33 +819,43 @@ function splitBrows(eyes, up) {
     // behind it (the long hair was drawn with locks over both cheeks, the opening for her face
     // only 50 px wide at her chin, and her face, eyes and mouth came out half hidden); her
     // ears and earrings are outside the oval and stay in front
-    for (let y = FACE_OVAL.cy - 60; y < H; y++)
-      for (let x = FACE_OVAL.cx - FACE_OVAL.rx; x <= FACE_OVAL.cx + FACE_OVAL.rx; x++) {
+    // (her own hair, cut from her picture, lies where it lay there)
+    for (let y = FROM_REF ? H : FACE_OVAL.top; y < H; y++)
+      for (let x = W / 2 - CHEEKS.hw - 2; x <= W / 2 + CHEEKS.hw + 2; x++) {
         const d = ((x - FACE_OVAL.cx) / FACE_OVAL.rx) ** 2 + ((y - FACE_OVAL.cy) / FACE_OVAL.ry) ** 2;
-        if (d > 1) continue;
+        const kOval = d > 1 ? 0 : Math.min(1, (1 - d) / 0.12) * Math.min(1, Math.max(0, (y - FACE_OVAL.top) / 16));
+        const kFace = cheekBehind(x, y);
+        if (!kOval && !kFace) continue;
         const i = y * W + x;
         if (!front[i * 4 + 3]) continue;
         // a pearl earring (white) stays in front
         const [, s, v] = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2]);
         if (s < 0.18 && v > 0.7) continue;
-        // softly at the edge of the oval
-        // and softly from her eyes down, so there is no line across her face
-        const k = Math.min(1, (1 - d) / 0.12) * Math.min(1, Math.max(0, (y - (FACE_OVAL.cy - 60)) / 60));
+        // and so do the jewels of the earrings (green, blue, purple)
+        const h = hsv(hair[i * 4], hair[i * 4 + 1], hair[i * 4 + 2])[0];
+        if (h >= 80 && h <= 320 && s > 0.3) continue;
+        // (softly at the edge of the oval, and softly from her eyes down, so there is no line
+        // across her face)
+        const k = Math.max(kOval, kFace);
         for (let c = 0; c < 3; c++) back[i * 4 + c] = hair[i * 4 + c];
         back[i * 4 + 3] = Math.max(back[i * 4 + 3], hair[i * 4 + 3]);
         front[i * 4 + 3] = front[i * 4 + 3] * (1 - k);
       }
     await write(`hair-${set.hair}-front.webp`, front);
     await write(`hair-${set.hair}-back.webp`, back);
-    const { eyes, brows } = splitBrows(dropSkin(layers.eyes, layers.skin), Math.round(layers.up.eyes));
+    const split = splitBrows(dropSkin(layers.eyes, layers.skin), Math.round(layers.up.eyes));
+    const eyeLine = toSheet(PLACE.eyes);
+    const eyes = FROM_REF ? split.eyes : biggerIris(scaleAbout(split.eyes, W / 2, eyeLine, EYES_GROW, EYES_GROW));
+    const brows = FROM_REF ? split.brows : scaleAbout(split.brows, W / 2, eyeLine + BROWS_UP / (EYES_GROW - 1), EYES_GROW, EYES_GROW);
     await write(`eyes-${set.eyes}.webp`, eyes);
     await write(`brows-${set.eyes}.webp`, brows);
     if (set.eyes === 'sparkly') await write('brows.webp', brows);
-    await write(`mouth-${set.mouth}.webp`, dropSkin(layers.mouth, layers.skin));
+    const mouth = FROM_REF ? dropSkin(layers.mouth, layers.skin) : childlike(dropSkin(layers.mouth, layers.skin));
+    await write(`mouth-${set.mouth}.webp`, mouth);
     boxes[`hair:${set.hair}`] = box(layers.hair);
     boxes[`dress:${set.dress}`] = box(layers.dress);
-    boxes[`eyes:${set.eyes}`] = box(layers.eyes);
-    boxes[`mouth:${set.mouth}`] = box(layers.mouth);
+    boxes[`eyes:${set.eyes}`] = box(eyes, brows);
+    boxes[`mouth:${set.mouth}`] = box(mouth);
     let skinPx = 0;
     for (let i = 0; i < W * H; i++) skinPx += mask[i];
     console.log(set.dir.padEnd(20), 'skin', layers.skin.join(','), '| skin on the dress', skinPx, 'px');

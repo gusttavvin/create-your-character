@@ -20,7 +20,7 @@ const S = 700 / CANVAS.h;
 const OX = (VW - CANVAS.w * S) / 2;
 const OY = 10;
 /** How far down the canvas the middle of her eyes is: where a blink closes them to (layers2d.cjs). */
-const EYE_LINE = 468;
+const EYE_LINE = 492;
 const Z = { powerBack: 0, hairBack: 1, head: 2, dress: 3, eyes: 4, mouth: 5, hairFront: 6, power: 7 };
 
 const WHOLE: CSSProperties = {

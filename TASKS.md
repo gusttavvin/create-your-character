@@ -2431,3 +2431,91 @@ Limitações: `hair-curly.glb` tem 2,6 MB e 145 mil triângulos, o comprido 1,7 
 ficam entre 0,02 e 1,2 MB); sem textura de escamas ou brocados (só relevo e cor); a nadadeira
 é lisa; de costas o cabelo comprido ainda é uma massa única com sulcos; desempenho em celular
 não medido.
+
+### Rosto como a foto da princesa azul, coque sem orelhas de baixo (23 de outubro de 2026)
+
+Clara: "o hair bun está com orelhas em baixo, pode tirar e deixa as bocas mais infantis"; depois
+mandou a princesa azul de frente, de lado e de costas (`art-source/princess/trellis/input/`:
+`blue-turnaround.webp` e os recortes `blue-front/side/back.png`) e "o 2d tbm ta estranho".
+Comparado lado a lado, na mesma escala, o rosto do jogo era comprido: olhos pequenos, juntos e
+altos, muita bochecha embaixo, boca de batom, blush largo e apagado. Tudo em `layers2d.cjs`:
+- [x] Olhos e sobrancelhas 20% maiores (`EYES_GROW`), a partir do meio dos olhos, e mais baixos:
+      `PLACE.eyes` 318 → 336 (é a altura em que as camadas foram desenhadas; tinha sido subida
+      a pedido do Gustavo, "tem que subir mais os olhos"). Nariz junto (`PLACE.nose` 345 → 358).
+      O piscar fecha no novo meio: `EYE_LINE` = 492 em `Princess2D.tsx`.
+- [x] Blush: uma bolinha rosa redonda em cada bochecha, de borda suave, mais para fora.
+- [x] Bocas: 90% do tamanho (a primeira tentativa, 68% × 82%, virou um biquinho), lábios mais
+      claros e rosados em vez de vermelho de batom.
+- [x] Coque: o desenho trazia um segundo par de orelhas, mais baixo, com os brincos pendurados
+      perto dos ombros. `bunEars` tira essas orelhas (pele pêssego, matiz 12–24; o cabelo dourado
+      é 28–40), o contorno e os pedacinhos que sobravam, suaviza o corte e pendura os brincos logo
+      abaixo das orelhas do rosto (`BUN_EARRINGS`).
+- [x] Cabelo longo: com os olhos maiores, os corações brancos ficavam no canto dos olhos;
+      `moveStud` desce os corações (com o ganchinho) para o lóbulo da orelha.
+- [x] `VERSION` = 7. Conferido: as quatro princesas montadas, rostos de perto, o coque de perto,
+      o jogo em 2D (piscar no lugar) e em 3D (inalterado), console limpo, `npm run build`.
+- [x] Segunda passada (Clara: "ainda tô achando os olhos estranhos... ou formato do rosto", com
+      a princesa rosa de frente, de lado e de costas: `pink-turnaround.webp`). Medido do começo do
+      cabelo (0) ao queixo (1) nas duas fotos: sobrancelhas em 0,24, olhos em 0,55–0,60, íris de
+      0,30–0,36, e o rosto 30% mais largo na altura da boca que o nosso.
+      - Íris maiores dentro do olho (`biggerIris`, 1,22×): a cor quase enche o olho, como nas fotos;
+        cresce só sobre o branco e a própria íris, as pálpebras e cílios cortam. O círculo é achado
+        pelas laterais e pela base da íris (a pálpebra esconde o topo; pela mediana saía torto).
+      - Sobrancelhas 16 px mais altas (`BROWS_UP`). Olhos inteiros maiores que 1,2× (testado 1,4×)
+        passavam das bordas do rosto e cobriam as orelhas.
+      - Bochechas redondas (`roundCheeks`): cada linha do rosto abaixo das orelhas é alargada até
+        uma elipse (`CHEEKS`) que desce ao queixo; orelhas e pescoço não mudam. O cabelo que caía
+        sobre as bochechas vai para trás delas (`CHEEK_OVAL`, além do `FACE_OVAL` de antes; só
+        embaixo, porque nas têmporas os cachos esmaeciam e ficavam fantasmas). Joias dos brincos
+        ficam na frente.
+      - Blush mais forte, dentro das bochechas novas. Corações do cabelo longo mais para fora.
+      - `VERSION` = 8. Conferido: as duas fotos lado a lado com o jogo, as quatro princesas nos
+        quatro tons, o jogo em 2D, console limpo, `npm run build`.
+- [x] Terceira passada (Clara: "o rosto ainda tá muito quadrado, faz direito"): a elipse das
+      bochechas deixava o rosto mais largo embaixo das orelhas que nos olhos (as orelhas e o cabelo
+      limitam o rosto a ~138 px de meia-largura ali), com mandíbula larga e queixo reto. Agora o
+      contorno é o medido na princesa rosa (`FACE_LINE`: meia-largura em fração da maior, dos olhos
+      ao queixo), com a maior = 136 px, a largura dos olhos: o rosto é mais largo nos olhos e
+      arredonda até um queixo pequeno. O cabelo vai para trás do rosto pelo mesmo contorno
+      (`cheekBehind`). O `FACE_OVAL` começa em y 440 e entra em 16 px (de 410 em 60 px deixava
+      cachos meio transparentes nas têmporas). `VERSION` = 9.
+- Limitações: o pescoço ainda mostra um retângulo claro fraco onde o pescoço do vestido encontra
+  o do rosto; em volta das orelhas do coque o cabelo continua com o recorte da orelha antiga.
+- [ ] 3D novo pela foto: o TRELLIS.2 sem conta recusou ("ZeroGPU quota exceeded"); o TRELLIS
+      antigo, que aceita várias vistas, está fora do ar. Precisa da conta do Gustavo no Hugging
+      Face; a imagem pronta é `blue-front.png` (`art-source/princess/trellis/input/`).
+
+### 2D cortado direto das fotos da Clara (23 de outubro de 2026)
+
+Clara: "o formato em baixo tá reto, ela tem queixinho, os olhos estão diferentes... o amarelo
+está bem maior que na referência, o marrom tá ruim também". As camadas da v3 (feitas por gerador
+de imagem) não eram as princesas dela, e nenhum ajuste nelas chegava lá.
+- [x] `art-source/princess/cutref.cjs` corta as quatro princesas de frente direto das fotos
+      (`reference/v2/green-front.webp`, `mermaid-turnaround.webp`, `trellis/input/pink-` e
+      `blue-turnaround.webp`): tira o fundo (e o reflexo da saia no chão), põe olhos e queixo no
+      lugar de sempre e separa rosto, vestido, cabelo com coroa e brincos, olhos com sobrancelhas
+      e boca, no formato da v3, em `reference/v4/`. As posições de olhos, queixo e das caixas de
+      olhos, sobrancelhas e boca foram medidas à mão numa grade (lista `PRINCESSES`). Sob olhos,
+      sobrancelhas e boca a pele é refeita (preenchida de fora e alisada), para outra princesa
+      poder usar outros olhos. A saia azul encosta na vista de lado: a borda direita é a esquerda
+      espelhada.
+- [x] `layers2d.cjs` com `FROM_REF = true` lê a v4 e não mexe em nada (sem crescer olhos,
+      arredondar bochechas, coque, corações, blush, nariz). `VERSION` = 10.
+- Conferido: as quatro ao lado das fotos, rostos de perto, misturas (olhos e bocas de outra),
+  tons de pele, o jogo em 2D, console limpo, `npm run build`.
+- Limitações: misturando, aparecem manchinhas escuras nas têmporas (sombra do cabelo da foto
+  original que outro cabelo não cobre); a sobrancelha esquerda da verde é curta (o cabelo cobre
+  na foto); a miniatura da boca "Wow" no cartão ficou borrada.
+- [x] Manchinhas (Clara: "quero que limpe as manchinhas e depois publique"):
+      - a pele refeita sob olhos e boca era alisada junto com o vazio preto fora do rosto
+        (`smoothIn` agora só usa pele); pontinhos soltos dentro do rosto (brilho da testa, pontas
+        de cílios, um cachinho) viram rosto pintado de pele; a sobrancelha esquerda da verde
+        (coberta pelo cabelo na foto) é a direita espelhada (`mirrorBrow`);
+      - tons escuros: orelhas e a borda do cabelo contra o rosto vão para o rosto (recebem o tom);
+        a pele do vestido vem de um mapa feito na foto (`vestido_pele.png` em v4), sem descer
+        abaixo das mãos nas saias longas (a cauda rosa da sereia e o dourado na sombra têm a cor
+        da pele); pele entre a trança e o pescoço não vai mais para o cabelo;
+      - contornos finos do cabelo de cada foto que ficavam no vestido (apareciam com outro
+        cabelo) saem por abertura de 3 px; as flores da trança passam do vestido para o cabelo.
+      - `VERSION` = 11. Conferido: as quatro em cada tom, misturas de olhos/boca, cada vestido com
+        outro cabelo, jogo em 2D e 3D, console, `npm run build`.
