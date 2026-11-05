@@ -9,9 +9,9 @@ import { pickOption, type ColorMap, type PartMap, type SlotLayout } from '../typ
  *
  * Every piece is a picture cut from one of the four princesses Clara sent, on the same
  * 1024 by 1536 canvas and already lined up (see pieces.tsx), so here they are simply stacked,
- * back to front: the back of her hair, her head (with her neck), the dress (with her arms and
- * hands; its neckline covers her neck), eyes, mouth, the front of her hair (with the tiara and
- * the earrings) and her ability round her (abilities.tsx).
+ * back to front: the back of her hair, the dress (with her arms, hands and neck), her head (with
+ * a short neck, over the top of the dress's), eyes, mouth, the front of her hair (with the tiara
+ * and the earrings) and her ability round her (abilities.tsx).
  */
 const VW = 600;
 const VH = 720;
@@ -21,7 +21,8 @@ const OX = (VW - CANVAS.w * S) / 2;
 const OY = 10;
 /** How far down the canvas the middle of her eyes is: where a blink closes them to (layers2d.cjs). */
 const EYE_LINE = 492;
-const Z = { powerBack: 0, hairBack: 1, head: 2, dress: 3, eyes: 4, mouth: 5, hairFront: 6, power: 7 };
+// (her head in front of her dress: her chin lies over the top of its neck, so her head sits on it)
+const Z = { powerBack: 0, hairBack: 1, dress: 2, head: 3, eyes: 4, mouth: 5, hairFront: 6, power: 7 };
 
 const WHOLE: CSSProperties = {
   position: 'absolute',
@@ -116,7 +117,7 @@ export default function Princess2D({ parts, colors, animate = true, className }:
         )}
         {hair && (
           <Layer key={`hairf-${hair.id}`} part="hair" z={Z.hairFront}>
-            <img src={hairFront(hair.id)} alt="" draggable={false} style={IMG} />
+            <img src={hairFront(hair.id, tone)} alt="" draggable={false} style={IMG} />
           </Layer>
         )}
         {/* her ability goes round her: the far side of it behind her, the near side in front */}

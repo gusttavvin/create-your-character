@@ -2519,3 +2519,109 @@ de imagem) não eram as princesas dela, e nenhum ajuste nelas chegava lá.
         cabelo) saem por abertura de 3 px; as flores da trança passam do vestido para o cabelo.
       - `VERSION` = 11. Conferido: as quatro em cada tom, misturas de olhos/boca, cada vestido com
         outro cabelo, jogo em 2D e 3D, console, `npm run build`.
+
+### Rodada de correções do 2D (30 de outubro de 2026)
+
+Clara: "o vestido green está sem um ombro; não gostei da formatação da cabeça sem nada; o cabelo
+long e curly tem que ser contínuo e não acabar no formato do vestido; o cabelo bun tá com uma
+sombra embaixo; olhos brown tortos; uma das sobrancelhas do blue está cortada; o green ainda tem
+sombras e resquícios; o purple está sem sobrancelha e com resquícios em volta".
+- [x] Vestido verde: a trança cobria o ombro esquerdo dela na foto. Do ombro até o punho da
+      manga, aquele lado é o outro espelhado pela joia do corpete (`shoulder` em `cutref.cjs`);
+      abaixo do punho só fica o que já existia (o outro braço está mais para fora e virava um
+      fantasma claro). O xadrez do fundo da foto, preso entre braço e cintura, sai (`checker`).
+- [x] Cabeça sem cabelo: era o rosto da verde sobre a cúpula lisa que fica sob o cabelo (com o
+      recorte do cabelo à mostra). Agora `baldHead` faz uma cabeça redonda com a largura das
+      bochechas, igual dos dois lados (com a cabeça endireitada antes), pele crescida do meio do
+      rosto e sombreada na borda, e duas orelhinhas. Gravada como `base_careca.png` em v4 e usada
+      em `head-<tom>.webp`.
+- [x] Cabelo long e curly: abaixo do queixo, o espaço entre os dois lados é preenchido com o
+      próprio cabelo espelhado, mais escuro (atrás dela), até onde o cabelo termina dos dois
+      lados; os buracos no formato das mangas da foto também (só os que têm cabelo em cima e
+      embaixo, para não fazer blocos retos entre os cachos). `curtain` em `layers2d.cjs`.
+- [x] Coque: a sombra do chão da foto azul era um pedaço solto do vestido e ia para o cabelo.
+      Agora só vão para o cabelo os pedaços que encostam nele.
+- [x] Olhos brown: a cabeça da verde é inclinada na foto (5°); olhos, sobrancelhas e boca dela
+      são endireitados (`level`).
+- [x] Sobrancelhas: a esquerda dos olhos blue (rosa) e purple (azul) ficava meio sob o cabelo;
+      agora é a direita espelhada (`mirrorBrow`). Caixas de olhos e sobrancelhas da sereia (green)
+      e da azul (purple) apertadas para não pegar cachos e a borda do rosto, e pontinhos soltos em
+      volta dos olhos são tirados.
+- [x] Também: brilhos da pele que ficavam claros em pele escura (peito, ombros, braços) entram
+      no mapa de pele; mechas de cabelo entre braço e cintura na sereia e na rosa saem (`gaps`).
+- `VERSION` = 12. Conferido: cada vestido sozinho e com cada cabelo, os quatro olhos em rostos
+  diferentes, os quatro tons, o jogo em 2D e 3D, console, `npm run build`.
+- Limitações (já existiam): em pele escura, uma linha clarinha pontilhada no contorno do cabelo
+  long e as orelhas meio claras com o bun e o long; restinhos mínimos entre braço e corpete da
+  rosa; a miniatura da boca "Wow" continua borrada.
+
+### Segunda rodada de correções (30 de outubro de 2026)
+
+Clara: "o nariz tá muito perto da boca, sobe ele um pouquinho; no cabelo long e curly vc fez um
+serviço de preguiçoso, pintou o fundo com a cor, mas tem que dar continuidade ao cabelo e ainda
+ficou um buraco branco na parte que é o ombro; a sobrancelha do green tá muito clara e tem uma
+sombra embaixo do olho aberto do green; a cor dark está um trabalho de porco também, vc não pode
+simplesmente pintar a princesa, tem que trocar a cor dela toda".
+- [x] Nariz: cada rosto (e a cabeça sem cabelo) tem o nariz levantado 10 px da folha
+      (`NOSE_REF`, `NOSE_UP` em `layers2d.cjs`, com `liftNose`).
+- [x] Cabelo long e curly: o preenchimento pintado (`curtain`) saiu. As fotos da rosa e da sereia
+      têm a princesa de costas: `backHair` em `cutref.cjs` recorta esse cabelo (fundo, vestido e
+      mãos fora), vira (visto de frente, através dela), põe com o meio da tiara no meio dos olhos
+      e grava `cabelo_costas.png`; `layers2d.cjs` põe embaixo do cabelo de trás (`under`), um
+      pouco mais escuro. O cabelo desce pelas costas com as pontas onduladas e os cachos da foto,
+      atrás de qualquer vestido, e fecha os buracos no formato das mangas. A borda clara do
+      cabelo de frente onde a manga cortava sai.
+- [x] Olhos green: o rosa da pálpebra de baixo e o alto do blush (pele, não olho) não vêm mais
+      com o olho (era a "sombra"); sobrancelhas com borda suave de 3 px em vez de 8 (ficavam
+      transparentes, claras) e caixa da direita ajustada.
+- [x] Pele escura: em vez de multiplicar pela cor mais escura (pele chapada, sem brilho), cada
+      pixel de pele é trocado em Lab (`retoned`): guarda quanto é mais claro ou escuro, mais
+      vermelho ou amarelo que a pele, em volta da cor nova (brilho, sombra e blush ficam; um pouco
+      menos nos tons escuros). Também passam a ter versão por tom:
+      - olhos e bocas (`eyes-<id>-<tom>`, `mouth-<id>-<tom>`): a pele que sobra em volta dos
+        cílios e lábios é pintada no tom (`skinBits`);
+      - a frente do cabelo (`hair-<id>-front-<tom>`): as orelhas, que ficam no cabelo, são
+        pintadas dentro de elipses medidas à mão (`EARS`), sem brincos e pérolas. Pela cor não dava
+        (a orelha na sombra tem a cor do cabelo castanho); e mover as orelhas para o rosto
+        deixava orelha e pérola em pedaços;
+      - o pescoço do rosto acaba logo abaixo do queixo (o vestido tem o pescoço; o de outra
+        princesa aparecia como um retângulo em pele escura);
+      - o pescoço da verde (sombra ruiva como o cabelo) volta para o vestido (`neck`), e o espelho
+        do ombro só preenche (não apaga ao lado do pescoço).
+- [x] Também: borda clara do cabelo contra o fundo da foto sai; punho dourado da sereia não é
+      mais cortado pela limpeza de mechas (`gapTest`).
+- `VERSION` = 13. Conferido: as quatro em cada tom, misturas, cada vestido com long e curly, de
+  perto (orelhas, pescoço, ombros, olhos), o jogo em 2D (todas as imagens carregam, console limpo),
+  `npm run build`.
+- Os arquivos sem tom `eyes-<id>.webp`, `mouth-<id>.webp` e `hair-<id>-front.webp` continuam sendo
+  gravados (iguais ao tom light), mas o site não usa mais.
+- Limitações: no tom escuro com a trança, ainda há um contorno fino claro entre o pescoço e o
+  cabelo; o cacheado tem vãos claros entre os cachos de fora (como na foto); a miniatura da boca
+  "Wow" continua borrada.
+
+### Terceira rodada (31 de outubro de 2026)
+
+Clara: "a cabeça ainda está manchada e deixe ela colada no corpo; o cabelo long e curly continua
+sem estar contínuo, ao invés de dar continuidade ao cabelo que tem, vc criou outro por cima".
+- [x] Cabeça lisa: onde olhos, sobrancelhas e boca foram tirados da foto, a pele refeita ficava em
+      manchas e o blush cortado em borrões vermelhos. `smoothFace` (layers2d.cjs) refaz a pele do
+      meio do rosto com um desfoque largo só da pele limpa (sem blush; a sombra dos lados conta
+      como pele), devolve o nariz como era e põe um blush redondo em cada bochecha (`BLUSH`). Na
+      cabeça sem cabelo, a cabeça toda (`BALD_MID`).
+- [x] Cabeça colada no corpo: a cabeça agora fica na frente do vestido (`Princess2D`: `Z.head` 3,
+      `Z.dress` 2) e traz um pescoço curto (`neckOn`), da largura do pescoço mais fino dos quatro
+      vestidos, que some até a clavícula. O queixo fica por cima do pescoço do vestido.
+- [x] Cabelo contínuo: o cabelo de costas posto por baixo saiu. `inpaintHair` (layers2d.cjs)
+      continua o próprio cabelo da princesa onde as mangas e os braços dela o escondiam na foto:
+      preenchimento por exemplos (Criminisi): da borda para dentro, primeiro onde uma mecha entra
+      no buraco, cada vez com o pedaço 9×9 do próprio cabelo mais parecido com o que já está em
+      volta, de modo que as mechas seguem na sua direção, com luz e sombra. A foto de costas só
+      diz até onde o cabelo desce (`want`); o que fica sempre embaixo de vestido ou rosto é
+      preenchido simples. Brincos não servem de modelo; a borda clara da foto também é refeita.
+      Acima do queixo (entre ombros e queixo, `SHOULDERS`) o que foi preenchido vai para trás.
+- `VERSION` = 14. Conferido: cabeças de perto (com e sem cabelo, tons), cada vestido com long e
+  curly, as camadas de trás sozinhas, o jogo em 2D (todas as imagens carregam, ordem das camadas,
+  console limpo), `npm run build`.
+- Limitações: entre os cachos de fora do curly ainda aparece o fundo (como na foto); onde o
+  cabelo preenchido aparece entre braço e cintura, as mechas são um pouco riscadas; o preenchimento
+  leva ~30 s ao gerar.

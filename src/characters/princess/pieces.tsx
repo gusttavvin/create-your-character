@@ -18,14 +18,16 @@ export const TONES: SkinTone[] = ['light', 'tan', 'brown', 'dark'];
  * redrawn, and a browser that had the old ones kept showing them (cards cut off, a mouth in the old
  * place). Raise VERSION whenever the pictures are made again (art-source/princess/layers2d.cjs).
  */
-const VERSION = 11;
+const VERSION = 14;
 const url = (file: string) => `/princess/${file}.webp?v=${VERSION}`;
 
-/** The files that make a piece, in the skin she is drawn in (only dresses and her head have skin). */
+/** The files that make a piece, in the skin she is drawn in (her hair and abilities have none). */
 export function filesOf(row: string, id: string, tone: SkinTone): string[] {
-  if (row === 'hair') return [url(`hair-${id}-back`), hairFront(id)];
+  if (row === 'hair') return [url(`hair-${id}-back`), hairFront(id, tone)];
   // her brows come with her eyes
-  if (row === 'eyes') return [browsOf(id), url(`eyes-${id}`)];
+  if (row === 'eyes') return [browsOf(id), url(`eyes-${id}-${tone}`)];
+  // (eyes and mouth in her skin too: the skin round her lashes and lips is painted in it)
+  if (row === 'mouth') return [url(`mouth-${id}-${tone}`)];
   if (row === 'dress') return [url(`dress-${id}-${tone}`)];
   if (row === 'accessory') return [url(`power-${id}`)];
   return [url(`${row}-${id}`)];
@@ -39,7 +41,8 @@ export const browsFile = url('brows');
 /** Each pair of eyes comes with its own princess's brows. */
 export const browsOf = (eyes: string) => url(`brows-${eyes}`);
 export const hairBack = (id: string) => url(`hair-${id}-back`);
-export const hairFront = (id: string) => url(`hair-${id}-front`);
+/** The front of her hair, with her ears in it, in her skin. */
+export const hairFront = (id: string, tone: SkinTone) => url(`hair-${id}-front-${tone}`);
 
 export function boxOf(row: string, id: string): [number, number, number, number] {
   const box = (BOXES as Record<string, number[]>)[`${row}:${id}`];
