@@ -2649,3 +2649,23 @@ lugar, eu vi que o ball está diferente! Também está virando muito rápido qua
       cartas passam para **Fredoka 600** (redonda, mais fina, carregada do Google Fonts em
       `index.html`). O nome inteiro cabe numa linha (`--len` é o comprimento do nome todo:
       17% da largura da carta, menos para nomes compridos, no mínimo 11%).
+
+## Jogo da memória: fundo tirado das imagens próprias (5 de novembro de 2026)
+
+Clara: "tem algumas imagens próprias que eu subi, que estão com fundo, vc consegue tirar o fundo
+delas, como a starfish". As imagens ficam só no navegador do computador dela (localStorage), não
+no servidor; as originais estão em Downloads: a starfish é um JPEG do pngtree com o xadrez de
+"transparente" desenhado, o urso tem fundo branco e uma marca d'água.
+- [x] `clearBackground` (`images.ts`): numa imagem sem partes transparentes cuja borda é quase toda
+      clara (branco, ou o cinza e branco do xadrez desenhado), tira o fundo claro ligado à borda,
+      os brancos puros grandes presos dentro do desenho, e pedacinhos soltos perto da borda
+      (escrita, marca d'água); o contorno fica suave. Foto (borda não lisa) fica como está.
+- [x] Vale para imagens novas (escolher do computador ou das coleções) e para as já salvas: ao abrir
+      o jogo ou as Palavras, `needsCentring` também acusa uma imagem com fundo, e ela é refeita
+      uma vez (fica transparente, então não é refeita de novo).
+- Conferido com as imagens dela (starfish, urso, bicicleta e uma foto), salvas do jeito antigo e
+  enviadas de novo, sobre fundo colorido; um pacote de teste no navegador do Claude (apagado
+  depois); `npm run build`.
+- Limitações: um desenho branco sem contorno encostado na borda perderia a parte branca; numa
+  imagem já salva em fundo branco, o branco entre os raios de uma roda fica (picado em pedaços
+  pequenos demais para saber que é fundo).

@@ -41,6 +41,135 @@ function inkBox(px: Uint8ClampedArray, w0: number, h0: number, paper = PAPER) {
   return { x0, y0, x1, y1, seeThrough };
 }
 
+/** A pixel of a plain light background: white, or the light grey of a drawn "see-through" checkerboard. */
+function plain(px: Uint8ClampedArray, i: number) {
+  const r = px[i];
+  const g = px[i + 1];
+  const b = px[i + 2];
+  const max = Math.max(r, g, b);
+  return max > 204 && max - Math.min(r, g, b) < max * 0.1;
+}
+
+/**
+ * Takes the background out of a picture that has none see-through: the white, or the grey and
+ * white checkerboard that many clip-art sites draw to look see-through (Clara's starfish), that
+ * reaches the edge of the picture, with the drawing's outline softened against it; the big
+ * patches of the same white closed in by the drawing (inside a bicycle's wheels); and the small
+ * writing near an edge (a site's name under her bear). A photo, with no plain background round
+ * it, is left as it is. Works on the pixels in place; says whether anything was taken out.
+ */
+function clearBackground(px: Uint8ClampedArray, w: number, h: number): boolean {
+  const n = w * h;
+  for (let i = 3; i < px.length; i += 4) if (px[i] < 250) return false;
+  // most of the picture's edge must be plain: otherwise it is a photo, or a drawing that fills it
+  let edge = 0;
+  let plainEdge = 0;
+  for (let x = 0; x < w; x++)
+    for (const y of [0, h - 1]) {
+      edge++;
+      if (plain(px, (y * w + x) * 4)) plainEdge++;
+    }
+  for (let y = 0; y < h; y++)
+    for (const x of [0, w - 1]) {
+      edge++;
+      if (plain(px, (y * w + x) * 4)) plainEdge++;
+    }
+  if (plainEdge < edge * 0.6) return false;
+
+  // the background: plain pixels joined to the edge
+  const bg = new Uint8Array(n);
+  const stack: number[] = [];
+  const push = (j: number) => {
+    if (!bg[j] && plain(px, j * 4)) {
+      bg[j] = 1;
+      stack.push(j);
+    }
+  };
+  for (let x = 0; x < w; x++) push(x), push((h - 1) * w + x);
+  for (let y = 0; y < h; y++) push(y * w), push(y * w + w - 1);
+  while (stack.length) {
+    const j = stack.pop()!;
+    const x = j % w;
+    if (x > 0) push(j - 1);
+    if (x < w - 1) push(j + 1);
+    if (j >= w) push(j - w);
+    if (j < n - w) push(j + w);
+  }
+
+  // parts of a mask (4-neighbours): a label for each pixel and each part's size and box
+  const parts = (mask: (j: number) => boolean) => {
+    const label = new Int32Array(n).fill(-1);
+    const info: { size: number; x0: number; y0: number; x1: number; y1: number }[] = [];
+    for (let s = 0; s < n; s++) {
+      if (label[s] >= 0 || !mask(s)) continue;
+      const p = { size: 0, x0: w, y0: h, x1: 0, y1: 0 };
+      label[s] = info.length;
+      const todo = [s];
+      while (todo.length) {
+        const j = todo.pop()!;
+        const x = j % w;
+        const y = (j / w) | 0;
+        p.size++;
+        p.x0 = Math.min(p.x0, x);
+        p.x1 = Math.max(p.x1, x);
+        p.y0 = Math.min(p.y0, y);
+        p.y1 = Math.max(p.y1, y);
+        for (const k of [x > 0 ? j - 1 : -1, x < w - 1 ? j + 1 : -1, j - w, j + w])
+          if (k >= 0 && k < n && label[k] < 0 && mask(k)) {
+            label[k] = info.length;
+            todo.push(k);
+          }
+      }
+      info.push(p);
+    }
+    return { label, info };
+  };
+
+  // big patches of pure white closed in by the drawing (small ones are eyes, shine and the
+  // white writing on a photo, and stay)
+  const white = (j: number) => {
+    const i = j * 4;
+    return !bg[j] && Math.min(px[i], px[i + 1], px[i + 2]) > 238;
+  };
+  const holes = parts(white);
+  for (let j = 0; j < n; j++) if (holes.label[j] >= 0 && holes.info[holes.label[j]].size > n * 0.004) bg[j] = 1;
+
+  // small bits apart from the drawing, near the edge of the picture: writing, a watermark
+  const ink = parts((j) => !bg[j]);
+  let big = 0;
+  for (const p of ink.info) big = Math.max(big, p.size);
+  if (!big) return false;
+  const band = 0.18;
+  for (let j = 0; j < n; j++) {
+    const p = ink.info[ink.label[j]];
+    if (!p || p.size > big * 0.02) continue;
+    const nearEdge = p.y0 > h * (1 - band) || p.y1 < h * band || p.x0 > w * (1 - band) || p.x1 < w * band;
+    if (nearEdge) bg[j] = 1;
+  }
+
+  let cleared = 0;
+  for (let j = 0; j < n; j++) if (bg[j]) cleared++;
+  if (cleared < n * 0.05) return false;
+
+  // the drawing's outline against the background: as see-through as it is close to white
+  const alpha = new Uint8ClampedArray(n);
+  for (let j = 0; j < n; j++) {
+    if (bg[j]) continue;
+    const x = j % w;
+    let next = false;
+    for (const k of [x > 0 ? j - 1 : -1, x < w - 1 ? j + 1 : -1, j - w, j + w]) if (k >= 0 && k < n && bg[k]) next = true;
+    if (!next) {
+      alpha[j] = 255;
+      continue;
+    }
+    const i = j * 4;
+    const dist = 765 - px[i] - px[i + 1] - px[i + 2];
+    alpha[j] = Math.min(255, (dist / 90) * 255);
+  }
+  for (let j = 0; j < n; j++) px[j * 4 + 3] = alpha[j];
+  return true;
+}
+
 function loadImage(url: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const i = new Image();
@@ -69,7 +198,10 @@ function centred(source: CanvasImageSource, w0: number, h0: number): string {
   const wctx = work.getContext('2d', { willReadFrequently: true });
   if (!wctx) throw new Error('no canvas');
   wctx.drawImage(source, 0, 0, w0, h0);
-  const { x0, y0, x1, y1, seeThrough } = inkBox(wctx.getImageData(0, 0, w0, h0).data, w0, h0);
+  // a plain background is taken out first, so the drawing alone is centred and kept see-through
+  const pixels = wctx.getImageData(0, 0, w0, h0);
+  if (clearBackground(pixels.data, w0, h0)) wctx.putImageData(pixels, 0, 0);
+  const { x0, y0, x1, y1, seeThrough } = inkBox(pixels.data, w0, h0);
   const bw = x1 - x0 + 1;
   const bh = y1 - y0 + 1;
 
@@ -150,6 +282,9 @@ export async function needsCentring(dataUrl: string) {
   const ctx = c.getContext('2d', { willReadFrequently: true });
   if (!ctx) return false;
   ctx.drawImage(img, 0, 0);
+  // (a picture with a plain background still on it, chosen before backgrounds were taken out)
+  const copy = ctx.getImageData(0, 0, w, h);
+  if (clearBackground(copy.data, w, h)) return true;
   // a JPEG smudges its edges a little more each time it is saved, so a photo is measured
   // more loosely: told it is off-centre by its own smudge, it would be redrawn every visit
   const b = inkBox(ctx.getImageData(0, 0, w, h).data, w, h, 225);
