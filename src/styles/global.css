@@ -2389,25 +2389,9 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
     radial-gradient(circle at 92% 14%, rgba(255, 143, 200, 0.28), transparent 32%);
 }
 
-/* the cards are as big as the screen allows, so what is on them grows with the card */
-.memory-focus .mcard {
-  container-type: inline-size;
-}
-
+/* the cards are as big as the screen allows, so the number grows with the card */
 .memory-focus .mcard-num {
   font-size: 34cqw;
-}
-
-.memory-focus .mcard-emoji {
-  font-size: 48cqw;
-}
-
-.memory-focus .mcard-word {
-  font-size: 11cqw;
-}
-
-.memory-focus .mcard-only-word {
-  font-size: 17cqw;
 }
 
 .memory-focus-exit {
@@ -2474,6 +2458,8 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   width: calc((100% - (var(--cols, 4) - 1) * var(--gap)) / var(--cols, 4));
   aspect-ratio: 3 / 4;
   perspective: 800px;
+  /* what is on a card is sized by the card (cqw: hundredths of its width) */
+  container-type: inline-size;
 }
 
 .mcard-inner {
@@ -2531,8 +2517,18 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   background: color-mix(in srgb, var(--sky) 22%, #fff);
 }
 
+/* the picture alone on a card: big, in the middle */
+.mcard-pic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 .mcard-emoji {
-  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-size: 48cqw;
   line-height: 1;
 }
 
@@ -2540,25 +2536,51 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
    to shave off whatever reaches the edge) */
 .mcard-emoji.is-photo {
   width: 88%;
+  height: 100%;
   min-height: 0;
-  flex: 1 1 auto;
   object-fit: contain;
 }
 
+/*
+ * Picture and word: the picture fills the top of the card and the word sits in a band under it,
+ * at the same height on every card (Clara: "deixe todos no mesmo lugar"; right under a picture of
+ * its own size, a bigger picture pushed the word down).
+ */
+.mcard-front.has-word {
+  display: grid;
+  grid-template-rows: 64% 36%;
+  justify-items: center;
+  gap: 0;
+  padding: 6px 6px 4px;
+}
+
+.mcard-front.has-word .mcard-pic {
+  height: 100%;
+  align-items: flex-end;
+}
+
+.mcard-front.has-word .mcard-emoji {
+  font-size: 42cqw;
+}
+
+/* a rounded, finer letter than the titles' (in Lilita One, big, the words looked blurred) */
 .mcard-word,
 .mcard-only-word {
-  font-weight: 800;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
   color: var(--ink);
+  line-height: 1.05;
+  overflow-wrap: break-word;
 }
 
+/* big enough to read from the back of the class; a long name a little smaller, on one line */
 .mcard-word {
-  font-size: clamp(0.7rem, 2vw, 0.95rem);
+  align-self: center;
+  font-size: max(11cqw, min(17cqw, calc(150cqw / var(--len, 6))));
 }
 
 .mcard-only-word {
-  font-family: var(--font-display);
-  font-size: clamp(0.95rem, 3vw, 1.5rem);
-  line-height: 1.1;
+  font-size: 17cqw;
 }
 
 @media (max-width: 560px) {

@@ -19,6 +19,9 @@ function caps(word: string) {
 
 type Mode = 'pictures' | 'words';
 
+/** How long two cards that do not match stay face up. */
+const MISS_SHOW_MS = 2000;
+
 /** Room left round the board when only the cards are on the screen, and between cards. */
 const FOCUS_EDGE = 24;
 const FOCUS_GAP = 14;
@@ -179,12 +182,13 @@ export default function MemoryGame() {
       setUp([]);
       return;
     }
-    // a miss: both cards stay up long enough to be read, then turn back
+    // a miss: both cards stay up long enough for the class to read them and remember where they
+    // are, then turn back (after 0.9 s, Clara found they turned too fast)
     setBusy(true);
     timer.current = window.setTimeout(() => {
       setUp([]);
       setBusy(false);
-    }, 900);
+    }, MISS_SHOW_MS);
   };
 
   const columns = useMemo(() => (cards.length <= 12 ? 4 : cards.length <= 16 ? 4 : 5), [cards.length]);
@@ -220,11 +224,19 @@ export default function MemoryGame() {
               <span className="mcard-back" aria-hidden>
                 <span className="mcard-num">{place + 1}</span>
               </span>
-              <span className="mcard-front">
+              <span className={`mcard-front${card.face === 'picture' && mode === 'pictures' ? ' has-word' : ''}`}>
                 {card.face === 'picture' ? (
                   <>
-                    <ItemPicture item={item} className="mcard-emoji" />
-                    {mode === 'pictures' && <span className="mcard-word">{caps(card.item.word)}</span>}
+                    {/* the picture in the top of the card and its word in a band under it, the
+                        same on every card, whatever the size of the picture or the word */}
+                    <span className="mcard-pic">
+                      <ItemPicture item={item} className="mcard-emoji" />
+                    </span>
+                    {mode === 'pictures' && (
+                      <span className="mcard-word" style={{ ['--len' as string]: card.item.word.length }}>
+                        {caps(card.item.word)}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="mcard-only-word">{caps(card.item.word)}</span>

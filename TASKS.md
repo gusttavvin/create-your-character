@@ -2625,3 +2625,27 @@ sem estar contínuo, ao invés de dar continuidade ao cabelo que tem, vc criou o
 - Limitações: entre os cachos de fora do curly ainda aparece o fundo (como na foto); onde o
   cabelo preenchido aparece entre braço e cintura, as mechas são um pouco riscadas; o preenchimento
   leva ~30 s ao gerar.
+
+## Jogo da memória: nomes maiores e no mesmo lugar, erro mais devagar (5 de novembro de 2026)
+
+Clara: "o nome quando viramos a cartinha está muito pequeno, aumente a letra e deixe todos no mesmo
+lugar, eu vi que o ball está diferente! Também está virando muito rápido quando erramos".
+- [x] Nome maior: na letra dos títulos, 17% da largura da carta (era ~11%, uns 15 px; agora ~24 px
+      na página e cresce com a carta no Play). Uma palavra comprida diminui um pouco para caber
+      (`--len`; ver a letra mais abaixo).
+- [x] Mesmo lugar: a frente com figura e nome é uma grade — figura nos 64% de cima, nome na faixa de
+      baixo — igual em todas as cartas. Antes o nome vinha logo abaixo da figura, e uma foto
+      escolhida pela professora (`is-photo`, que esticava) empurrava o nome para o pé da carta.
+      Todas as cartas usam `container-type` (tamanhos em `cqw`), não só no Play.
+- [x] Emojis de texto (⚽ ⭐ ⬛ ⬜) ganham o sinal de emoji U+FE0F (`ItemPicture`), para serem
+      desenhados como figura colorida como os outros.
+- [x] Erro: as duas cartas ficam 2 s viradas (`MISS_SHOW_MS`; era 0,9 s).
+- Conferido: pacote Toys com 10 pares, todos os nomes na mesma altura (medido), carta com foto,
+  Play em tela cheia, uma jogada errada (~2 s), console limpo, `npm run build`.
+- Não deu para ver a bola "diferente" no meu navegador (ali ela é emoji, do mesmo tamanho dos
+  outros); se era uma foto escolhida para ela, o nome agora fica no lugar dos outros.
+- [x] Clara: "a letra tá maior, mas está embaçada, acho que por estar muito grossa". Comparadas
+      nas cartas Lilita One (a dos títulos), Baloo 2, Fredoka, Nunito e Andika: os nomes das
+      cartas passam para **Fredoka 600** (redonda, mais fina, carregada do Google Fonts em
+      `index.html`). O nome inteiro cabe numa linha (`--len` é o comprimento do nome todo:
+      17% da largura da carta, menos para nomes compridos, no mínimo 11%).
