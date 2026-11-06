@@ -617,6 +617,10 @@ function build(row, els, gradients) {
     // the purple one is a little ghost: round like any body, and its bottom then cut along the
     // wavy hem (lofted alone, the hem came out straight; as a pillow it was a square cushion)
     else if (/dragon-ghost/.test(p.cls)) solid = hem(loft(p, 0.82));
+    // a tail as a pillow, as deep as each part of it is wide: lofted slice by slice, the part of it
+    // lying across, cut into wide slices, came out as a big oval dish beside the body (Clara: "esse
+    // oval no começo da tail tá muito ruim")
+    else if (row === 'tail') solid = roundedSolid(p, 0.45, true);
     else if (winding(p)) solid = roundedSolid(p, 0.85, true);
     else solid = loft(p, row === 'body' ? 0.82 : 0.9);
     // a brow and a little flying heart are named, so the game can tilt one and float the other

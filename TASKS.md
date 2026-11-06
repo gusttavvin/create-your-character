@@ -2669,3 +2669,35 @@ no servidor; as originais estão em Downloads: a starfish é um JPEG do pngtree 
 - Limitações: um desenho branco sem contorno encostado na borda perderia a parte branca; numa
   imagem já salva em fundo branco, o branco entre os raios de uma roda fica (picado em pedaços
   pequenos demais para saber que é fundo).
+
+## Dragão 3D: asas batendo como no 2D, baby maior, caudas presas e finas (5 de novembro de 2026)
+
+Clara: "o 3d da tail de heart está ruim, o coração está entrando pra dentro do corpinho"; depois:
+"as wings não estão movimentando no 3d como no 2d, faça ela movimentar no 3d e coloque duas, assim
+como no 2d, e a baby tá muito pequena no 3d! E a tail, esse oval no começo da tail tá muito ruim
+no 3d e no blue todas as tails estão afastadas do corpo".
+- [x] Asas (`Dragon3D.tsx`, `Wings`): batem para cima e para baixo como no 2D (`WING_FLAP`, 7°, a
+      cada 1,6 s, mais um pouco para trás); antes só giravam para trás e para a frente, o que de
+      frente quase não se via. Ficam menos para trás (z -0,12 da profundidade do corpo, varridas
+      0,15 rad; eram -0,2 e 0,3) e cada uma é afastada para o lado até metade dela ficar fora do
+      contorno do corpo (`wingShift`, `WING_SHOWING`): atrás do corpo redondo, uma das duas sumia.
+      A baby é 1,5× maior no 3D (`WING_SCALE_3D`). No vermelho o fogo das duas bocas ainda cobre
+      parte das asas (como no 2D).
+- [x] Caudas presas: no azul (estreito) as caudas ficavam no ar ao lado do corpo. `tailIn` traz a
+      raiz para dentro do corpo, na profundidade em que a cauda sai (`TAIL_DEPTH`), medida no
+      contorno do corpo (`surface` da biblioteca). Nos corpos em que a raiz já estava dentro, nada
+      muda.
+- [x] Oval no começo da cauda: as caudas eram feitas fatia por fatia como um corpo, e a parte
+      deitada, cortada em fatias largas, virava um prato oval enorme ao lado do corpo (180 unidades
+      de profundidade). No gerador (`art-source/dragon/model3d.mjs`) toda cauda agora é uma
+      almofada (`roundedSolid(p, 0.45, true)`), funda como cada parte dela é larga.
+      `npm run models:dragon`: só os quatro GLBs de cauda mudaram; zero erros e zero avisos.
+      Ficaram mais pesados: lightning 1,68 MB (93 mil triângulos), heart 1,69 MB, fire 0,41 MB,
+      ice 0,43 MB (antes 0,2–0,4 MB); desempenho no celular não medido.
+- [x] Cauda de coração: sai mais perto do meio do corpo (onde ele é mais largo), inclina-se para
+      fora até 0,5 rad e se afasta o que puder sem a raiz sair do corpo (`tailClear`), até o
+      coração ficar fora do contorno (antes, empurrada só para o lado, a raiz soltava do corpo
+      azul; só inclinada, no roxo largo o coração caía no chão).
+- Conferido em `dragon-review-3d.html` (`?row=tail` e `?row=wings`) nos quatro corpos, de frente,
+  três quartos, lado e costas; no jogo, dragão azul com asas baby e cauda arrow em 3D (asas medidas
+  batendo, console limpo); `npm run build`.

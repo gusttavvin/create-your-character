@@ -278,28 +278,87 @@ function hinge(piece: Group, move: DragonMove, root: [number, number], z: number
  */
 const WING_DROP_3D: Record<string, number> = { classic: 24 };
 
-/** The wings, swept back behind the body, beating at the shoulder. */
+/**
+ * How much bigger a pair of wings is in 3D than on the sheet: the baby wings, behind a round
+ * body, showed as two little points beside the face (Clara: "a baby tá muito pequena no 3D").
+ */
+const WING_SCALE_3D: Record<string, number> = { tiny: 1.5 };
+
+/**
+ * How much of each wing must show beside the body, seen from the front, as on the sheet: behind
+ * a round body (and the red one's two heads) the wings were half hidden, one of a pair at times.
+ */
+const WING_SHOWING = 0.5;
+
+/** The flat dragon's wings beat up and down by this much (radians, 7 degrees), and so do these. */
+const WING_FLAP = 0.12;
+
+/** The points of a piece (every few of them), where they land on the body's drawing. */
+function sheetPoints(piece: Object3D, move: DragonMove, skip = (_: Mesh) => false) {
+  const out: [number, number][] = [];
+  piece.updateMatrixWorld(true);
+  const v = new Vector3();
+  piece.traverse((o) => {
+    if (!(o instanceof Mesh) || skip(o)) return;
+    const p = o.geometry.attributes.position;
+    for (let i = 0; i < p.count; i += 3) {
+      v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+      const [px, py] = fromModel(v.x, v.y);
+      out.push([px * move.k + move.tx, py * move.k + move.ty]);
+    }
+  });
+  return out;
+}
+
+/** Whether a point of the body's drawing lies on the body, seen from the front (deeper than `z`). */
+function onBody(body: string, z = 0) {
+  const surface = surfaceOf(body);
+  return (x: number, y: number) => x >= 0 && x <= 520 && y >= 0 && y <= 620 && surface(x, y) >= z;
+}
+
+/**
+ * How far (drawing units) a wing must move out to the side for `WING_SHOWING` of it to be clear
+ * of the body; `side` is -1 for the left wing, 1 for the right, `scale` its size about its root.
+ */
+function wingShift(points: [number, number][], body: string, [rx, ry]: [number, number], side: number, scale: number) {
+  const inBody = onBody(body);
+  const at = points.map(([x, y]) => [rx + (x - rx) * scale, ry + (y - ry) * scale]);
+  for (let shift = 0; shift <= 90; shift += 3) {
+    const out = at.filter(([x, y]) => !inBody(x + side * shift, y)).length;
+    if (out >= at.length * WING_SHOWING) return shift;
+  }
+  return 90;
+}
+
+/** The wings, behind the body, beating up and down at the shoulder as the flat dragon's do. */
 function Wings({ id, body, left, right }: { id: string; body: string; left: DragonMove; right: DragonMove }) {
   const { scene } = useGLTF(urlOf('wings', id));
   const made = useMemo(() => {
     const made = own(scene);
     const depth = LIB.pieces[`body:${body}`].depth ?? 100;
-    const z = -0.2 * depth * U;
+    // (a little way into the body from its middle, and only a little swept back: further back and
+    // swept further, they hid behind the body)
+    const z = -0.12 * depth * U;
+    const scale = WING_SCALE_3D[id] ?? 1;
     const [rx, ry] = DRAGON_PIECES[`wings:${id}`].root!;
     const pair = new Group();
     const sides: Group[] = [];
-    for (const [name, move, root, sweep] of [
-      ['WingL', left, [rx, ry], -0.3],
-      ['WingR', right, [520 - rx, ry], 0.3],
+    for (const [name, move, root, side] of [
+      ['WingL', left, [rx, ry], -1],
+      ['WingR', right, [520 - rx, ry], 1],
     ] as const) {
       const wing = made.root.getObjectByName(name);
       if (!wing) continue;
+      const at: [number, number] = [root[0] * move.k + move.tx, root[1] * move.k + move.ty];
+      const shift = wingShift(sheetPoints(wing, move), body, at, side, scale);
       const piece = new Group();
       piece.add(wing);
       const pivot = hinge(piece, move, root as [number, number], z);
+      pivot.position.x += side * shift * U;
       pivot.position.y -= (WING_DROP_3D[body] ?? 0) * U;
-      pivot.rotation.y = sweep;
-      pivot.userData.sweep = sweep;
+      pivot.scale.setScalar(scale);
+      pivot.rotation.y = side * 0.15;
+      pivot.userData.side = side;
       pair.add(pivot);
       sides.push(pivot);
     }
@@ -308,19 +367,113 @@ function Wings({ id, body, left, right }: { id: string; body: string; left: Drag
   }, [scene, body, id, left, right]);
   useDispose(made);
   useFrame(({ clock }) => {
-    const beat = Math.sin((clock.getElapsedTime() / 1.6) * Math.PI * 2) * 0.22;
-    for (const side of made.pair.userData.sides as Group[]) side.rotation.y = side.userData.sweep * (1 + beat);
+    // the tips go up and back down every 1.6 s, as on the sheet (wingbeat-left/right)
+    const up = (1 - Math.cos((clock.getElapsedTime() / 1.6) * Math.PI * 2)) / 2;
+    for (const wing of made.pair.userData.sides as Group[]) {
+      const side = wing.userData.side as number;
+      wing.rotation.z = side * WING_FLAP * up;
+      wing.rotation.y = side * (0.15 + 0.08 * up);
+    }
   });
   return <primitive object={made.pair} dispose={null} />;
 }
 
-/** The tail, from behind the body, wagging. */
+/**
+ * How deep (a share of the body's depth) behind its middle a tail comes out of the body; the heart
+ * tail nearer the middle, where the body is widest, so it can come out further to the side.
+ */
+const TAIL_DEPTH: Record<string, number> = { leaf: 0.08 };
+const tailDepth = (id: string) => TAIL_DEPTH[id] ?? 0.25;
+
+/**
+ * How far (drawing units, never outwards) a tail must move in for its root to be inside the body:
+ * on a narrow body (the blue one) the tails hung in the air beside it, and the round end of each,
+ * hidden on the sheet, showed as an oval (Clara: "esse oval no começo da tail tá muito ruim").
+ * The body is narrower at the depth the tail comes out at than seen from the front.
+ */
+function tailIn(body: string, [rx, ry]: [number, number], z: number) {
+  return Math.min(0, tailReach(body, ry, z) - rx);
+}
+
+/** The furthest out (drawing units) a tail's root can be at height y, its round end still inside. */
+function tailReach(body: string, y: number, z: number) {
+  const inside = onBody(body, z + 6);
+  let edge = 260;
+  while (edge < 520 && inside(edge + 2, y)) edge += 2;
+  // (the round end of a tail is about this wide, from its root)
+  const END = 20;
+  return edge - END;
+}
+
+/**
+ * The tails that curl back up beside the body: the heart tail's heart came up against the side of
+ * the body and half behind it, seen from the front (Clara: "o coração está entrando pra dentro do
+ * corpinho"). Such a tail leans out from its root until all of it but its root is clear of the
+ * body's outline, with a little room, as in the flat dragon; its root stays in the body.
+ */
+const CLEAR_OF_BODY: Record<string, boolean> = { leaf: true };
+
+/**
+ * How a tail clears the body: how far (radians) it leans out about its root, at most a little (more,
+ * the heart fell to the floor beside the wide purple body), and then how far (drawing units) it
+ * moves out, no further than `room`.
+ */
+function tailClear(points: [number, number][], body: string, [rx, ry]: [number, number], room: number) {
+  const inBody = onBody(body);
+  const ROOM = 8;
+  const far = points.filter(([x, y]) => Math.hypot(x - rx, y - ry) >= 60);
+  const turned = (a: number) =>
+    far.map(([x, y]) => {
+      // (turned clockwise on the sheet, whose y runs down)
+      const dx = x - rx;
+      const dy = y - ry;
+      return [rx + dx * Math.cos(a) - dy * Math.sin(a), ry + dx * Math.sin(a) + dy * Math.cos(a)];
+    });
+  const need = (pts: number[][]) => {
+    let shift = 0;
+    for (const [x, y] of pts) {
+      if (!inBody(x - ROOM, y)) continue;
+      let edge = x;
+      while (edge < 520 && inBody(edge - ROOM, y)) edge += 2;
+      shift = Math.max(shift, edge - x);
+    }
+    return shift;
+  };
+  let best = { lean: 0, shift: Math.min(room, need(turned(0))) };
+  for (let a = 0.03; a <= 0.5; a += 0.03) {
+    const shift = need(turned(a));
+    if (shift <= room) return { lean: a, shift };
+    best = { lean: a, shift: room };
+  }
+  return best;
+}
+
+/** The tail, out of the body behind its middle, wagging. */
 function Tail({ id, body, move }: { id: string; body: string; move: DragonMove }) {
   const { scene } = useGLTF(urlOf('tail', id));
   const made = useMemo(() => {
     const made = own(scene);
     const depth = LIB.pieces[`body:${body}`].depth ?? 100;
-    const pivot = hinge(made.root, move, DRAGON_PIECES[`tail:${id}`].root!, -0.25 * depth * U);
+    const root = DRAGON_PIECES[`tail:${id}`].root!;
+    const at: [number, number] = [root[0] * move.k + move.tx, root[1] * move.k + move.ty];
+    const z = tailDepth(id) * depth;
+    const inward = tailIn(body, at, z);
+    let moved: DragonMove = { ...move, tx: move.tx + inward };
+    let lean = 0;
+    if (CLEAR_OF_BODY[id]) {
+      const points = sheetPoints(made.root, moved, (m) => m.name.endsWith('_heart'));
+      const x = at[0] + inward;
+      // (its round end may come a little out of the body: the tail is thick, and hides it)
+      const clear = tailClear(points, body, [x, at[1]], Math.max(0, tailReach(body, at[1], z) + 12 - x));
+      lean = clear.lean;
+      moved = { ...moved, tx: moved.tx + clear.shift };
+    }
+    const pivot = hinge(made.root, moved, root, -z * U);
+    // (an inner hinge leans it, the outer one wags it)
+    const lift = new Group();
+    lift.rotation.z = -lean;
+    lift.add(...pivot.children);
+    pivot.add(lift);
     const hearts: Mesh[] = [];
     made.root.traverse((o) => {
       if (o instanceof Mesh && o.name.endsWith('_heart')) hearts.push(o);

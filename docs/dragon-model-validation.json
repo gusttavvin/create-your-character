@@ -1,8 +1,8 @@
 [
   {
     "piece": "tail-lightning",
-    "bytes": 258356,
-    "triangles": 13440,
+    "bytes": 1680216,
+    "triangles": 93248,
     "errors": 0,
     "warnings": 0
   },
@@ -36,8 +36,8 @@
   },
   {
     "piece": "tail-fire",
-    "bytes": 362004,
-    "triangles": 19685,
+    "bytes": 405220,
+    "triangles": 22229,
     "errors": 0,
     "warnings": 0
   },
@@ -71,8 +71,8 @@
   },
   {
     "piece": "tail-ice",
-    "bytes": 376228,
-    "triangles": 20000,
+    "bytes": 428388,
+    "triangles": 23036,
     "errors": 0,
     "warnings": 0
   },
@@ -106,8 +106,8 @@
   },
   {
     "piece": "tail-leaf",
-    "bytes": 213428,
-    "triangles": 10964,
+    "bytes": 1693764,
+    "triangles": 93944,
     "errors": 0,
     "warnings": 0
   },
