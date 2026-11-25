@@ -4,7 +4,15 @@
    ========================================================================== */
 
 :root {
-  --ink: #0b1b3b;
+  /* the site's personality (Clara: lively, warm, creative): plum instead of black for every
+     outline and text, coral for energy, sun for joy, mint for calm */
+  --ink: #3b1e54;
+  --coral: #ff6b4a;
+  --sun: #ffc23d;
+  --mint: #2ec4a6;
+  /* its signature: every card, button and tag has a lopsided, hand-drawn edge */
+  --wobble: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  --wobble-soft: 40px 14px 36px 14px / 14px 36px 14px 40px;
   --red: #ff6b78;
   --yellow: #ffd93d;
   --green: #7ed957;
@@ -16,15 +24,15 @@
   --paper: #ffffff;
   /* the site's own colours: blue and light pink. The worksheet rows and the
      characters keep the kit palette above. */
-  --sky: #4fc3ff;
-  --sky-soft: #dcf2ff;
-  --sky-deep: #1f7fc4;
-  --rose: #ff8fc8;
-  --rose-soft: #ffe3f1;
-  --rose-deep: #d94e97;
-  --bg: #f3faff;
-  --muted: #55688a;
-  --font-display: 'Lilita One', 'Baloo 2', system-ui, sans-serif;
+  --sky: #2ec4a6;
+  --sky-soft: #dcf6f0;
+  --sky-deep: #188f78;
+  --rose: #ff6b4a;
+  --rose-soft: #ffe7de;
+  --rose-deep: #e0482a;
+  --bg: #fff8f0;
+  --muted: #7b6491;
+  --font-display: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
   --font-body: 'Baloo 2', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --radius: 18px;
   --shadow: 0 6px 0 rgba(11, 27, 59, 0.12);
@@ -46,10 +54,10 @@ body {
   font-weight: 600;
   color: var(--ink);
   background: var(--bg);
-  background-image: radial-gradient(circle at 8% 8%, rgba(79, 195, 255, 0.3), transparent 34%),
-    radial-gradient(circle at 92% 14%, rgba(255, 143, 200, 0.28), transparent 32%),
-    radial-gradient(circle at 16% 92%, rgba(255, 143, 200, 0.22), transparent 30%),
-    radial-gradient(circle at 88% 86%, rgba(79, 195, 255, 0.24), transparent 30%);
+  background-image: radial-gradient(circle at 8% 8%, rgba(255, 194, 61, 0.22), transparent 30%),
+    radial-gradient(circle at 92% 14%, rgba(255, 107, 74, 0.14), transparent 30%),
+    radial-gradient(circle at 16% 92%, rgba(46, 196, 166, 0.14), transparent 30%),
+    radial-gradient(circle at 88% 86%, rgba(255, 194, 61, 0.18), transparent 30%);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -2620,6 +2628,93 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   gap: 10px;
 }
 
+/* the wheel can be dragged anywhere on the page (Clara shares only part of her screen) */
+.wheel-stage.is-moved {
+  z-index: 20;
+}
+
+.wheel-tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wheel-handle,
+.wheel-tool {
+  all: unset;
+  box-sizing: border-box;
+  padding: 3px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wheel-handle,
+.wheel-svg.is-draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.wheel-svg.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* the title and the Games button fade away while the wheel is moved over them */
+.memory-head .is-covered {
+  visibility: hidden;
+}
+
+.wheel-handle:active {
+  cursor: grabbing;
+  background: var(--sky-soft, #dff3ff);
+}
+
+.wheel-tool:hover,
+.wheel-handle:hover,
+.wheel-tool:focus-visible {
+  background: #f3f7ff;
+}
+
+/* where the wheel was, while it is in its own little window */
+.wheel-away {
+  justify-content: center;
+  min-height: 240px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* the little window the wheel pops out into: the wheel alone, as big as the window allows */
+.wheel-pip-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #f3f8ff);
+  overflow: hidden;
+}
+
+.wheel-stage.is-popped {
+  width: 100%;
+  padding: 18px 10px 6px;
+  box-sizing: border-box;
+}
+
+.wheel-stage.is-popped .wheel-svg {
+  width: min(92vw, calc(100vh - 150px));
+}
+
+.wheel-stage.is-popped .wheel-pin {
+  top: 8px;
+}
+
 .wheel-svg {
   width: min(100%, 420px);
   height: auto;
@@ -3128,4 +3223,1516 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
     width: 46px;
     height: 46px;
   }
+}
+
+/* ------------------------------------------ games for the older students (11+) */
+
+.game-age {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.older-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.older-done {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+
+/* where the teacher writes her own content */
+.older-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.older-edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.older-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.older-grow {
+  flex: 1 1 240px;
+}
+
+.older-input {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font: inherit;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--ink);
+  background: #fff;
+  min-width: 0;
+}
+
+.older-text {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* the teams and their points */
+.teams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 150px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--team) 35%, #fff);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: scale 0.2s;
+}
+
+.team.is-turn {
+  background: var(--team);
+  scale: 1.06;
+  box-shadow: 0 0 0 4px var(--ink), var(--shadow);
+}
+
+.team-name {
+  all: unset;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.team-name:focus-visible {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.team-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-points {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--ink);
+  min-width: 2ch;
+  text-align: center;
+}
+
+.team-step {
+  all: unset;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.team-step:hover,
+.team-step:focus-visible {
+  background: var(--sky-soft);
+}
+
+.teams-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* a countdown: a ring that empties, and the seconds left */
+.clock {
+  --done: 0deg;
+  width: 86px;
+  height: 86px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: conic-gradient(var(--sky-soft) var(--done), var(--sky) 0);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--ink);
+}
+
+.clock span {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.clock.is-low {
+  background: conic-gradient(var(--rose-soft) var(--done), var(--red) 0);
+  animation: clock-beat 1s ease-in-out infinite;
+}
+
+.clock.is-out {
+  background: var(--red);
+}
+
+@keyframes clock-beat {
+  50% {
+    scale: 1.08;
+  }
+}
+
+/* Quiz Board */
+.quiz-board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quiz-cat {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  padding: 6px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 2vw, 1.3rem);
+  line-height: 1.1;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 14px;
+}
+
+.quiz-cell {
+  all: unset;
+  display: grid;
+  place-items: center;
+  min-height: clamp(64px, 11vh, 110px);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4.4vw, 2.8rem);
+  color: var(--yellow);
+  -webkit-text-stroke: 0.07em var(--ink);
+  paint-order: stroke fill;
+  background: linear-gradient(135deg, var(--sky) 0%, var(--sky-deep) 100%);
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: translate 0.15s;
+}
+
+.quiz-cell:hover:not(:disabled),
+.quiz-cell:focus-visible {
+  translate: 0 -3px;
+}
+
+.quiz-cell.is-used,
+.quiz-cell.is-empty {
+  background: #e6edf5;
+  border-color: #c3cfdd;
+  box-shadow: none;
+  cursor: default;
+}
+
+.quiz-open {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(11, 27, 59, 0.55);
+}
+
+.quiz-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(900px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 26px 22px;
+  text-align: center;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.quiz-card-head {
+  margin: 0;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.quiz-q {
+  margin: 0;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 4.5vw, 3rem);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.quiz-a {
+  margin: 0;
+  padding: 8px 18px;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 3.6vw, 2.2rem);
+  color: var(--ink);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+}
+
+.quiz-award {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.quiz-close {
+  all: unset;
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  opacity: 0.6;
+}
+
+.quiz-close:hover,
+.quiz-close:focus-visible {
+  opacity: 1;
+}
+
+.quiz-edit-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.quiz-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--sky-soft);
+  border-radius: 14px;
+}
+
+.quiz-edit-cat {
+  font-family: var(--font-display);
+  text-align: center;
+}
+
+.quiz-edit-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quiz-edit-cell textarea {
+  resize: vertical;
+}
+
+.quiz-edit-pts {
+  font-family: var(--font-display);
+  color: var(--sky-deep);
+}
+
+/* Do not say it */
+.taboo-stage {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+  background: color-mix(in srgb, var(--team) 25%, #fff);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.taboo-ready {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 10px;
+  text-align: center;
+}
+
+.taboo-turn {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  color: var(--ink);
+}
+
+.taboo-how {
+  margin: 0;
+  max-width: 560px;
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.taboo-go {
+  font-size: 1.3rem;
+}
+
+.taboo-play {
+  display: grid;
+  grid-template-columns: auto minmax(0, 520px);
+  grid-template-areas: 'clock card' 'buttons buttons' 'round round';
+  gap: 14px 20px;
+  align-items: center;
+  justify-items: center;
+}
+
+.taboo-play .clock {
+  grid-area: clock;
+}
+
+.taboo-card {
+  grid-area: card;
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.taboo-word {
+  margin: 0;
+  padding: 18px 12px;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  line-height: 1.1;
+  color: #fff;
+  background: var(--purple);
+  border-bottom: 4px solid var(--ink);
+}
+
+.taboo-banned {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 3.4vw, 1.9rem);
+  color: var(--red);
+}
+
+.taboo-banned li::before {
+  content: '🚫 ';
+  font-size: 0.8em;
+}
+
+.taboo-buttons {
+  grid-area: buttons;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.taboo-buttons .btn {
+  font-size: 1.2rem;
+}
+
+.taboo-yes {
+  background: var(--green);
+}
+
+.taboo-no {
+  background: var(--red);
+}
+
+.taboo-round {
+  grid-area: round;
+  margin: 0;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+@media (max-width: 600px) {
+  .taboo-play {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'clock' 'card' 'buttons' 'round';
+  }
+}
+
+/* Mystery Word */
+.mw-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.mw-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mw-row {
+  display: grid;
+  grid-template-columns: repeat(var(--len, 5), clamp(44px, min(9vw, 7.5vh), 72px));
+  gap: 6px;
+}
+
+.mw-row.is-shaking {
+  animation: mw-shake 0.4s;
+}
+
+@keyframes mw-shake {
+  20%,
+  60% {
+    translate: -8px 0;
+  }
+  40%,
+  80% {
+    translate: 8px 0;
+  }
+}
+
+.mw-tile {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.4rem, min(5vw, 4.5vh), 2.4rem);
+  text-transform: uppercase;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid #c3cfdd;
+  border-radius: 10px;
+}
+
+.mw-tile.is-typed {
+  border-color: var(--ink);
+}
+
+.mw-tile.is-right,
+.mw-key.is-right {
+  background: #6ac04a;
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.mw-tile.is-near,
+.mw-key.is-near {
+  background: #f2c230;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.mw-tile.is-out,
+.mw-key.is-out {
+  background: #8a97ab;
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.mw-message {
+  margin: 0;
+  min-height: 1.6em;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--ink);
+  text-align: center;
+}
+
+.mw-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.mw-keyrow {
+  display: flex;
+  gap: 5px;
+}
+
+.mw-key {
+  all: unset;
+  min-width: clamp(28px, 6.5vw, 46px);
+  height: clamp(40px, 7vh, 54px);
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  box-sizing: border-box;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mw-key.is-wide {
+  min-width: clamp(56px, 11vw, 80px);
+  font-size: 0.95rem;
+}
+
+.mw-key:hover,
+.mw-key:focus-visible {
+  outline: 3px solid var(--sky);
+}
+
+.mw-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Would You Rather? */
+.wyr-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wyr-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  color: var(--ink);
+}
+
+.wyr-sides {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  width: 100%;
+}
+
+.wyr-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: clamp(180px, 34vh, 320px);
+  padding: 22px 16px 14px;
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.wyr-side.is-a {
+  background: var(--sky);
+}
+
+.wyr-side.is-b {
+  background: var(--rose);
+}
+
+.wyr-choice {
+  margin: 0;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.wyr-votes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wyr-count {
+  min-width: 3.5ch;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--ink);
+}
+
+.wyr-or {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.wyr-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.wyr-tools .clock {
+  width: 64px;
+  height: 64px;
+  font-size: 1.4rem;
+}
+
+.wyr-tools .clock span {
+  width: 46px;
+  height: 46px;
+}
+
+.wyr-frame {
+  margin: 0;
+  padding: 8px 18px;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: var(--ink);
+  background: #fff;
+  border: 3px dashed var(--ink);
+  border-radius: 16px;
+}
+
+@media (max-width: 600px) {
+  .wyr-sides {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------ the site's personality */
+
+/*
+ * Clara's classes are lively, warm and creative, and the site should look like nobody else's
+ * (not a theme: no costume). Its signature is the lopsided, hand-drawn edge every card, button
+ * and tag has (--wobble), with plum outlines, coral, sun and mint. The game covers are drawn
+ * in these colours instead of emoji.
+ */
+.btn,
+.pack,
+.chip,
+.seg,
+.game-card,
+.game-cta,
+.game-learn,
+.game-age,
+.memory-bar,
+.pick-card,
+.wheel-side,
+.wheel-names,
+.wheel-handle,
+.wheel-tool,
+.older-edit,
+.older-input,
+.team,
+.taboo-stage,
+.taboo-card,
+.quiz-cat,
+.quiz-cell,
+.quiz-card,
+.quiz-a,
+.wyr-side,
+.wyr-frame,
+.mw-key,
+.mcard-back,
+.mcard-front {
+  border-radius: var(--wobble);
+}
+
+.mw-tile {
+  border-radius: var(--wobble-soft);
+}
+
+.topbar {
+  background: rgba(255, 248, 240, 0.94);
+}
+
+/* the logo: the name with a scribble under it and a star */
+.logo {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.logo-name b {
+  color: var(--coral);
+}
+
+.logo-scribble {
+  display: block;
+  width: 100%;
+  height: 0.38em;
+  margin-top: 0.02em;
+  overflow: visible;
+}
+
+.logo-star {
+  position: absolute;
+  top: -0.3em;
+  right: -0.72em;
+  width: 0.72em;
+  height: 0.72em;
+  overflow: visible;
+  animation: logo-twinkle 3.2s ease-in-out infinite;
+}
+
+@keyframes logo-twinkle {
+  0%,
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+  50% {
+    rotate: 18deg;
+    scale: 1.15;
+  }
+}
+
+.brand {
+  font-size: 1.45rem;
+  padding-right: 0.7em;
+}
+
+.brand .logo-by {
+  display: none;
+}
+
+/* the home page */
+.hero-logo {
+  font-size: clamp(2.8rem, 8vw, 5rem);
+}
+
+.logo-by {
+  margin-top: 0.35em;
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: 0.24em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.games-group {
+  max-width: 1100px;
+  margin: 30px auto 0;
+}
+
+.games-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--ink);
+}
+
+.games-group-title svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.games-group .games {
+  margin-top: 0;
+}
+
+.game-art {
+  position: relative;
+  align-items: stretch;
+  justify-content: space-between;
+  min-height: 180px;
+  padding: 12px 16px 0;
+  background: color-mix(in srgb, var(--game) 24%, #fff);
+}
+
+.game-art-thing {
+  width: 50%;
+  align-self: center;
+  transition: rotate 0.3s ease, scale 0.3s ease;
+}
+
+a.game-card:hover .game-art-thing {
+  rotate: -6deg;
+  scale: 1.06;
+}
+
+.game-title {
+  font-weight: 700;
+}
+
+.game-cta {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* (the logo keeps its own letters: no capitals) */
+.hero-title {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* the four games for the older students fit on one row */
+.games-group.is-older .games {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+/* the back of a memory card: mint with light stripes (the old blue to pink, in these colours,
+   went brown in the middle) */
+.mcard-back {
+  background: repeating-linear-gradient(-45deg, var(--mint) 0 14px, #45d0b4 14px 28px);
+}
+
+/* a cover is its drawing alone, in the middle */
+.game-art .game-art-thing {
+  width: auto;
+  height: 150px;
+  margin: 0 auto;
+  align-self: center;
+}
+
+/* Don't Say It! online: the card face down on the shared screen, and the word just done */
+.taboo-play {
+  grid-template-areas: 'clock card' 'last last' 'buttons buttons' 'round round';
+}
+
+@media (max-width: 600px) {
+  .taboo-play {
+    grid-template-areas: 'clock' 'card' 'last' 'buttons' 'round';
+  }
+}
+
+.taboo-card.is-hidden .taboo-word {
+  background: var(--ink);
+}
+
+.taboo-secret {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: repeating-linear-gradient(-45deg, #fff 0 14px, var(--rose-soft) 14px 28px);
+}
+
+.taboo-hint {
+  margin: 0;
+  max-width: 340px;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.taboo-last {
+  grid-area: last;
+  margin: 0;
+  padding: 4px 16px;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble);
+}
+
+.taboo-last.is-got {
+  background: #c9f2d3;
+}
+
+/* online, each student can play on their own: up to 8, smaller */
+.team {
+  min-width: 120px;
+}
+
+/* Would You Rather online: A and B, for the votes in the chat */
+.wyr-side {
+  position: relative;
+}
+
+.wyr-letter {
+  position: absolute;
+  top: -18px;
+  left: 18px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: #fff;
+  background: var(--ink);
+  border-radius: var(--wobble-soft);
+}
+
+.wyr-count {
+  min-width: 5ch;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+/* Would You Rather: the themes, a choice when playing alone, and the result */
+.wyr-themes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.wyr-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.wyr-theme {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 12px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--ink);
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 0 6px 0 var(--ink);
+  cursor: pointer;
+  transition: translate 0.12s ease, rotate 0.12s ease;
+}
+
+.wyr-theme:hover,
+.wyr-theme:focus-visible {
+  translate: 0 -3px;
+  rotate: -1deg;
+}
+
+.wyr-theme:nth-child(5n + 1) {
+  background: #ffe7de;
+}
+
+.wyr-theme:nth-child(5n + 2) {
+  background: #fff1cc;
+}
+
+.wyr-theme:nth-child(5n + 3) {
+  background: var(--sky-soft);
+}
+
+.wyr-theme:nth-child(5n + 4) {
+  background: #efe6fb;
+}
+
+.wyr-theme.is-mix {
+  background: var(--sun);
+}
+
+.wyr-theme-emoji {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+button.wyr-side {
+  font: inherit;
+  cursor: pointer;
+  transition: scale 0.15s ease, opacity 0.2s ease;
+}
+
+button.wyr-side:hover,
+button.wyr-side:focus-visible {
+  scale: 1.02;
+}
+
+.wyr-side.is-chosen {
+  scale: 1.04;
+  box-shadow: 0 0 0 6px var(--ink), var(--shadow);
+}
+
+.wyr-side.is-not {
+  opacity: 0.45;
+}
+
+.wyr-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 22px;
+  text-align: center;
+  background: color-mix(in srgb, var(--trait) 30%, #fff);
+  border: 4px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 0 8px 0 var(--ink);
+}
+
+.wyr-result-emoji {
+  margin: 0;
+  font-size: 4.5rem;
+  line-height: 1;
+}
+
+.wyr-result-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.wyr-result-text {
+  margin: 0;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 500;
+  font-size: 1.3rem;
+  color: var(--ink);
+}
+
+.wyr-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.wyr-bar {
+  display: grid;
+  grid-template-columns: 11em 1fr 3em;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+
+.wyr-bar-track {
+  height: 16px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wyr-bar-fill {
+  display: block;
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.wyr-bar-pct {
+  text-align: right;
+}
+
+/* (three themes on a row: six fill two rows) */
+.wyr-theme-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .wyr-theme-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* the door of the site: log in, create an account or play as a guest */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 900px;
+  margin: 10px auto 0;
+  text-align: center;
+}
+
+.welcome-hello {
+  margin: 0;
+  font-family: 'Fredoka', var(--font-body);
+  font-weight: 500;
+  font-size: 1.35rem;
+  color: var(--ink);
+}
+
+.welcome-doors {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.welcome-doors.is-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .welcome-doors,
+  .welcome-doors.is-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.welcome-door {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 0 7px 0 var(--ink);
+  cursor: pointer;
+  transition: translate 0.12s ease, rotate 0.12s ease;
+}
+
+.welcome-door:hover,
+.welcome-door:focus-visible {
+  translate: 0 -4px;
+  rotate: -1deg;
+}
+
+.welcome-door small {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.welcome-door-emoji {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.welcome-door.is-login,
+.welcome-door.is-student {
+  background: var(--sky-soft);
+}
+
+.welcome-door.is-new,
+.welcome-door.is-teacher {
+  background: #fff1cc;
+}
+
+.welcome-door.is-guest {
+  background: var(--rose-soft);
+}
+
+.welcome-form {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 22px 22px 18px;
+  text-align: left;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 0 7px 0 var(--ink);
+}
+
+.welcome-form .welcome-doors {
+  margin-top: 6px;
+}
+
+.welcome-title {
+  margin: 4px 0 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.7rem;
+  color: var(--ink);
+  text-align: center;
+}
+
+.welcome-back,
+.welcome-link {
+  all: unset;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--rose-deep);
+}
+
+.welcome-back:hover,
+.welcome-link:hover,
+.welcome-back:focus-visible,
+.welcome-link:focus-visible {
+  text-decoration: underline;
+}
+
+.welcome-switch {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.welcome-form .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Quiz Board, alone: the points, and the answer typed */
+.quiz-score {
+  margin: 0;
+  align-self: center;
+  padding: 6px 22px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--ink);
+  background: var(--sun);
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble);
+}
+
+.quiz-answer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.quiz-answer .older-input {
+  flex: 1 1 260px;
+  max-width: 420px;
+  font-size: 1.3rem;
+  padding: 8px 14px;
+}
+
+.mw-themes {
+  justify-content: center;
+}
+
+/* Don't Say It! alone: the word's letters as blanks, the clues, and the guess */
+.taboo-blanks {
+  letter-spacing: 0.08em;
+}
+
+.taboo-clues {
+  color: var(--ink);
+}
+
+.taboo-clues li::before {
+  content: '💡 ';
+}
+
+.taboo-guess {
+  grid-area: buttons;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.taboo-guess .older-input {
+  flex: 1 1 240px;
+  max-width: 360px;
+  font-size: 1.3rem;
+}
+
+.taboo-guess.is-shaking {
+  animation: mw-shake 0.4s;
+}
+
+/* choosing the voice that reads the words */
+.voice-picker {
+  position: relative;
+}
+
+.voice-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: 280px;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble-soft);
+  box-shadow: 0 6px 0 var(--ink);
+}
+
+.voice-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.voice-pick {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.voice-pick small {
+  color: var(--muted);
+}
+
+.voice-pick:hover,
+.voice-pick:focus-visible {
+  background: var(--sky-soft);
+}
+
+.voice-row.is-on .voice-pick {
+  background: var(--sun);
+}
+
+/* Mystery Word's Play: the word alone on the screen, as big as it allows */
+.mw-focus .mw-themes {
+  display: none;
+}
+
+.mw-focus .mw-stage {
+  gap: 1.4vh;
+}
+
+.mw-focus .mw-row {
+  grid-template-columns: repeat(var(--len, 5), clamp(48px, min(11vw, 9vh), 104px));
+}
+
+.mw-focus .mw-tile {
+  font-size: clamp(1.6rem, min(6vw, 5.4vh), 3.4rem);
+}
+
+.mw-focus .mw-key {
+  min-width: clamp(30px, 7vw, 64px);
+  height: clamp(40px, 7.5vh, 66px);
+  font-size: clamp(1rem, 2.4vh, 1.5rem);
+}
+
+.mw-focus .mw-message {
+  font-size: clamp(1.2rem, 3vh, 2rem);
+}
+
+/* a student joining a class from the top of the site */
+.join-class {
+  position: relative;
+}
+
+.chip-join {
+  cursor: pointer;
+  background: #fff1cc;
+  font: inherit;
+  font-weight: 800;
+}
+
+.join-menu .btn {
+  width: 100%;
+  margin-top: 8px;
 }

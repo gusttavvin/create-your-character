@@ -3,6 +3,9 @@ import { useAuth } from '../lib/auth';
 import { PrefsProvider, usePrefs } from '../lib/prefs';
 import { DragProvider } from '../lib/drag';
 import { playClick } from '../lib/sounds';
+import Logo from './Logo';
+import VoicePicker from './VoicePicker';
+import JoinClass from './JoinClass';
 
 function ModeToggle() {
   const { mode, setMode } = usePrefs();
@@ -37,7 +40,7 @@ function UserChip() {
   const { role, displayName, signOut } = useAuth();
   if (role === 'guest') {
     return (
-      <Link to="/teacher" className="chip chip-guest" title="Sign in">
+      <Link to="/welcome" className="chip chip-guest" title="Log in or create an account">
         👋 Guest
       </Link>
     );
@@ -53,27 +56,28 @@ function UserChip() {
 }
 
 function Shell() {
+  const { role, hasBackend } = useAuth();
   return (
     <div className="app">
       <header className="topbar">
         <Link to="/" className="brand">
-          <span className="brand-icon" aria-hidden>
-            🎮
-          </span>
-          <span className="brand-text">
-            Funny <b>Games</b>
-          </span>
+          <Logo />
         </Link>
         <nav className="topnav">
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/gallery">My Characters</NavLink>
-          <NavLink to="/teacher">Teacher</NavLink>
+          {/* (only with an account: a guest has none; offline, with no accounts at all, the
+              characters are kept on the computer and the page stays) */}
+          {(role !== 'guest' || !hasBackend) && <NavLink to="/gallery">My Characters</NavLink>}
+          {/* (a teacher's classes; teachers log in at the door, like students) */}
+          {role === 'teacher' && <NavLink to="/teacher">My Classes</NavLink>}
         </nav>
         <div className="topbar-right">
           <ModeToggle />
           <SoundToggle />
+          <VoicePicker />
+          <JoinClass />
           <UserChip />
         </div>
       </header>

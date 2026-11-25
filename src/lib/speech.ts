@@ -36,16 +36,53 @@ export function onSoundChange(l: (on: boolean) => void) {
 }
 
 let voicesCache: SpeechSynthesisVoice[] = [];
+const VOICE = 'funny-games:voice';
+
+/**
+ * The English voices this computer has, the best first: the natural (neural) voices of Edge and
+ * Windows, a child's (Ana) at the top, then Google's, then the rest. Clara found the old robotic
+ * one (Zira) bad: the computer's plain voices come last.
+ */
+export function englishVoices(): SpeechSynthesisVoice[] {
+  if (typeof speechSynthesis === 'undefined') return [];
+  if (!voicesCache.length) voicesCache = speechSynthesis.getVoices();
+  const rank = (v: SpeechSynthesisVoice) =>
+    /Ana.*(Natural|Online)/i.test(v.name)
+      ? 0
+      : /Natural|Online/i.test(v.name)
+        ? 1
+        : /Google UK English Female/i.test(v.name)
+          ? 2
+          : /Google/i.test(v.name)
+            ? 3
+            : /Samantha|Karen|Moira|Tessa/i.test(v.name)
+              ? 4
+              : 9;
+  return voicesCache.filter((v) => /^en[-_]/i.test(v.lang)).sort((a, b) => rank(a) - rank(b));
+}
+
+/** The voice chosen on this computer (its name), or none for the best one. */
+export function chosenVoice() {
+  try {
+    return localStorage.getItem(VOICE) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function chooseVoice(name: string) {
+  try {
+    if (name) localStorage.setItem(VOICE, name);
+    else localStorage.removeItem(VOICE);
+  } catch {
+    /* ignore */
+  }
+}
 
 function pickVoice(): SpeechSynthesisVoice | null {
-  if (typeof speechSynthesis === 'undefined') return null;
-  if (!voicesCache.length) voicesCache = speechSynthesis.getVoices();
-  const english = voicesCache.filter((v) => /^en[-_]/i.test(v.lang));
-  const preferred =
-    english.find((v) => /Google US English|Samantha|Zira|Aria|Jenny|Natural/i.test(v.name)) ??
-    english.find((v) => v.lang.toLowerCase() === 'en-us') ??
-    english[0];
-  return preferred ?? null;
+  const voices = englishVoices();
+  const name = chosenVoice();
+  return voices.find((v) => v.name === name) ?? voices[0] ?? null;
 }
 
 if (typeof speechSynthesis !== 'undefined') {
@@ -60,10 +97,10 @@ export function speak(text: string, opts: { rate?: number; force?: boolean } = {
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
     u.rate = opts.rate ?? 0.9;
-    u.pitch = 1.05;
     const v = pickVoice();
+    // (a voice speaks in its own accent, and at its own pitch: raised, the natural ones sounded odd)
+    u.lang = v?.lang ?? 'en-US';
     if (v) u.voice = v;
     speechSynthesis.speak(u);
   } catch {

@@ -55,13 +55,23 @@ export function playTada() {
 }
 
 /** Soft click for buttons/toggles. */
-export function playClick() {
-  tone(660, 0, 0.06, 'square', 0.05);
-}
+// (silent: Clara found the click on every button annoying; the other sounds stay)
+export function playClick() {}
 
 /** Playful "whoosh" for the random button. */
 export function playShuffle() {
   const c = getCtx();
   if (!c) return;
   for (let i = 0; i < 4; i++) tone(300 + i * 120, i * 0.05, 0.08, 'triangle', 0.1);
+}
+
+/** Low buzz for a wrong answer or a forbidden word. */
+export function playBuzz() {
+  tone(140, 0, 0.32, 'sawtooth', 0.12);
+  tone(110, 0.05, 0.3, 'sawtooth', 0.1);
+}
+
+/** Short tick for the last seconds of a timer. */
+export function playTick() {
+  tone(1200, 0, 0.04, 'square', 0.04);
 }

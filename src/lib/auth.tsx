@@ -28,11 +28,38 @@ interface AuthContextValue {
   signInTeacher: (email: string, password: string) => Promise<void>;
   signUpTeacher: (email: string, password: string, name: string) => Promise<{ needsEmailConfirm: boolean }>;
   joinClass: (code: string, nickname: string) => Promise<void>;
+  /** A student's or a teacher's sign-in: a student's username, or an e-mail. */
+  signIn: (login: string, password: string) => Promise<void>;
+  signUpStudent: (username: string, password: string, name: string, classCode?: string) => Promise<void>;
+  /** A student with an account joins a teacher's class by its code; says the class's name. */
+  enterClass: (code: string) => Promise<string>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/**
+ * Students have a username and a password, no e-mail (they are children). The sign-in service
+ * wants an e-mail, so a username stands for one on the site's own address, which takes no mail:
+ * the project confirms new accounts without sending any (mailer_autoconfirm).
+ */
+const STUDENT_DOMAIN = 'student.create-your-character.pages.dev';
+export const cleanUsername = (u: string) =>
+  u
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '');
+const loginEmail = (login: string) => (login.includes('@') ? login.trim() : `${cleanUsername(login)}@${STUDENT_DOMAIN}`);
+
+/** The service's messages, as a child can read them. */
+function friendly(err: { message?: string }) {
+  const m = err.message ?? '';
+  if (/invalid login credentials/i.test(m)) return new Error('That username (or e-mail) and password do not match. Try again!');
+  if (/already registered|already exists/i.test(m)) return new Error('That name is taken. Try another one!');
+  if (/password/i.test(m) && /6|short|least/i.test(m)) return new Error('The password needs at least 6 letters or numbers.');
+  return err instanceof Error ? err : new Error(m || 'Something went wrong. Try again!');
+}
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
   if (!supabase) return null;
@@ -113,6 +140,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const signIn = useCallback(async (login: string, password: string) => {
+    if (!supabase) throw new Error('Backend not configured');
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(login), password });
+    if (error) throw friendly(error);
+  }, []);
+
+  const signUpStudent = useCallback(async (username: string, password: string, name: string, classCode?: string) => {
+    if (!supabase) throw new Error('Backend not configured');
+    const user = cleanUsername(username);
+    if (user.length < 3) throw new Error('Your username needs at least 3 letters or numbers.');
+    const code = classCode?.trim().toUpperCase();
+    if (code) {
+      const { data: cls } = await supabase.from('classes').select('id').eq('code', code).maybeSingle();
+      if (!cls) throw new Error('Class code not found. Ask your teacher for the code!');
+    }
+    const { error } = await supabase.auth.signUp({
+      email: loginEmail(user),
+      password,
+      options: { data: { role: 'student', display_name: name.trim() || user, ...(code ? { class_code: code } : {}) } },
+    });
+    if (error) throw friendly(error);
+  }, []);
+
+  const enterClass = useCallback(
+    async (code: string) => {
+      if (!supabase) throw new Error('Backend not configured');
+      const { data, error } = await supabase.rpc('join_class', { p_code: code.trim().toUpperCase() });
+      if (error) {
+        if (/not found/i.test(error.message)) throw new Error('Class code not found. Ask your teacher for the code!');
+        throw friendly(error);
+      }
+      await refreshProfile();
+      return String(data ?? '');
+    },
+    [refreshProfile],
+  );
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -136,10 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInTeacher,
       signUpTeacher,
       joinClass,
+      signIn,
+      signUpStudent,
+      enterClass,
       signOut,
       refreshProfile,
     };
-  }, [ready, user, profile, signInTeacher, signUpTeacher, joinClass, signOut, refreshProfile]);
+  }, [ready, user, profile, signInTeacher, signUpTeacher, joinClass, signIn, signUpStudent, enterClass, signOut, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -214,3 +214,35 @@ $$;
 
 revoke all on function public.keepalive() from public;
 grant execute on function public.keepalive() to anon, authenticated;
+
+-- ------------------------------------------------------------------ join a class
+-- A student with an account joins a teacher's class by its code (the "Join a class" button at
+-- the top of the site). Students cannot change their own class_id (see the grant on profiles),
+-- so this function does it for them, and only them: their own profile, a real class code, and
+-- only if they are a student.
+create or replace function public.join_class(p_code text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_class public.classes%rowtype;
+begin
+  if auth.uid() is null then
+    raise exception 'not signed in';
+  end if;
+  select * into v_class from public.classes where code = upper(trim(p_code));
+  if not found then
+    raise exception 'class code not found';
+  end if;
+  update public.profiles set class_id = v_class.id where id = auth.uid() and role = 'student';
+  if not found then
+    raise exception 'only students join a class';
+  end if;
+  return v_class.name;
+end;
+$$;
+
+revoke all on function public.join_class(text) from public;
+grant execute on function public.join_class(text) to authenticated;

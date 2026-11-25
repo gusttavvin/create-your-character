@@ -2701,3 +2701,169 @@ no 3d e no blue todas as tails estão afastadas do corpo".
 - Conferido em `dragon-review-3d.html` (`?row=tail` e `?row=wings`) nos quatro corpos, de frente,
   três quartos, lado e costas; no jogo, dragão azul com asas baby e cauda arrow em 3D (asas medidas
   batendo, console limpo); `npm run build`.
+
+## Roleta: mover pela tela e abrir numa janela própria (24 de novembro de 2026)
+
+Clara: "em relação à roleta, gostaria de mover ela, pois às vezes compartilho outra parte da tela".
+- [x] **✥ Move**: arrastar a roleta (com o botão de girar e o nome sorteado) para qualquer lugar da
+      página; o lugar fica guardado no computador (`funny-games:wheel-place`) e **↺ Put back** a
+      devolve. Ela não sai da tela: sempre sobra um pedaço para pegar de novo.
+- [x] **🪟 Pop out** (Chrome e Edge): abre a roleta numa janelinha própria que fica por cima de
+      tudo na tela (Document Picture-in-Picture), para mover para a parte da tela que está sendo
+      compartilhada e mudar de tamanho. A roleta cresce com a janela. A página mostra "The wheel is
+      in its own little window" com **↩ Bring it back here**. Os confetes saem na janelinha
+      (`burstConfetti(count, win)`), e o giro é animado pela janelinha (a página escondida atrás de
+      outro programa para as animações). Fechar a janelinha no meio de um giro para o giro.
+      Num navegador que não consegue abrir a janela, aparece um aviso para usar ✥ Move.
+- Conferido: arrastar (medido 300×80 px, guardado e mantido ao recarregar), Put back, aviso quando a
+  janela não abre, `npm run build`.
+- Não deu para testar a janelinha de verdade: o navegador do Claude não abre esse tipo de janela.
+  Falta conferir no Chrome da Clara.
+- [x] Clara: "quando movo pra cima, não consigo voltar com ela pra baixo! e pode tirar o título
+      quando eu colocar ela por cima dele". A barra do site (fixa no alto) ficava por cima do botão
+      ✥ Move: agora a roleta para logo abaixo da barra (`barBottom`), e uma roleta já guardada lá
+      em cima desce ao abrir a página. A própria roleta também pode ser arrastada (um alvo grande).
+      O título e o botão Games somem (`is-covered`, `visibility: hidden`, sem mexer no resto) quando
+      a roleta fica por cima deles, e voltam quando ela sai. Conferido: guardada a -400 px desce para
+      baixo da barra; arrastada 1000 px para cima, para na barra com o Move à mostra; arrastada pela
+      roleta para baixo, o título volta.
+- [x] Clara: "será que esse botão pode ficar embaixo do spin?": ✥ Move, ↺ Put back e 🪟 Pop out
+      agora ficam embaixo do botão Spin. A roleta para 10 px abaixo da barra do site (a setinha
+      dela fica à mostra).
+
+## Jogos para os mais velhos (11+): Quiz Board, Don't Say It!, Mystery Word, Would You Rather? (24 de novembro de 2026)
+
+Clara pediu ideias de jogos para alunos a partir de 11 anos e escolheu quatro (1, 2, 5 e 6 da
+lista): um quadro de perguntas em times, descrever sem as palavras proibidas, descobrir a palavra
+em seis tentativas e "would you rather". Os nomes não usam marcas (Jeopardy, Taboo, Wordle).
+- Na página inicial, depois da roleta, com a etiqueta **11+** (`older` em `games.ts`).
+- Peças em comum em `src/games/older/`: `GameHead` (o topo da página, como nos outros jogos),
+  `Teams` (2 a 4 times, nomes editáveis, pontos com + e −), `useCountdown` e `Clock` (cronômetro
+  que tica nos últimos 5 s), `useStored` (guarda no computador da professora). Sons novos:
+  `playBuzz`, `playTick`. Os textos grandes usam a letra Fredoka.
+- **Quiz Board** (`/quiz`, `QuizBoard.tsx`): categorias × 100/200/300…; a pergunta abre grande,
+  "Show the answer", e os pontos vão para o time que acertou (ou Nobody). A professora escreve os
+  quadros (✏️ Edit: nome, 2–6 categorias, 2–5 perguntas, pergunta e resposta), vários quadros, novo
+  e apagar. Vem com "Review time" (verbos no passado, comida, opostos, perguntas, soletrar).
+- **Don't Say It!** (`/dont-say-it`, `TabooGame.tsx`): pensado para o projetor — um aluno senta de
+  costas para a tela e o time descreve a palavra. Tempo 30 s a 2 min; ✓ Got it (+1), ✗ Said it!,
+  → Skip; no fim, quantas palavras o time acertou e "Next: Team 2". 40 cartas do dia a dia e
+  "My cards" (uma por linha: `palavra: proibida, proibida, …`).
+- **Mystery Word** (`/mystery-word`, `MysteryWord.tsx`): seis tentativas, verde/amarelo/cinza,
+  teclado na tela e do computador, 💡 Hint (o que a palavra quer dizer), 48 palavras de 5 letras
+  com dicas, e 🔒 Choose a word (a professora digita uma palavra secreta de 3 a 8 letras e a dica).
+  Não há dicionário: qualquer conjunto de letras conta como tentativa.
+- **Would You Rather?** (`/would-you-rather`, `WouldYouRather.tsx`): duas escolhas grandes, votos
+  (✋ + e −) de cada lado, cronômetro para cada aluno falar (20/30/60 s), o modelo "I'd rather …
+  because …", 30 perguntas e "My questions" (uma por linha: `escolha | escolha`).
+- Conferido no navegador: quadro, pergunta, resposta e pontos; editor do quadro; uma rodada inteira
+  de 30 s do Don't Say It!; Mystery Word com seis tentativas digitadas de uma vez (cores conferidas,
+  dica, palavra no fim); votos e cronômetro do Would You Rather; página inicial; `npm run build`.
+
+## Identidade do site (24 de novembro de 2026)
+
+Clara: "não gosto de como tá o design do site num geral, me parece sem identidade". Depois de
+ver seis temas (caderno, personagens, fliperama, sala de aula, passaporte, gibi): "eu não quero
+temas, quero uma personalidade única". Pelas respostas dela (aulas animadas, carinhosas e
+criativas; sem aparecer como personagem; sem gravar a voz; cores: "me sugira"), a personalidade:
+- **Cores** (`:root` em `global.css`): ameixa `#3B1E54` no lugar do preto em todo contorno e texto,
+  coral `#FF6B4A` (energia), sol `#FFC23D` (alegria), menta `#2EC4A6` (calma), fundo creme
+  `#FFF8F0`. Os nomes antigos (`--sky`, `--rose`…) agora são menta e coral, então tudo muda junto.
+  As cores dos personagens (paleta da folha) não mudaram.
+- **Assinatura**: a borda "torta", feita à mão (`--wobble`), em cartões, botões, etiquetas,
+  cartas da memória, quadro do quiz, letras do Mystery Word…
+- **Letra**: Fredoka nos títulos (era Lilita One).
+- **Logo** (`components/Logo.tsx`): "Funny Games" com um rabisco amarelo embaixo e uma estrelinha
+  menta que pisca; na página inicial, "by Teacher Clara" pequeno.
+- **Capas dos jogos** (`components/GameArt.tsx`): os personagens dela ao lado de um desenho do
+  jogo (cartas, roleta, troféu, balão fechado com zíper, letras, "or"), no lugar dos emojis.
+- **Página inicial**: "Play and create" e "For older students 11+"; botão "Let's play!".
+- Roleta, times e confetes nas cores novas; verso das cartas da memória menta listrado.
+- Conferido no navegador: página inicial (larga e estreita), montar monstro, memória, quiz,
+  roleta; `npm run build`. Ajustes de detalhe combinados com a Clara a seguir.
+- [x] Clara: "não quero os personagens na capa de cada game". As capas têm só o desenho do jogo,
+      no meio (`GameArt`); o Create Your Character continua com os personagens (é o jogo deles).
+
+## Jogos 11+ adaptados para aula online (24 de novembro de 2026)
+
+Clara: "as aulas são online, então tem que ser adaptado para aulas online e não presenciais".
+Ela compartilha a tela; os alunos falam no microfone ou escrevem no chat.
+- **Times**: de 2 a 8 (`MAX_TEAMS`), para jogar também cada aluno por si (clicar no nome para
+  trocar); botões "+ Add" e "− Remove".
+- **Don't Say It!**: como "Online: card hidden" (o padrão), a carta fica virada na tela
+  compartilhada ("🤫 Secret word") e **📋 Copy for the chat** copia "Your word: BUS — don't say:
+  drive, stop, school, ride" para ela mandar em mensagem privada a quem descreve; o time adivinha
+  no microfone ou no chat. Cada palavra que passa aparece para todos ("✓ It was: teacher").
+  "🏫 In the classroom: card on the screen" volta ao jeito presencial. O navegador que não copia
+  mostra o texto para copiar à mão.
+- **Would You Rather?**: as escolhas têm A e B grandes, para votar escrevendo A ou B no chat; a
+  professora conta nos dois lados ("3 votes").
+- **Quiz Board** e **Mystery Word**: o texto do topo diz para responder no chat ou no microfone.
+- Conferido no navegador: capas, uma rodada online do Don't Say It! (copiar, carta escondida,
+  "It was"), Would You Rather com A e B; `npm run build`.
+
+## Entrada do site, jogar sozinho, temas e resultado do Would You Rather (24 de novembro de 2026)
+
+Clara: "página inicial do site, assim que entrar: opção de logar, criar conta ou entrar como
+visitante! Os jogos devem ser possíveis de jogar individualmente também, não só em turmas! No would
+you rather vamos criar os temas e no final fazer um resultado mostrando como a criança é, de
+brincadeira!". O site é público: qualquer um cria conta de aluno ou de professora. Temas: sports,
+food, animals, superpowers & fantasy, school & everyday life. Resultado: um tipo de personalidade.
+
+- **Entrada** (`WelcomePage.tsx`, também em `/welcome`, para onde leva o botão "Guest" do topo):
+  na primeira visita, 🔑 Log in, ✨ Create an account, 🎮 Play as a guest (lembrado no computador,
+  `funny-games:welcomed`). Sem `.env` (sem servidor) a entrada não aparece.
+  - Aluno: nome, **nome de usuário** e senha, código da turma opcional, **sem e-mail** (crianças).
+    O Supabase pede um e-mail: o usuário vira `usuario@student.create-your-character.pages.dev`,
+    endereço que não recebe mensagem. Funciona porque o projeto confirma contas sem mandar e-mail
+    (`mailer_autoconfirm: true`, conferido em `/auth/v1/settings`); se isso for desligado, as
+    contas de aluno param de funcionar. O gatilho `handle_new_user` (schema.sql) já põe o papel e a
+    turma pelos metadados: nada mudou no banco.
+  - Professora: nome, e-mail e senha (`signUpTeacher`, como na área da professora).
+  - Log in: nome de usuário ou e-mail (`signIn` em `auth.tsx`). Mensagens de erro em inglês simples.
+- **Would You Rather** (`wyrQuestions.ts`): 5 temas × 12 perguntas, e "Mix it all!"; cada escolha
+  soma um ponto a uma de seis personalidades (Adventurer, Dreamer, Star, Chill Cat, Bright Spark,
+  Kind Heart). Rodadas de 10. 🙋 Just me: clica em A ou B; 👥 With my class: votos do chat, que
+  somam para "Our class is …!". No fim, a personalidade, uma frase e as barras das seis. As
+  perguntas da professora (My questions) não têm resultado.
+- **Quiz Board** (`quizBoards.ts`): quadros prontos — Review time e um por tema (4 categorias × 3)
+  — mais os da professora (➕ New board, ✏️ Edit só nos dela, guardados em
+  `funny-games:quiz-my-boards`). 🙋 Just me: digita a resposta, conferida por `isRight` (sem
+  maiúsculas e pontuação, alternativas com `/`, "a/the" opcional); se não bater, mostra a resposta
+  e o aluno diz se tinha acertado. Mostra só a primeira alternativa (`shownAnswer`).
+- **Don't Say It!**: cartas por tema (10 por tema, mais as 40 do dia a dia), Mix e My cards.
+  🙋 Just me vira "Guess the word": as palavras proibidas são as pistas, a palavra aparece em
+  tracinhos, o aluno digita (sem diferença de maiúsculas e espaços); conta palavras no tempo.
+- **Mystery Word**: os mesmos temas (10 palavras com dica cada), Mix e Everyday words.
+- Conferido no navegador: entrada (portas, formulário de aluno, visitante lembrado após recarregar);
+  Would You Rather sozinho (10 escolhas até o resultado) e com a turma (votos até "Our class is…");
+  Don't Say It! sozinho (palpite errado sem ponto, certo +1); Quiz sozinho (errado com "I had it
+  right", certo +300); Mystery Word por tema com dica; `npm run build`.
+- **Não testado**: criar conta e entrar de verdade (precisa criar uma conta de teste no Supabase).
+
+## Entrar numa turma, sons, voz, Play do Mystery Word, menu por conta (25 de novembro de 2026)
+
+Clara: o aluno cria a conta e depois entra na turma da teacher pelo código, por uma opção no topo;
+"o barulho quando clicamos é chato e a voz da mulher muito ruim"; Mystery Word com Play como a
+memória; "o My Characters só pode aparecer quando a pessoa entrar na conta"; juntar a parte do
+teacher na entrada: log in e criar conta escolhem student ou teacher; "jogar como guest sempre
+entra na conta de student".
+- [x] **Join a class** (`components/JoinClass.tsx`, no topo, só para alunos com conta): digita o
+      código e entra; depois "🏫 My class". Usa a função `join_class` do banco, nova no fim de
+      `supabase/schema.sql` (o aluno não pode mudar a própria turma direto: a função confere o
+      código e que é aluno). **Precisa ser instalada no Supabase** (SQL editor) — ainda não foi.
+- [x] Clique dos botões em silêncio (`playClick` vazio); acerto, erro e festa continuam.
+- [x] Voz: as vozes naturais (Edge/Windows "Online (Natural)", uma infantil primeiro) antes das
+      robóticas, cada uma no seu sotaque e tom; botão 🗣 no topo (`VoicePicker.tsx`) para ouvir e
+      escolher (guardado no computador).
+- [x] Mystery Word: **▶ Play** como na memória (só o jogo, grande; ✕ para sair).
+- [x] Menu: "My Characters" só com conta (ou sem servidor, quando tudo fica no computador);
+      "Teacher" virou "My Classes" e só aparece para professoras.
+- [x] Entrada: 🔑 Log in e ✨ Create an account perguntam primeiro "I'm a student / I'm a teacher";
+      aluno entra com nome de usuário, professora com e-mail. 🎮 Play as a guest = como aluno, sem
+      conta. Os formulários da antiga área da professora saíram; `/teacher` sem conta leva a
+      `/welcome?as=teacher` (login de professora) e, depois de entrar, volta às turmas.
+- Conferido no navegador como visitante: menu só com Home, Log in → student/teacher → formulário
+  certo, `/teacher` → login de professora; Mystery Word Play; `npm run build`.
+- Não testado: entrar/criar conta de verdade e o Join a class (precisa de conta de teste e da
+  função instalada no Supabase). Letra nova e personagem de perfil aguardam a escolha da Clara.

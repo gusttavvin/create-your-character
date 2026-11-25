@@ -1,6 +1,7 @@
 /** Minimal confetti burst rendered on a full-screen canvas. */
 
-const COLORS = ['#FF6B78', '#FFD93D', '#7ED957', '#A77BFF', '#4FC3FF', '#FF8A2A', '#FF6EC7'];
+// (the site's own colours: coral, sun, mint, lilac, and a peach and a light mint)
+const COLORS = ['#FF6B4A', '#FFC23D', '#2EC4A6', '#B69CE0', '#FF9E7D', '#7FD8C6', '#3B1E54'];
 
 interface Piece {
   x: number;
@@ -15,8 +16,11 @@ interface Piece {
   life: number;
 }
 
-export function burstConfetti(count = 140) {
-  if (typeof document === 'undefined') return;
+/** `win`: the window it bursts in (the wheel can be popped out into a little window of its own). */
+export function burstConfetti(count = 140, win?: Window) {
+  if (typeof globalThis.document === 'undefined') return;
+  const window = win ?? globalThis.window;
+  const document = window.document;
   const canvas = document.createElement('canvas');
   canvas.className = 'confetti-canvas';
   canvas.width = window.innerWidth;
@@ -75,8 +79,8 @@ export function burstConfetti(count = 140) {
       ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
       ctx.restore();
     }
-    if (alive > 0 && frame < 240) requestAnimationFrame(tick);
+    if (alive > 0 && frame < 240) window.requestAnimationFrame(tick);
     else canvas.remove();
   };
-  requestAnimationFrame(tick);
+  window.requestAnimationFrame(tick);
 }

@@ -14,6 +14,8 @@ export interface Game {
   /** Card colour, from the worksheet palette. */
   color: string;
   ready: boolean;
+  /** For the older students (11 and up): a small tag on its card. */
+  older?: boolean;
 }
 
 export const GAMES: Game[] = [
@@ -24,7 +26,7 @@ export const GAMES: Game[] = [
     learn: 'body words · colours · describing',
     emoji: '🎨',
     path: '/create-your-character',
-    color: '#FFD93D',
+    color: '#FFC23D',
     ready: true,
   },
   {
@@ -34,7 +36,7 @@ export const GAMES: Game[] = [
     learn: 'animals · fruit · school things · colours',
     emoji: '🧠',
     path: '/memory',
-    color: '#4FC3FF',
+    color: '#2EC4A6',
     ready: true,
   },
   {
@@ -44,8 +46,52 @@ export const GAMES: Game[] = [
     learn: 'taking turns · speaking',
     emoji: '🎡',
     path: '/wheel',
-    color: '#FF8FC8',
+    color: '#FF6B4A',
     ready: true,
+  },
+  {
+    id: 'quiz',
+    title: 'Quiz Board',
+    blurb: 'Teams pick a category and a value, answer in English and win the points.',
+    learn: 'review anything · teams',
+    emoji: '🏆',
+    path: '/quiz',
+    color: '#FFC23D',
+    ready: true,
+    older: true,
+  },
+  {
+    id: 'dont-say-it',
+    title: "Don't Say It!",
+    blurb: 'Describe the word to your team without saying the forbidden words.',
+    learn: 'speaking · describing',
+    emoji: '🤐',
+    path: '/dont-say-it',
+    color: '#2EC4A6',
+    ready: true,
+    older: true,
+  },
+  {
+    id: 'mystery-word',
+    title: 'Mystery Word',
+    blurb: 'Find the English word in six tries. Green, yellow or grey: every try helps.',
+    learn: 'spelling · vocabulary',
+    emoji: '🔤',
+    path: '/mystery-word',
+    color: '#B69CE0',
+    ready: true,
+    older: true,
+  },
+  {
+    id: 'would-you-rather',
+    title: 'Would You Rather?',
+    blurb: "Two choices, one vote. Then say why: “I'd rather … because …”",
+    learn: 'opinions · speaking',
+    emoji: '🤔',
+    path: '/would-you-rather',
+    color: '#FF6B4A',
+    ready: true,
+    older: true,
   },
 ];
 
