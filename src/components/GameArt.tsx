@@ -27,7 +27,7 @@ const THINGS: Record<string, ReactNode> = {
       <rect x="14" y="26" width="52" height="70" rx="10" fill="var(--coral)" transform="rotate(-12 40 61)" />
       <path d={STAR} transform="translate(40 61) rotate(-12) scale(1.5)" fill="var(--sun)" strokeWidth={2.5} />
       <rect x="54" y="22" width="52" height="70" rx="10" fill="#fff" transform="rotate(9 80 57)" />
-      <text x="80" y="66" transform="rotate(9 80 57)" textAnchor="middle" fontFamily="Fredoka" fontWeight="700" fontSize="30" fill={INK} stroke="none">
+      <text x="80" y="66" transform="rotate(9 80 57)" textAnchor="middle" fontFamily="Grandstander" fontWeight="700" fontSize="30" fill={INK} stroke="none">
         A
       </text>
     </Thing>
@@ -75,7 +75,7 @@ const THINGS: Record<string, ReactNode> = {
       ].map(([c, l, r], i) => (
         <g key={i} transform={`translate(${10 + i * 36} ${34 + (i % 2) * 10}) rotate(${r} 16 16)`}>
           <rect width="32" height="32" rx="6" fill={c as string} />
-          <text x="16" y="24" textAnchor="middle" fontFamily="Fredoka" fontWeight="700" fontSize="22" fill={i === 1 ? INK : '#fff'} stroke="none">
+          <text x="16" y="24" textAnchor="middle" fontFamily="Grandstander" fontWeight="700" fontSize="22" fill={i === 1 ? INK : '#fff'} stroke="none">
             {l}
           </text>
         </g>
@@ -89,7 +89,7 @@ const THINGS: Record<string, ReactNode> = {
       <rect x="10" y="26" width="48" height="62" rx="12" fill="var(--mint)" transform="rotate(-6 34 57)" />
       <rect x="62" y="26" width="48" height="62" rx="12" fill="var(--coral)" transform="rotate(6 86 57)" />
       <circle cx="60" cy="58" r="16" fill="var(--sun)" />
-      <text x="60" y="64" textAnchor="middle" fontFamily="Fredoka" fontWeight="700" fontSize="16" fill={INK} stroke="none">
+      <text x="60" y="64" textAnchor="middle" fontFamily="Grandstander" fontWeight="700" fontSize="16" fill={INK} stroke="none">
         or
       </text>
     </Thing>

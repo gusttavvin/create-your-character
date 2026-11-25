@@ -2867,3 +2867,7 @@ entra na conta de student".
   certo, `/teacher` → login de professora; Mystery Word Play; `npm run build`.
 - Não testado: entrar/criar conta de verdade e o Join a class (precisa de conta de teste e da
   função instalada no Supabase). Letra nova e personagem de perfil aguardam a escolha da Clara.
+- [x] Letra: Clara escolheu a opção A, **Grandstander** (alegre e um pouco torta), no lugar da
+      Fredoka ("robotizada, parecendo letra de editorial") em todo o site: títulos, logo, nomes das
+      cartas, perguntas, resultado e desenhos das capas. Os bonequinhos de perfil ela não quis
+      ("muito mal feitos"): ficaram de fora.

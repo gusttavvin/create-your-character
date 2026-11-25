@@ -32,7 +32,9 @@
   --rose-deep: #e0482a;
   --bg: #fff8f0;
   --muted: #7b6491;
-  --font-display: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  /* (Grandstander: cheerful and a little lopsided, like the site's edges; Clara chose it over
+     Fredoka, which looked robotic, like an editorial letter) */
+  --font-display: 'Grandstander', 'Baloo 2', system-ui, sans-serif;
   --font-body: 'Baloo 2', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --radius: 18px;
   --shadow: 0 6px 0 rgba(11, 27, 59, 0.12);
@@ -2574,7 +2576,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 /* a rounded, finer letter than the titles' (in Lilita One, big, the words looked blurred) */
 .mcard-word,
 .mcard-only-word {
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   color: var(--ink);
   line-height: 1.05;
@@ -3517,7 +3519,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 
 .quiz-q {
   margin: 0;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.6rem, 4.5vw, 3rem);
   line-height: 1.2;
@@ -3527,7 +3529,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .quiz-a {
   margin: 0;
   padding: 8px 18px;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.3rem, 3.6vw, 2.2rem);
   color: var(--ink);
@@ -3664,7 +3666,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .taboo-word {
   margin: 0;
   padding: 18px 12px;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(2.2rem, 6vw, 3.6rem);
   line-height: 1.1;
@@ -3680,7 +3682,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.3rem, 3.4vw, 1.9rem);
   color: var(--red);
@@ -3764,7 +3766,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.4rem, min(5vw, 4.5vh), 2.4rem);
   text-transform: uppercase;
@@ -3802,7 +3804,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .mw-message {
   margin: 0;
   min-height: 1.6em;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: 1.4rem;
   color: var(--ink);
@@ -3829,7 +3831,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   place-items: center;
   padding: 0 4px;
   box-sizing: border-box;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: 1.1rem;
   text-transform: uppercase;
@@ -3907,7 +3909,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
   flex: 1;
   display: grid;
   place-items: center;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.6rem, 4vw, 2.8rem);
   line-height: 1.15;
@@ -3966,7 +3968,7 @@ body.is-dragging .stage.is-editing .char2d [data-part] {
 .wyr-frame {
   margin: 0;
   padding: 8px 18px;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: clamp(1.2rem, 3vw, 1.8rem);
   color: var(--ink);
@@ -4213,7 +4215,7 @@ a.game-card:hover .game-art-thing {
   grid-area: last;
   margin: 0;
   padding: 4px 16px;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 600;
   font-size: 1.4rem;
   color: var(--ink);
@@ -4377,7 +4379,7 @@ button.wyr-side:focus-visible {
 
 .wyr-result-text {
   margin: 0;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 500;
   font-size: 1.3rem;
   color: var(--ink);
@@ -4443,7 +4445,7 @@ button.wyr-side:focus-visible {
 
 .welcome-hello {
   margin: 0;
-  font-family: 'Fredoka', var(--font-body);
+  font-family: 'Grandstander', var(--font-body);
   font-weight: 500;
   font-size: 1.35rem;
   color: var(--ink);
